@@ -3,7 +3,7 @@ import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
 import { currentLevel, LEVEL_COUNT, levelStatus, session } from '../state';
 import { drawFox, drawLalo } from '../ui/characters';
-import { RoundButton } from '../ui/round-button';
+import { digits, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
 import { cookieCounter } from '../ui/widgets';
 
@@ -122,6 +122,26 @@ export class MapScene extends Phaser.Scene {
         labelColor: '#FFFFFF',
         onTap: play,
       });
+      return;
+    }
+
+    if (status === 'pending') {
+      // Jugado sin superar la prueba: amarillo, con un globo de Lalo con «?» y sin estrellas.
+      new RoundButton(this, p.x, p.y, {
+        width: 96,
+        color: COLORS.yellow,
+        shadowColor: COLORS.yellowDark,
+        label: String(level),
+        labelSize: 54,
+        onTap: play,
+      });
+      const bx = p.x + 50;
+      const by = p.y - 50;
+      const bubble = this.add.graphics();
+      bubble.fillStyle(COLORS.shadow).fillCircle(bx, by + 4, 30);
+      bubble.fillStyle(COLORS.white).fillCircle(bx, by, 30).fillTriangle(bx - 22, by + 12, bx - 8, by + 26, bx - 34, by + 32);
+      this.add.image(bx - 6, by, 'lalo').setDisplaySize(30, 34);
+      digits(this, bx + 14, by + 2, '?', 30, '#FF6B5E');
       return;
     }
 

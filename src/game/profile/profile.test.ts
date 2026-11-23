@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buyHat, completeLevel, createGameState, session } from '../state';
-import { activateProfile, activeProfileId, saveActive, savedProfiles, startProfile, useStore } from './active';
+import { buyHat, completeLevel, createGameState, markPending, session } from '../state';
+import { activateProfile, activeAge, activeAlias, activeProfileId, DEFAULT_ALIAS, saveActive, savedProfiles, startProfile, useStore } from './active';
 import { cleanAlias, isValidProfile, profileId } from './profile-id';
 import { decodeProgress, encodeProgress } from './progress-codec';
 import { createProfile, listProfiles, loadProgress, saveProgress, type KeyValueStore } from './profile-store';
@@ -64,6 +64,31 @@ describe('progress-codec', () => {
   });
   it('un gorro puesto que no se tiene vuelve al inicial', () => {
     expect(decodeProgress({ ownedHats: ['cap'], hat: 'crown' }).hat).toBe('cap');
+  });
+});
+
+describe('progress-codec: niveles pendientes', () => {
+  it('ida y vuelta con pendientes', () => {
+    const s = createGameState();
+    completeLevel(s, 1, 2, 3);
+    markPending(s, 2, 1);
+    const back = decodeProgress(JSON.parse(JSON.stringify(encodeProgress(s))));
+    expect([...back.pending]).toEqual([2]);
+    expect(back.stars.get(1)).toBe(2);
+    expect(back.cookies).toBe(4);
+  });
+
+  it('un registro antiguo sin pending conserva sus niveles hechos', () => {
+    const back = decodeProgress({ stars: [[1, 3], [2, 2]], cookies: 7, ownedHats: ['cap'], hat: 'cap' });
+    expect(back.pending.size).toBe(0);
+    expect(back.stars.get(1)).toBe(3);
+    expect(back.stars.get(2)).toBe(2);
+  });
+
+  it('ignora pendientes dañados, fuera de rango o ya hechos', () => {
+    const back = decodeProgress({ stars: [[1, 3]], pending: [1, 0, 7, 2.5, 'x', null, 3], cookies: 0 });
+    expect([...back.pending]).toEqual([3]);
+    expect(decodeProgress({ stars: [], pending: 'basura' }).pending.size).toBe(0);
   });
 });
 
@@ -150,6 +175,36 @@ describe('perfil activo', () => {
     expect(activeProfileId()).toBeNull();
     expect(() => saveActive()).not.toThrow();
     expect(savedProfiles()).toEqual([]);
+  });
+
+  it('el pendiente se guarda y se recupera', () => {
+    startProfile('ANA', 4);
+    markPending(session, 1, 2);
+    saveActive();
+    startProfile('BEA', 5);
+    expect(session.pending.size).toBe(0);
+    activateProfile('ana-4');
+    expect(session.pending.has(1)).toBe(true);
+    expect(session.cookies).toBe(2);
+  });
+
+  it('alias y edad del perfil activo', () => {
+    expect(activeAlias()).toBe(DEFAULT_ALIAS);
+    expect(activeAge()).toBeUndefined();
+    startProfile('lucía', 5);
+    expect(activeAlias()).toBe('LUCIA');
+    expect(activeAge()).toBe(5);
+    startProfile('BEA', 7);
+    activateProfile('lucia-5');
+    expect(activeAlias()).toBe('LUCIA');
+    expect(activeAge()).toBe(5);
+  });
+
+  it('alias y edad también sin almacenamiento', () => {
+    useStore(null);
+    startProfile('NIÑA', 3);
+    expect(activeAlias()).toBe('NIÑA');
+    expect(activeAge()).toBe(3);
   });
 
   it('activar un perfil inexistente devuelve false', () => {

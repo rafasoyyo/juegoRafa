@@ -3,7 +3,7 @@ import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
 import { starsFor, type Stars } from '../../learning/scoring';
 import { saveActive } from '../profile/active';
-import { completeLevel, LEVEL_COUNT, session } from '../state';
+import { completeLevel, LEVEL_COUNT, markPending, session } from '../state';
 import { drawFox } from '../ui/characters';
 import { digits, fitImage, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
@@ -14,6 +14,8 @@ export interface LevelCompleteData {
   blocksHit: number;
   blocksTotal: number;
   cookies: number;
+  /** Si se superó la prueba de la bandera. Sin dato (p. ej. abriendo la escena en desarrollo), sí. */
+  passed?: boolean;
 }
 
 const GROUND_TOP = 615;
@@ -25,7 +27,10 @@ function starDelay(i: number): number {
 }
 const CONFETTI_COLORS = [COLORS.coral, COLORS.yellow, COLORS.purple, COLORS.grass, 0x4da3ff];
 
-/** Celebración sin texto: confeti, estrellas, galletas ganadas y tres caminos. */
+/**
+ * Celebración sin texto: confeti, estrellas, galletas ganadas y tres caminos. Si no se superó la prueba
+ * de la bandera, pantalla de ánimo: sin confeti ni estrellas, el nivel queda pendiente y se puede seguir.
+ */
 export class LevelCompleteScene extends Phaser.Scene {
   private result!: LevelCompleteData;
   private stars: Stars = 1;
@@ -40,19 +45,26 @@ export class LevelCompleteScene extends Phaser.Scene {
       blocksHit: data?.blocksHit ?? 0,
       blocksTotal: data?.blocksTotal ?? 0,
       cookies: data?.cookies ?? 0,
+      passed: data?.passed ?? true,
     };
   }
 
   create(): void {
     // Se guarda una sola vez al llegar, no en cada recolocación.
     this.stars = starsFor(this.result.blocksHit, this.result.blocksTotal);
-    completeLevel(session, this.result.level, this.stars, this.result.cookies);
+    if (this.result.passed) completeLevel(session, this.result.level, this.stars, this.result.cookies);
+    else markPending(session, this.result.level, this.result.cookies);
     saveActive();
 
     enter(this);
     this.build(this.scale.width, true);
-    // La melodía del mapa vuelve cuando han sonado los tintineos de las estrellas.
-    this.time.delayedCall(starDelay(this.stars - 1) + MUSIC_AFTER_STARS_MS, () => audio.playMusic('map'));
+    if (this.result.passed) {
+      // La melodía del mapa vuelve cuando han sonado los tintineos de las estrellas.
+      this.time.delayedCall(starDelay(this.stars - 1) + MUSIC_AFTER_STARS_MS, () => audio.playMusic('map'));
+    } else {
+      this.time.delayedCall(300, () => audio.sfx('prize'));
+      this.time.delayedCall(300 + MUSIC_AFTER_STARS_MS, () => audio.playMusic('map'));
+    }
     onResize(this, (w) => {
       this.tweens.killAll();
       this.time.removeAllEvents();
@@ -65,11 +77,14 @@ export class LevelCompleteScene extends Phaser.Scene {
   private build(width: number, animate: boolean): void {
     addSky(this);
     drawGround(this, 0, MAX_W, GROUND_TOP, 30);
-    this.confetti(width);
-    this.card(width, animate);
-
-    const fox = drawFox(this, Math.max(150, width * 0.14), GROUND_TOP + 20, 'celebrate', session.hat, 210);
-    this.tweens.add({ targets: fox, y: fox.y - 26, duration: 260, yoyo: true, repeat: -1, repeatDelay: 140, ease: 'Quad.easeOut' });
+    if (this.result.passed) {
+      this.confetti(width);
+      this.card(width, animate);
+      const fox = drawFox(this, Math.max(150, width * 0.14), GROUND_TOP + 20, 'celebrate', session.hat, 210);
+      this.tweens.add({ targets: fox, y: fox.y - 26, duration: 260, yoyo: true, repeat: -1, repeatDelay: 140, ease: 'Quad.easeOut' });
+    } else {
+      this.encouragement(width);
+    }
 
     const y = GAME_H - 32 - 75;
     const { level } = this.result;
@@ -100,6 +115,36 @@ export class LevelCompleteScene extends Phaser.Scene {
       iconSize: 54,
       onTap: () => goTo(this, 'Level', { level }),
     });
+  }
+
+  /** Prueba no superada: el zorro y Lalo saludan, y se ven las galletas recogidas. Sin estrellas. */
+  private encouragement(width: number): void {
+    const cw = 600;
+    const ch = 330;
+    const top = 36;
+    const g = this.add.graphics();
+    g.fillStyle(COLORS.shadow).fillRoundedRect(width / 2 - cw / 2, top + 10, cw, ch, 40);
+    g.fillStyle(COLORS.white).fillRoundedRect(width / 2 - cw / 2, top, cw, ch, 40);
+
+    // Lalo, grande, en el centro de la tarjeta, saludando con un balanceo.
+    const lalo = fitImage(this.add.image(width / 2, top + 140, 'lalo'), 170);
+    this.tweens.add({ targets: lalo, angle: { from: -8, to: 8 }, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.time.addEvent({ delay: 2600, loop: true, callback: () => {
+      lalo.setTexture('lalo-blink');
+      fitImage(lalo, 170);
+      this.time.delayedCall(160, () => fitImage(lalo.setTexture('lalo'), 170));
+    } });
+
+    const pw = 200;
+    const ph = 76;
+    const py = top + ch - 30 - ph / 2;
+    g.fillStyle(0xfff4d6).fillRoundedRect(width / 2 - pw / 2, py - ph / 2, pw, ph, ph / 2);
+    fitImage(this.add.image(width / 2 - 36, py, 'cookie'), 54);
+    digits(this, width / 2 + 30, py + 2, String(this.result.cookies), 48);
+
+    // El zorro saluda balanceándose (sin saltar de alegría).
+    const fox = drawFox(this, Math.max(150, width * 0.14), GROUND_TOP + 20, 'idle', session.hat, 210);
+    this.tweens.add({ targets: fox, angle: { from: -5, to: 5 }, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
   private card(width: number, animate: boolean): void {

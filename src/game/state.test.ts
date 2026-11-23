@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buyHat, canPlay, completeLevel, createGameState, currentLevel, HAT_PRICES, levelStatus, wearHat } from './state';
+import { buyHat, canPlay, completeLevel, createGameState, currentLevel, HAT_PRICES, isUnlocked, levelStatus, markPending, wearHat } from './state';
 
 describe('mapa del mundo', () => {
   it('en la primera partida el 1 es el actual y del 2 al 6 están bloqueados', () => {
@@ -115,5 +115,63 @@ describe('mi personaje', () => {
     const s = createGameState();
     expect(wearHat(s, 'crown')).toBe(false);
     expect(s.hat).toBe('cap');
+  });
+});
+
+describe('niveles pendientes (prueba no superada)', () => {
+  it('prueba no superada: 1 hecho, 2 pendiente, 3 actual, 4-6 bloqueados', () => {
+    const s = createGameState();
+    completeLevel(s, 1, 2, 0);
+    markPending(s, 2, 0);
+    expect(levelStatus(s, 1)).toBe('done');
+    expect(levelStatus(s, 2)).toBe('pending');
+    expect(levelStatus(s, 3)).toBe('current');
+    expect(currentLevel(s)).toBe(3);
+    for (let l = 4; l <= 6; l++) expect(levelStatus(s, l)).toBe('locked');
+    expect(s.stars.has(2)).toBe(false);
+  });
+
+  it('un pendiente desbloquea el siguiente y se puede jugar', () => {
+    const s = createGameState();
+    markPending(s, 1, 0);
+    expect(isUnlocked(s, 2)).toBe(true);
+    expect(canPlay(s, 1)).toBe(true);
+    expect(canPlay(s, 2)).toBe(true);
+    expect(canPlay(s, 3)).toBe(false);
+  });
+
+  it('solo quedan pendientes: el zorro va al primer pendiente', () => {
+    const s = createGameState();
+    for (let l = 1; l <= 6; l++) {
+      if (l === 4) markPending(s, l, 0);
+      else completeLevel(s, l, 1, 0);
+    }
+    expect(currentLevel(s)).toBe(4);
+    expect(levelStatus(s, 4)).toBe('current');
+  });
+
+  it('pendiente superado más tarde pasa a hecho con sus estrellas', () => {
+    const s = createGameState();
+    markPending(s, 1, 0);
+    completeLevel(s, 1, 2, 0);
+    expect(levelStatus(s, 1)).toBe('done');
+    expect(s.stars.get(1)).toBe(2);
+    expect(s.pending.has(1)).toBe(false);
+  });
+
+  it('repetir un nivel hecho y fallar no lo deshace', () => {
+    const s = createGameState();
+    completeLevel(s, 1, 2, 0);
+    markPending(s, 1, 0);
+    expect(levelStatus(s, 1)).toBe('done');
+    expect(s.stars.get(1)).toBe(2);
+    expect(s.pending.has(1)).toBe(false);
+  });
+
+  it('las galletas se suman aunque la prueba no se supere', () => {
+    const s = createGameState();
+    s.cookies = 5;
+    markPending(s, 2, 3);
+    expect(s.cookies).toBe(8);
   });
 });

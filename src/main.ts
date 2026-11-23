@@ -7,6 +7,7 @@ import { LevelScene } from './game/scenes/LevelScene';
 import { MapScene } from './game/scenes/MapScene';
 import { NewProfileScene } from './game/scenes/NewProfileScene';
 import { ProfilesScene } from './game/scenes/ProfilesScene';
+import { QuizScene } from './game/scenes/QuizScene';
 import { TitleScene } from './game/scenes/TitleScene';
 import { WardrobeScene } from './game/scenes/WardrobeScene';
 
@@ -19,7 +20,7 @@ const game = new Phaser.Game({
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 900 * 3.2 }, fixedStep: false, debug: false } },
   input: { activePointers: 4 },
-  scene: [BootScene, TitleScene, ProfilesScene, NewProfileScene, MapScene, LevelScene, LevelCompleteScene, WardrobeScene],
+  scene: [BootScene, TitleScene, ProfilesScene, NewProfileScene, MapScene, LevelScene, QuizScene, LevelCompleteScene, WardrobeScene],
 });
 
 // Solo en desarrollo: acceso desde la consola para probar.

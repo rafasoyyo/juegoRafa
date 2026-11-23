@@ -11,6 +11,7 @@ import { toWorld } from '../levels/parse';
 import { RUN_SPEED, type WorldLevel } from '../levels/types';
 import { loseCookie, pickFruitBlock, powerPhase, type PowerPhase } from '../power/power';
 import { LEVEL_COUNT, session } from '../state';
+import type { QuizData } from './QuizScene';
 import { drawLalo, FOX_UNITS, makeHat, placeHat, type FoxPose } from '../ui/characters';
 import { RoundButton } from '../ui/round-button';
 import { TouchControls } from '../ui/touch-controls';
@@ -120,6 +121,8 @@ export class LevelScene extends Phaser.Scene {
   private dust: Phaser.GameObjects.Image[] = [];
   private nextDustAt = 0;
   private enemies: EnemyView[] = [];
+  /** Erizos y abejas del nivel, para «¿Te acuerdas?». */
+  private enemyCounts = { hedgehog: 0, bee: 0 };
   private knockUntil = -Infinity;
   private protectedUntil = -Infinity;
   private hitAt = -Infinity;
@@ -322,7 +325,10 @@ export class LevelScene extends Phaser.Scene {
 
   /** Enemigos al azar en zonas seguras (suelo llano); cambian cada vez que se entra en el nivel. */
   private buildEnemies(): void {
-    this.enemies = layoutEnemies(this.level, courseFor(this.world)).map((spawn) => createEnemyView(this, spawn, GROUND_TOP));
+    const spawns = layoutEnemies(this.level, courseFor(this.world));
+    this.enemyCounts = { hedgehog: 0, bee: 0 };
+    for (const spawn of spawns) this.enemyCounts[spawn.kind] += 1;
+    this.enemies = spawns.map((spawn) => createEnemyView(this, spawn, GROUND_TOP));
     for (const enemy of this.enemies) enemy.update(this.time.now);
   }
 
@@ -687,12 +693,15 @@ export class LevelScene extends Phaser.Scene {
     this.controls.read();
     this.updateProgress(1);
     this.time.delayedCall(CELEBRATE_MS, () =>
-      goTo(this, 'LevelComplete', {
+      goTo(this, 'Quiz', {
         level: this.level,
+        ambient: this.world.ambient,
+        hedgehogs: this.enemyCounts.hedgehog,
+        bees: this.enemyCounts.bee,
+        cookies: this.cookies,
         blocksHit: this.blocksHit,
         blocksTotal: this.world.blocks.length,
-        cookies: this.cookies,
-      }),
+      } satisfies QuizData),
     );
   }
 

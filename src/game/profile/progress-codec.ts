@@ -7,13 +7,15 @@ import { HATS, LEVEL_COUNT, createGameState, type GameState, type HatId } from '
 export interface SavedProgress {
   /** Pares [nivel, estrellas]. */
   stars: [number, number][];
+  /** Niveles pendientes (jugados sin superar la prueba). Falta en el progreso guardado antes de las pruebas. */
+  pending?: number[];
   cookies: number;
   ownedHats: string[];
   hat: string;
 }
 
 export function encodeProgress(state: GameState): SavedProgress {
-  return { stars: [...state.stars], cookies: state.cookies, ownedHats: [...state.ownedHats], hat: state.hat };
+  return { stars: [...state.stars], pending: [...state.pending], cookies: state.cookies, ownedHats: [...state.ownedHats], hat: state.hat };
 }
 
 const isHat = (v: unknown): v is HatId => typeof v === 'string' && (HATS as readonly string[]).includes(v);
@@ -31,6 +33,12 @@ export function decodeProgress(raw: unknown): GameState {
       if (typeof level !== 'number' || typeof stars !== 'number') continue;
       if (!Number.isInteger(level) || level < 1 || level > LEVEL_COUNT || !Number.isFinite(stars)) continue;
       state.stars.set(level, Math.max(1, Math.min(3, Math.round(stars))));
+    }
+  }
+  if (Array.isArray(r.pending)) {
+    for (const level of r.pending) {
+      if (typeof level !== 'number' || !Number.isInteger(level) || level < 1 || level > LEVEL_COUNT) continue;
+      if (!state.stars.has(level)) state.pending.add(level);
     }
   }
   if (typeof r.cookies === 'number' && Number.isFinite(r.cookies)) state.cookies = Math.max(0, Math.floor(r.cookies));

@@ -92,6 +92,12 @@ export function createProfile(store: KeyValueStore, alias: string, age: number, 
   return { info: { id, alias: record.alias, age, lastPlayed: now }, progress: decodeProgress(record.progress) };
 }
 
+/** Alias y edad de un perfil guardado; `null` si no existe o no se puede leer. */
+export function profileInfo(store: KeyValueStore, id: string): ProfileInfo | null {
+  const r = read(store, id);
+  return r ? { id: r.id, alias: r.alias, age: r.age, lastPlayed: r.lastPlayed } : null;
+}
+
 /** Progreso guardado de un perfil; `null` si no existe o no se puede leer. */
 export function loadProgress(store: KeyValueStore, id: string): GameState | null {
   const r = read(store, id);

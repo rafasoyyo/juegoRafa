@@ -39,21 +39,23 @@ Primera versión: **Cantidad, Número y Patrones**. Esto permite validar el jueg
 La respuesta se da **jugando**, no parando para un examen:
 - **Bloques «?»**: contienen cantidades. Golpear el correcto suelta galletas y abre el camino.
 - **Puertas/tubos**: piden una cantidad (puntos en el cartel). Se atraviesan al llevar esa cantidad.
-- **Enemigo**: no mata; si lo tocas, rebotas. Se «derrota» saltando sobre el que lleva el patrón o la cantidad correcta.
+- **Enemigo** (erizo, abeja): no mata. Tocarlo, también cayéndole encima, es un **pinchazo**: Rufo brinca hacia arriba y hacia atrás, parpadea 1 s protegido y **pierde una galleta del contador del nivel** (nunca baja de 0). No hay vidas, ni derrota, ni se pierde nada del total guardado, y las estrellas no cambian. Idea futura: «derrotar» saltando sobre el que lleva el patrón o la cantidad correcta.
+- **Fresa del modo invencible**: en cada nivel, un bloque «?» elegido al azar al entrar esconde una **fresa**. Al golpearlo da su galleta y suelta la fresa, que se posa junto al bloque. Al comerla, Rufo brilla con destellos de colores durante **8 s** (el brillo acelera en los 2 últimos): atraviesa erizos y abejas sin pincharse ni perder galletas.
 - **Meta**: bandera al final, con celebración.
 
 ### 1.4 Pruebas y puntuación (sin presión)
 - **Estrellas 1 a 3 por nivel**, según aciertos al primer intento. Nunca 0: terminar siempre da al menos 1.
 - **Galletas** (con pepitas de chocolate): son el premio del juego; se ganan por acertar y se gastan en cosméticos del personaje (sombreros, colores).
-- **Sin vidas ni «game over»**. Un fallo = rebote suave + pista, y se reintenta.
+- **Sin vidas ni «game over»**. Un fallo en una prueba = rebote suave + pista, y se reintenta. El único coste en el nivel es el pinchazo de un enemigo, que resta una galleta del nivel (nunca baja de 0, no toca el total guardado ni las estrellas).
 - **Pistas progresivas**: 1.er fallo, la voz repite la consigna; 2.º, la respuesta correcta brilla; 3.º, la mascota la señala.
+- **Prueba de la bandera** (hecha): al llegar a la bandera de cada nivel, una prueba corta de **3 preguntas**, con un tipo por nivel en el mundo 1: ¿Cuántos hay?, ¿Dónde hay más?, Sigue la serie, Caza de formas, Las letras de tu nombre y ¿Te acuerdas? (sobre lo que ha pasado en el nivel). Se adapta a la edad del perfil en tres franjas (3-4, 5-6 y 7-8) y se explica sin texto ni voz: con dibujos y con Lalo señalando. Cada pregunta tiene 3 intentos: tras el 1.er fallo, Lalo repite la demostración; tras el 2.º, da una pista propia de cada prueba; tras el 3.º, enseña la respuesta. Se supera con 2 aciertos de 3. **No da estrellas** (siguen saliendo de los bloques «?»). Si no se supera, el nivel queda **pendiente** (amarillo en el mapa, sin estrellas) pero el siguiente se desbloquea; las galletas recogidas sí se suman. Detalle en `openspec/specs/flag-quiz/`.
 - **Mini-prueba al final de cada mundo** (el «castillo»): 5 retos cortos mezclados. Da una **medalla**, no una nota.
 - **Dificultad adaptativa** invisible: sube de rango tras 4-5 aciertos seguidos; baja tras 3 fallos.
 - **Repaso espaciado**: lo fallado reaparece en niveles posteriores con otro disfraz.
 
 ### 1.5 Estructura
 - **4 mundos × 6 niveles** (v1: 1 mundo completo).
-- Cada nivel = un recorrido corto con 3 a 5 retos y una meta.
+- Cada nivel = un recorrido corto con 3 a 5 retos y una meta, donde espera la prueba de la bandera.
 - Mundo 1: *Colina de los números* (1-5). Mundo 2: 1-10. Mundo 3: patrones y formas. Mundo 4: letras.
 
 ## 2. Propuesta de interfaz y control (móvil táctil)
@@ -179,7 +181,7 @@ La fase 1 y 2 deciden si el juego funciona. Se prueba con él lo antes posible.
 
 ## 6. Decisiones tomadas
 
-1. **Personaje:** al niño le gusta Mario Bros. Como se va a **publicar**, no se pueden usar Mario ni sus assets (propiedad de Nintendo). Se crea un **personaje original**: el **zorro** del lienzo de diseño, con gorros que se compran con galletas. Le acompaña **Lalo el búho**, mascota guía que dará las consignas con voz en la fase 2. Para uso privado en casa, un *skin* de Mario es un asunto distinto, pero no entra en el repositorio publicado.
+1. **Personaje:** al niño le gusta Mario Bros. Como se va a **publicar**, no se pueden usar Mario ni sus assets (propiedad de Nintendo). Se crea un **personaje original**: el **zorro Rufo** del lienzo de diseño, con gorros que se compran con galletas. Le acompaña **Lalo el búho**, mascota guía que dará las consignas con voz en la fase 2. Para uso privado en casa, un *skin* de Mario es un asunto distinto, pero no entra en el repositorio publicado.
 2. **Control manual** de movimiento (izquierda, derecha, saltar). El autoavance se queda como opción en el panel de padres.
 3. **Idiomas de voz:** español e inglés. Las claves de audio van por idioma (`audio/es`, `audio/en`).
 4. **Se publicará.** Hay que cumplir normativa de menores desde el principio (ver 7).

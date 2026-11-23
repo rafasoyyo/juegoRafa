@@ -59,6 +59,7 @@ Licencia: la del repositorio.
 | `svg/icon-speaker-off.svg` | derivado de `icon-speaker.svg`: mismo altavoz con un aspa en lugar de las ondas (silencio) |
 | `svg/lalo-blink.svg` | derivado de Lalo del lienzo (ojos cerrados) |
 | `svg/lalo.svg` | lienzo de diseño |
+| `svg/snail.svg` | derivado: caracol propio (distractor de la prueba de la bandera), en la paleta y el estilo del lienzo |
 | `svg/star-empty.svg` | lienzo de diseño |
 | `svg/strawberry.svg` | derivado: fresa propia (fruta del modo invencible), en la paleta y el estilo del lienzo |
 | `svg/star.svg` | lienzo de diseño |
