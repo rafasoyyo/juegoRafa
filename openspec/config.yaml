@@ -1,0 +1,57 @@
+schema: spec-driven
+
+context: |
+  Language: es
+  All artifacts must be written in es.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+
+  ## Proyecto
+
+  juegoRafa — juego web de plataformas 2D con estética pixel art, estilo «bloques ? y ladrillos»,
+  para niños de 4 a 6 años que aún no leen ni suman. Educativo y entretenido, con pruebas y
+  puntuación. Se publicará, así que todo debe poder distribuirse legalmente.
+  La propuesta completa (educativa y técnica) está en `docs/PROPUESTA.md`; si discrepan, manda
+  ese documento y hay que corregir este archivo.
+
+  ## Restricciones no negociables
+
+  - **Móvil y táctil primero**, horizontal. Escritorio es solo para desarrollar (teclado).
+  - **Sin texto que el niño deba leer**: toda consigna es voz + dibujo. Idiomas de voz: español e inglés.
+  - **Sin vidas ni «game over»**; un fallo = rebote suave + pista. Estrellas de 1 a 3, nunca 0.
+  - **Sin assets, personajes, nombres, logos ni música de terceros con copyright** (Nintendo incluida:
+    nada de Mario ni goombas). Personaje propio (un niño); arte propio o CC0 con licencia anotada.
+  - **Se publica y es para menores**: sin publicidad, sin analítica con identificadores personales,
+    datos mínimos (alias, avatar, progreso), consentimiento verificable del tutor, borrado de datos
+    desde el panel de padres. Aplican RGPD (menores de 14) y COPPA (menores de 13, por el inglés).
+  - La lógica pedagógica (`src/learning/`) es TypeScript puro: sin Phaser ni Firebase.
+
+  ## Stack
+
+  Phaser 3 · TypeScript 5 (strict) · Vite · vite-plugin-pwa (Workbox) · Vitest.
+  Firebase: Hosting (proyecto `juegorafa-edu`), Auth anónima + enlace de email del tutor, Firestore.
+  Node >= 24.
+
+  ## Estructura
+
+  `src/game/` (Phaser: scenes, ui, config) · `src/learning/` (retos, adaptación, puntuación) ·
+  `src/data/` (repositorios Firebase) · `content/` (niveles y retos en JSON) · `public/` (assets, iconos).
+
+  ## Comandos
+
+  `npm run dev` (servidor con `--host`, para probar en el móvil por la wifi) · `npm run build`
+  (typecheck + build) · `npm test` (Vitest) · `npm run deploy` (build + Firebase Hosting).
+
+  ## Estado
+
+  Fase 0 hecha y desplegada (ver `openspec/specs/`). Pendiente: fases 1 a 6 de la hoja de ruta de
+  `docs/PROPUESTA.md`.
+
+rules:
+  proposal:
+    - Indicar qué habilidad educativa (cantidad, número, patrones, formas, letras) toca el cambio, si toca alguna.
+    - Declarar qué queda fuera de alcance.
+  specs:
+    - Todo requisito de interfaz debe ser válido en móvil táctil horizontal.
+    - Ningún requisito puede exigir que el niño lea.
+  tasks:
+    - Cada tarea acaba con una verificación concreta (comando o comprobación en navegador móvil emulado).
