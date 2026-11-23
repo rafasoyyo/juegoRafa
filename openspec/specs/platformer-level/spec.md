@@ -20,7 +20,8 @@ personaje jugable SHALL ser el zorro original del juego.
 ### Requirement: Bloques «?» que dan galletas
 Un bloque «?» SHALL activarse al golpearlo desde abajo, esté sobre el suelo, un escalón o una
 plataforma, cambiar a su aspecto usado, soltar una galleta con pepitas de chocolate y sumar uno al
-contador, y SHALL NOT activarse una segunda vez.
+contador, y SHALL NOT activarse una segunda vez. El bloque que esconde la fruta del nivel SHALL
+soltar además la fruta.
 
 #### Scenario: Golpe desde abajo
 - **WHEN** el niño salta y golpea un bloque «?» con la cabeza
@@ -36,7 +37,11 @@ contador, y SHALL NOT activarse una segunda vez.
 
 #### Scenario: Bloque ya usado
 - **WHEN** el niño golpea otra vez un bloque usado
-- **THEN** el contador no cambia
+- **THEN** el contador no cambia y no sale ninguna fruta
+
+#### Scenario: Bloque con fruta
+- **WHEN** el niño golpea desde abajo el bloque que esconde la fruta
+- **THEN** sale la galleta, el contador sube en uno y además sale la fruta
 
 ### Requirement: Aspecto de la galleta
 La galleta SHALL ser un gráfico propio en el estilo vectorial plano y redondeado del juego: un círculo
@@ -65,7 +70,7 @@ ser continuo de la salida a la bandera.
 
 #### Scenario: Recorrido completo
 - **WHEN** el niño recorre el nivel sin llegar a la meta durante varios minutos
-- **THEN** el juego no muestra pantalla de fin ni resta nada
+- **THEN** el juego no muestra pantalla de fin y solo los pinchazos con enemigos restan galletas
 
 #### Scenario: Caer de una plataforma
 - **WHEN** el zorro cae desde la plataforma más alta del nivel

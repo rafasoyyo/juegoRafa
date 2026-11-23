@@ -28,12 +28,36 @@ describe('recetas de efectos', () => {
     }
   });
 
-  it('el choque y el «todavía no» no usan ondas ásperas', () => {
-    for (const name of ['bump', 'nope'] as const) {
+  it('el choque, el «todavía no» y la fruta no usan ondas ásperas', () => {
+    for (const name of ['bump', 'nope', 'fruit', 'power', 'power-off'] as const) {
       for (const l of recipe(name).layers) {
         if (l.kind === 'tone') expect(['sine', 'triangle']).toContain(l.wave);
       }
     }
+  });
+
+  /** Primera y última altura de una receta, por orden de inicio de sus capas de tono. */
+  const ends = (name: SfxName): { first: number; last: number } => {
+    const tones = recipe(name)
+      .layers.filter((l): l is ToneLayer => l.kind === 'tone')
+      .sort((a, b) => a.start - b.start);
+    const at = (l: ToneLayer, end: boolean): number => (typeof l.freq === 'number' ? l.freq : l.freq[end ? l.freq.length - 1 : 0]![1]);
+    return { first: at(tones[0]!, false), last: at(tones[tones.length - 1]!, true) };
+  };
+
+  it('el poder sube y su final baja', () => {
+    expect(ends('power').last).toBeGreaterThan(ends('power').first);
+    expect(ends('power-off').last).toBeLessThan(ends('power-off').first);
+    expect(ends('fruit').last).toBeGreaterThan(ends('fruit').first);
+  });
+
+  it('el final del poder es suave: solo seno', () => {
+    for (const l of recipe('power-off').layers) expect(l.kind === 'tone' && l.wave).toBe('sine');
+  });
+
+  it('el poder dura más que el premio y la fruta es distinta de la galleta', () => {
+    expect(recipeDuration(recipe('power'))).toBeGreaterThan(recipeDuration(recipe('prize')));
+    expect(recipe('fruit')).not.toEqual(recipe('cookie'));
   });
 
   it('cada estrella suena más aguda que la anterior', () => {

@@ -60,6 +60,7 @@ Licencia: la del repositorio.
 | `svg/lalo-blink.svg` | derivado de Lalo del lienzo (ojos cerrados) |
 | `svg/lalo.svg` | lienzo de diseño |
 | `svg/star-empty.svg` | lienzo de diseño |
+| `svg/strawberry.svg` | derivado: fresa propia (fruta del modo invencible), en la paleta y el estilo del lienzo |
 | `svg/star.svg` | lienzo de diseño |
 | `svg/tree.svg` | lienzo de diseño |
 
@@ -78,6 +79,7 @@ Licencia: la del repositorio.
 | `decor-moon` | `src/game/scenes/BootScene.ts` | propio: luna de la noche |
 | `decor-star` | `src/game/scenes/BootScene.ts` | propio: estrella redondeada de la noche |
 | `dust` | `src/game/scenes/BootScene.ts` | propio: mota de polvo de la carrera |
+| `sparkle` | `src/game/scenes/BootScene.ts` | propio: destello de cuatro puntas del modo invencible |
 | Plataformas (tronco y nube mullida) | `src/game/ui/widgets.ts` (`drawPlatform`) | propio: plataformas de un solo sentido de los niveles |
 | Escalones (hierba sobre tierra) | `src/game/ui/widgets.ts` (`drawStep`) | propio: escalones de los niveles |
 | Colinas, suelo y piernas del zorro | `src/game/ui/widgets.ts`, `src/game/scenes/LevelScene.ts` | propio |

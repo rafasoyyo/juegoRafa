@@ -38,7 +38,19 @@ export interface Recipe {
   layers: readonly Layer[];
 }
 
-export type SfxName = 'tap' | 'nope' | 'jump' | 'block' | 'cookie' | 'bump' | 'prize' | 'star' | 'goal';
+export type SfxName =
+  | 'tap'
+  | 'nope'
+  | 'jump'
+  | 'block'
+  | 'cookie'
+  | 'bump'
+  | 'fruit'
+  | 'power'
+  | 'power-off'
+  | 'prize'
+  | 'star'
+  | 'goal';
 export interface SfxOptions {
   /** Para `star`: 0, 1 o 2; cada una más aguda. */
   index?: number;
@@ -101,6 +113,26 @@ export function recipe(name: SfxName, opts: SfxOptions = {}): Recipe {
       return {
         layers: [{ ...tone(0, 0.36, 'sine', [[0, 330], [0.12, 200], [0.32, 440]], 0.45, 0.008), vibrato: { rate: 14, depth: 22 } }],
       };
+    case 'fruit':
+      // «Plop» de aparición: tres notas rápidas que suben, después del tintineo de la galleta.
+      return {
+        layers: [
+          ...['A5', 'D6', 'F#6'].map((n, i) => tone(0.3 + i * 0.06, 0.16, 'triangle', hz(n), 0.26, 0.006)),
+          tone(0.42, 0.3, 'triangle', [[0, hz('F#6')], [0.12, hz('A6')]], 0.2, 0.008),
+        ],
+      };
+    case 'power':
+      // Poder: barrido largo que sube con un trino y una escalera brillante encima; más largo que `prize`.
+      return {
+        layers: [
+          { ...tone(0, 0.9, 'triangle', [[0, hz('C4')], [0.8, hz('C6')]], 0.24, 0.02), vibrato: { rate: 9, depth: 12 } },
+          ...['C5', 'E5', 'G5', 'C6', 'E6', 'G6', 'C7'].map((n, i) => tone(0.1 + i * 0.09, 0.22, 'triangle', hz(n), 0.2, 0.006)),
+          tone(0.74, 0.7, 'sine', hz('C7'), 0.14, 0.01),
+        ],
+      };
+    case 'power-off':
+      // Fin del poder: tres campanitas suaves que bajan, en seno. Nada de error.
+      return { layers: ['G6', 'E6', 'C6'].map((n, i) => tone(i * 0.15, 0.32, 'sine', hz(n), 0.22, 0.01)) };
     case 'prize':
       // Arpegio de premio que sube hasta Do agudo con un brillo final.
       return {
@@ -140,4 +172,17 @@ export function recipeFrequencies(r: Recipe): number[] {
   return out;
 }
 
-export const SFX_NAMES: readonly SfxName[] = ['tap', 'nope', 'jump', 'block', 'cookie', 'bump', 'prize', 'star', 'goal'];
+export const SFX_NAMES: readonly SfxName[] = [
+  'tap',
+  'nope',
+  'jump',
+  'block',
+  'cookie',
+  'bump',
+  'fruit',
+  'power',
+  'power-off',
+  'prize',
+  'star',
+  'goal',
+];

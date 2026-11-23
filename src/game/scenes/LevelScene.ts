@@ -9,6 +9,7 @@ import { AMBIENTS, type Ambient } from '../levels/ambients';
 import { levelData } from '../levels/catalog';
 import { toWorld } from '../levels/parse';
 import { RUN_SPEED, type WorldLevel } from '../levels/types';
+import { loseCookie, pickFruitBlock, powerPhase, type PowerPhase } from '../power/power';
 import { LEVEL_COUNT, session } from '../state';
 import { drawLalo, FOX_UNITS, makeHat, placeHat, type FoxPose } from '../ui/characters';
 import { RoundButton } from '../ui/round-button';
@@ -50,13 +51,34 @@ const DUST_POOL = 6;
 const DUST_EVERY_MS = 90;
 const DUST_LIFE_MS = 350;
 
-/** Rebote al tocar un enemigo: sin control, protegido (parpadeando) y ritmo del parpadeo. */
+/** Pinchazo al tocar un enemigo: sin control, protegido (parpadeando) y ritmo del parpadeo. */
 const KNOCK_MS = 300;
 const PROTECT_MS = 1000;
 const BLINK_MS = 80;
 const BLINK_ALPHA = 0.35;
-const KNOCK_VX = 0.9 * RUN_SPEED;
-const KNOCK_VY = 0.55 * JUMP_SPEED;
+/** Brinco del pinchazo: alto y corto hacia atrás. */
+const KNOCK_VX = 0.6 * RUN_SPEED;
+const KNOCK_VY = 0.8 * JUMP_SPEED;
+/** Galleta que sale despedida de Rufo al pincharse. */
+const LOST_COOKIE_MS = 600;
+
+/** Fresa: impulso al salir del bloque y botecitos cuando se posa. */
+const FRUIT_VX = 0.35 * RUN_SPEED;
+const FRUIT_VY = 0.6 * JUMP_SPEED;
+const FRUIT_SIZE = 56;
+const FRUIT_HOP = 12;
+const FRUIT_HOP_MS = 260;
+
+/** Brillo del modo invencible: colores del tinte, ritmo y destellos (todo al doble en `ending`). */
+const GLOW_COLORS = [0xffd23f, 0xff6b5e, 0xff9ec4, 0x8fd3ff, 0x9be37a] as const;
+const GLOW_STEP_MS = 110;
+/** El tinte se aplica en modo pantalla (aclara) con esta fuerza, para que Rufo siga siendo naranja. */
+const GLOW_STRENGTH = 0.42;
+const SPARKLE_POOL = 14;
+const SPARKLE_EVERY_MS = 70;
+const SPARKLE_LIFE_MS = 420;
+/** Las piernas (Graphics) no admiten tinte: se aclaran hacia el blanco. */
+const GLOW_LEG_LIGHTEN = 0.45;
 
 /**
  * Grosor del cuerpo físico de una plataforma: más que lo que cae el zorro en un fotograma a velocidad
@@ -102,6 +124,20 @@ export class LevelScene extends Phaser.Scene {
   private protectedUntil = -Infinity;
   private hitAt = -Infinity;
 
+  /** Superficies del recorrido (suelo, escalones y plataformas), donde se posa la fresa. */
+  private surfaces: Phaser.GameObjects.GameObject[] = [];
+  private fruit?: Phaser.Types.Physics.Arcade.ImageWithDynamicBody;
+  private fruitLanded = false;
+  /** Tiempo del último fotograma, para fechar lo que pasa en las retrollamadas de la física. */
+  private now = 0;
+  private powerStartedAt = -Infinity;
+  private powerWas: PowerPhase = 'off';
+  /** Enemigos que Rufo invencible está tocando, para que hagan el gesto solo al entrar en contacto. */
+  private contacts = new Set<EnemyView>();
+  private sparkles: Phaser.GameObjects.Image[] = [];
+  private nextSparkleAt = 0;
+  private glowing = false;
+
   private home!: RoundButton;
   private progress!: { container: Phaser.GameObjects.Container; fill: Phaser.GameObjects.Graphics; face: Phaser.GameObjects.Image; barW: number };
   private counter!: CookieCounter;
@@ -132,6 +168,16 @@ export class LevelScene extends Phaser.Scene {
     this.knockUntil = -Infinity;
     this.protectedUntil = -Infinity;
     this.hitAt = -Infinity;
+    this.surfaces = [];
+    this.fruit = undefined;
+    this.fruitLanded = false;
+    this.now = 0;
+    this.powerStartedAt = -Infinity;
+    this.powerWas = 'off';
+    this.contacts = new Set();
+    this.sparkles = [];
+    this.nextSparkleAt = 0;
+    this.glowing = false;
   }
 
   create(): void {
@@ -147,6 +193,7 @@ export class LevelScene extends Phaser.Scene {
     const steps = this.buildSteps();
     const platforms = this.buildPlatforms();
     const blocks = this.buildBlocks();
+    this.surfaces = [ground, ...steps, ...platforms];
     this.buildFox();
     this.buildGoal();
     this.buildEnemies();
@@ -169,6 +216,8 @@ export class LevelScene extends Phaser.Scene {
     const body = this.fox.body;
     const grounded = body.blocked.down || body.touching.down;
     for (const enemy of this.enemies) enemy.update(time);
+    this.now = time;
+    this.settleFruit();
 
     if (this.finished) {
       this.fox.setVelocityX(0);
@@ -203,6 +252,7 @@ export class LevelScene extends Phaser.Scene {
     // Salto variable: soltar pronto = salto más corto (no recorta el saltito del rebote).
     if (!knocked && !input.jump && body.velocity.y < -VARIABLE_JUMP_MIN) this.fox.setVelocityY(body.velocity.y * 0.6);
 
+    this.tickPower(time);
     this.checkEnemies(time);
     this.animateFox(time, delta, grounded, dir);
     this.updateProgress();
@@ -253,7 +303,7 @@ export class LevelScene extends Phaser.Scene {
     this.fox.setFlipX(!this.faceLeft);
     placeHat(this.hat, this.fox, this.pose, this.faceLeft);
 
-    this.drawLegs(pose === 'run', mix, dirSign);
+    this.drawLegs(pose === 'run', mix, dirSign, this.glowing);
     if (pose === 'run' && mix > 0.5 && time >= this.nextDustAt) {
       this.puffDust(dirSign);
       this.nextDustAt = time + DUST_EVERY_MS;
@@ -276,16 +326,31 @@ export class LevelScene extends Phaser.Scene {
     for (const enemy of this.enemies) enemy.update(this.time.now);
   }
 
-  /** Los enemigos no se tocan: cualquier contacto, también desde arriba, es un rebote suave. */
-  private checkEnemies(time: number): void {
-    if (time < this.protectedUntil) return;
+  /** Enemigos que tocan ahora la caja del zorro. */
+  private touchingEnemies(): EnemyView[] {
     const body = this.fox.body;
     const fox = { x: body.x, y: body.y, w: body.width, h: body.height };
-    const enemy = this.enemies.find((e) => overlaps(fox, e.box()));
+    return this.enemies.filter((e) => overlaps(fox, e.box()));
+  }
+
+  /**
+   * Los enemigos no se tocan: cualquier contacto, también desde arriba, es un pinchazo. En modo
+   * invencible se atraviesan y solo hacen su gesto al entrar en contacto.
+   */
+  private checkEnemies(time: number): void {
+    if (powerPhase(time, this.powerStartedAt) !== 'off') {
+      const touching = new Set(this.touchingEnemies());
+      for (const enemy of touching) if (!this.contacts.has(enemy)) enemy.gesture();
+      this.contacts = touching;
+      return;
+    }
+    this.contacts.clear();
+    if (time < this.protectedUntil) return;
+    const enemy = this.touchingEnemies()[0];
     if (enemy) this.onEnemyHit(enemy, time);
   }
 
-  /** Rebote sin penalización: no toca galletas, bloques ni estrellas. */
+  /** Pinchazo: brinco hacia arriba y hacia atrás y una galleta menos (nunca bajo 0). No toca bloques ni estrellas. */
   private onEnemyHit(enemy: EnemyView, time: number): void {
     const box = enemy.box();
     let side = Math.sign(this.fox.x - (box.x + box.w / 2));
@@ -298,6 +363,145 @@ export class LevelScene extends Phaser.Scene {
     this.lastGrounded = -Infinity;
     enemy.gesture();
     audio.sfx('bump');
+
+    const { cookies, lost } = loseCookie(this.cookies);
+    if (!lost) return;
+    this.cookies = cookies;
+    this.counter.setValue(this.cookies);
+    this.layout(this.scale.width, this.scale.height);
+    bump(this, this.counter.container);
+    this.dropCookie(side);
+  }
+
+  /** Galleta que sale de Rufo en arco hacia atrás (`side`) y se desvanece. */
+  private dropCookie(side: number): void {
+    const x0 = this.fox.x;
+    const y0 = this.fox.y - this.fox.displayHeight * 0.6;
+    const cookie = this.add.image(x0, y0, 'cookie').setDepth(12);
+    const arc = { t: 0 };
+    this.tweens.add({
+      targets: arc,
+      t: 1,
+      duration: LOST_COOKIE_MS,
+      ease: 'Linear',
+      onUpdate: () => {
+        const t = arc.t;
+        cookie.setPosition(x0 + side * 120 * t, y0 - 150 * t + 190 * t * t);
+        cookie.setAngle(side * 300 * t);
+        cookie.setAlpha(t < 0.5 ? 1 : 2 * (1 - t));
+      },
+      onComplete: () => cookie.destroy(),
+    });
+  }
+
+  /** Fresa: sale del bloque hacia arriba y hacia donde mira Rufo, y cae sobre el recorrido. */
+  private spawnFruit(block: Phaser.Physics.Arcade.Image): void {
+    const fruit = this.physics.add.image(block.x, block.y - BLOCK_SIZE / 2, 'strawberry').setOrigin(0.5, 1).setDepth(6);
+    fruit.setDisplaySize(FRUIT_SIZE, FRUIT_SIZE);
+    fruit.setCollideWorldBounds(true);
+    fruit.setVelocity((this.faceLeft ? -1 : 1) * FRUIT_VX, -FRUIT_VY);
+    this.physics.add.collider(fruit, this.surfaces);
+    this.physics.add.overlap(this.fox, fruit, () => this.eatFruit());
+    this.fruit = fruit;
+    this.fruitLanded = false;
+    audio.sfx('fruit');
+  }
+
+  /** Cuando la fresa se posa, se queda quieta dando botecitos. */
+  private settleFruit(): void {
+    const fruit = this.fruit;
+    if (!fruit || this.fruitLanded || !fruit.active) return;
+    const body = fruit.body;
+    if (!(body.blocked.down || body.touching.down)) return;
+    this.fruitLanded = true;
+    body.setVelocity(0, 0);
+    body.setAllowGravity(false);
+    body.moves = false;
+    this.tweens.add({ targets: fruit, y: fruit.y - FRUIT_HOP, duration: FRUIT_HOP_MS, ease: 'Quad.easeOut', yoyo: true, repeat: -1, repeatDelay: 120 });
+  }
+
+  /** Rufo come la fresa: destello y modo invencible. No toca el contador. */
+  private eatFruit(): void {
+    const fruit = this.fruit;
+    if (!fruit?.active || this.finished) return;
+    this.fruit = undefined;
+    const { x } = fruit;
+    const y = fruit.y - fruit.displayHeight / 2;
+    this.tweens.killTweensOf(fruit);
+    fruit.destroy();
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      this.sparkleAt(x, y, GLOW_COLORS[k % GLOW_COLORS.length]!, Math.cos(a) * 60, Math.sin(a) * 60, SPARKLE_LIFE_MS);
+    }
+    this.powerStartedAt = this.now;
+    this.contacts = new Set(this.touchingEnemies());
+    audio.sfx('power');
+  }
+
+  /**
+   * Modo invencible: brillo mientras dura y, al acabar, su tintineo. Si acaba tocando un enemigo,
+   * da la misma protección (con parpadeo) que un pinchazo, para no pincharse en el fotograma siguiente.
+   */
+  private tickPower(time: number): void {
+    const phase = powerPhase(time, this.powerStartedAt);
+    if (phase === 'off' && this.powerWas !== 'off') {
+      audio.sfx('power-off');
+      this.clearGlow();
+      if (this.touchingEnemies().length > 0) {
+        this.protectedUntil = time + PROTECT_MS;
+        this.hitAt = time;
+      }
+    }
+    this.powerWas = phase;
+    if (phase !== 'off') this.glow(time, phase);
+  }
+
+  /** Tinte de colores que cambia (más deprisa al final) y destellos alrededor de Rufo. */
+  private glow(time: number, phase: PowerPhase): void {
+    const speed = phase === 'ending' ? 2 : 1;
+    const step = Math.floor(((time - this.powerStartedAt) * speed) / GLOW_STEP_MS);
+    const color = scaleColor(GLOW_COLORS[step % GLOW_COLORS.length]!, GLOW_STRENGTH);
+    if (!this.glowing) {
+      this.fox.setTintMode(Phaser.TintModes.SCREEN);
+      this.hat.setTintMode(Phaser.TintModes.SCREEN);
+      this.glowing = true;
+    }
+    this.fox.setTint(color);
+    this.hat.setTint(color);
+
+    if (time < this.nextSparkleAt) return;
+    this.nextSparkleAt = time + SPARKLE_EVERY_MS / speed;
+    const h = this.fox.displayHeight;
+    const x = this.fox.x + Phaser.Math.Between(-48, 48);
+    const y = this.fox.y - Phaser.Math.FloatBetween(0.1, 1) * h;
+    const tint = GLOW_COLORS[Phaser.Math.Between(0, GLOW_COLORS.length - 1)]!;
+    this.sparkleAt(x, y, tint, Phaser.Math.Between(-14, 14), -Phaser.Math.Between(10, 30), SPARKLE_LIFE_MS / speed);
+  }
+
+  /** Suelta un destello del pool en (x, y) que crece, gira, se desplaza (dx, dy) y se desvanece. */
+  private sparkleAt(x: number, y: number, tint: number, dx: number, dy: number, life: number): void {
+    const s = this.sparkles.find((d) => !d.active);
+    if (!s) return;
+    this.tweens.killTweensOf(s);
+    s.setActive(true).setVisible(true).setPosition(x, y).setTint(tint).setScale(0.5).setAlpha(1).setAngle(0);
+    this.tweens.add({
+      targets: s,
+      x: x + dx,
+      y: y + dy,
+      scale: { from: 0.5, to: 1.6 },
+      angle: 90,
+      alpha: 0,
+      duration: life,
+      ease: 'Quad.easeOut',
+      onComplete: () => s.setActive(false).setVisible(false),
+    });
+  }
+
+  private clearGlow(): void {
+    if (!this.glowing) return;
+    this.glowing = false;
+    this.fox.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
+    this.hat.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
   }
 
   private squashFox(amount: number): void {
@@ -311,7 +515,7 @@ export class LevelScene extends Phaser.Scene {
    * Con `mix` 0 se ven dos piernas nítidas; con 1, una rueda borrosa de pies con estela y líneas
    * de velocidad.
    */
-  private drawLegs(visible: boolean, mix: number, dirSign: number): void {
+  private drawLegs(visible: boolean, mix: number, dirSign: number, glowing: boolean): void {
     const g = this.legs.clear();
     g.setVisible(visible);
     if (!visible) return;
@@ -322,12 +526,14 @@ export class LevelScene extends Phaser.Scene {
 
     const { phase, intensity } = this.run;
     const y0 = FOX_GROUND_Y;
+    const legColor = glowing ? lighten(RUN_COLORS.leg, GLOW_LEG_LIGHTEN) : RUN_COLORS.leg;
+    const footColor = glowing ? lighten(RUN_COLORS.foot, GLOW_LEG_LIGHTEN) : RUN_COLORS.foot;
     const foot = (f: FootPoint, alpha: number): void => {
-      g.fillStyle(RUN_COLORS.foot, alpha).fillEllipse(f.x + 2, y0 + f.y - FOOT_RY, FOOT_RX * 2, FOOT_RY * 2);
+      g.fillStyle(footColor, alpha).fillEllipse(f.x + 2, y0 + f.y - FOOT_RY, FOOT_RX * 2, FOOT_RY * 2);
     };
     const leg = (hip: { x: number; y: number }, f: FootPoint, alpha: number): void => {
-      g.lineStyle(LEG_WIDTH, RUN_COLORS.leg, alpha).lineBetween(hip.x, y0 + hip.y, f.x, y0 + f.y - FOOT_RY);
-      g.fillStyle(RUN_COLORS.leg, alpha).fillCircle(f.x, y0 + f.y - FOOT_RY, LEG_WIDTH / 2);
+      g.lineStyle(LEG_WIDTH, legColor, alpha).lineBetween(hip.x, y0 + hip.y, f.x, y0 + f.y - FOOT_RY);
+      g.fillStyle(legColor, alpha).fillCircle(f.x, y0 + f.y - FOOT_RY, LEG_WIDTH / 2);
     };
 
     if (mix > 0) {
@@ -343,11 +549,11 @@ export class LevelScene extends Phaser.Scene {
       const cy = y0 + path.cy - FOOT_RY;
       const rx = path.rx + 6;
       const ry = path.ry;
-      g.fillStyle(RUN_COLORS.leg, 0.28 * mix).fillEllipse(cx, cy, rx * 2, ry * 2);
+      g.fillStyle(legColor, 0.28 * mix).fillEllipse(cx, cy, rx * 2, ry * 2);
       const spin = phase * Math.PI * 2;
       for (let k = 0; k < 3; k++) {
         const a0 = spin + (k * Math.PI * 2) / 3;
-        g.lineStyle(5, RUN_COLORS.leg, 0.75 * mix).beginPath();
+        g.lineStyle(5, legColor, 0.75 * mix).beginPath();
         for (let t = 0; t <= 8; t++) {
           const a = a0 - (t / 8) * 1.3;
           const px = cx + rx * 0.85 * Math.cos(a);
@@ -412,9 +618,14 @@ export class LevelScene extends Phaser.Scene {
   }
 
   /** Bloques «?» apoyados en la superficie que tienen debajo (suelo, escalón o plataforma). */
+  /** Uno de ellos, al azar en cada partida, esconde la fresa; por fuera es igual que los demás. */
   private buildBlocks(): Phaser.Physics.Arcade.StaticGroup {
     const group = this.physics.add.staticGroup();
-    for (const b of this.world.blocks) group.create(b.x, b.bottom - BLOCK_SIZE / 2, 'block');
+    const fruitAt = pickFruitBlock(this.world.blocks.length);
+    this.world.blocks.forEach((b, i) => {
+      const block = group.create(b.x, b.bottom - BLOCK_SIZE / 2, 'block') as Phaser.Physics.Arcade.Image;
+      if (i === fruitAt) block.setData('fruit', true);
+    });
     return group;
   }
 
@@ -427,6 +638,9 @@ export class LevelScene extends Phaser.Scene {
     this.legs = this.add.graphics().setDepth(9).setVisible(false);
     for (let i = 0; i < DUST_POOL; i++) {
       this.dust.push(this.add.image(0, 0, 'dust').setDepth(8).setActive(false).setVisible(false));
+    }
+    for (let i = 0; i < SPARKLE_POOL; i++) {
+      this.sparkles.push(this.add.image(0, 0, 'sparkle').setDepth(12).setActive(false).setVisible(false));
     }
     this.hat = makeHat(this, session.hat, FOX_SIZE).setDepth(11);
     placeHat(this.hat, this.fox, 'idle', false);
@@ -456,11 +670,16 @@ export class LevelScene extends Phaser.Scene {
     this.counter.setValue(this.cookies);
     this.layout(this.scale.width, this.scale.height);
     bump(this, this.counter.container);
+    if (block.getData('fruit')) this.spawnFruit(block);
   }
 
   private onGoal(): void {
     if (this.finished) return;
     this.finished = true;
+    this.powerStartedAt = -Infinity;
+    this.powerWas = 'off';
+    this.contacts.clear();
+    this.clearGlow();
     audio.stopMusic(300);
     audio.sfx('goal');
     this.fox.setVelocity(0, Math.min(this.fox.body.velocity.y, 0));
@@ -527,4 +746,19 @@ export class LevelScene extends Phaser.Scene {
     this.counter.container.setPosition(width - 32 - this.counter.width / 2, 28 + 48);
     this.controls.layout(width, height);
   }
+}
+
+/** Multiplica cada canal de un color por `k` (0 a 1): con `k` bajo, el tinte en modo pantalla aclara poco. */
+function scaleColor(color: number, k: number): number {
+  const ch = (shift: number): number => Math.round(((color >> shift) & 0xff) * k) << shift;
+  return ch(16) | ch(8) | ch(0);
+}
+
+/** Mezcla un color hacia el blanco (`t` de 0 a 1). */
+function lighten(color: number, t: number): number {
+  const ch = (shift: number): number => {
+    const c = (color >> shift) & 0xff;
+    return Math.round(c + (255 - c) * t) << shift;
+  };
+  return ch(16) | ch(8) | ch(0);
 }

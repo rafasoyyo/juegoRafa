@@ -37,6 +37,7 @@ export class BootScene extends Phaser.Scene {
     svg('block-used', 'block-used', 84);
     svg('flag', 'flag', 80, 190);
     svg('cookie', 'cookie', 56);
+    svg('strawberry', 'strawberry', 64);
     svg('hedgehog', 'hedgehog', 100, 70);
     svg('bee', 'bee', 90, 80);
     svg('bee-wing', 'bee-wing', 40, 30);
@@ -81,6 +82,7 @@ export class BootScene extends Phaser.Scene {
     for (const ambient of Object.values(AMBIENTS)) this.makeGradient(skyKey(ambient.id), ambient.sky);
     this.makeShowcase();
     this.makeDust();
+    this.makeSparkle();
     this.makeDecor();
 
     // Espera a Baloo 2 para que los dígitos no se dibujen con la fuente de reserva.
@@ -108,6 +110,22 @@ export class BootScene extends Phaser.Scene {
     const g = this.make.graphics({}, false);
     g.fillStyle(RUN_COLORS.dust).fillCircle(16, 16, 16);
     g.generateTexture('dust', 32, 32);
+    g.destroy();
+  }
+
+  /** Destello del modo invencible: estrella blanca de cuatro puntas redondeadas (se tiñe al usarlo). */
+  private makeSparkle(): void {
+    const g = this.make.graphics({}, false);
+    const c = 16;
+    const pts: Phaser.Math.Vector2[] = [];
+    for (let k = 0; k < 8; k++) {
+      const r = k % 2 === 0 ? 15 : 4.5;
+      const a = -Math.PI / 2 + (k * Math.PI) / 4;
+      pts.push(new Phaser.Math.Vector2(c + Math.cos(a) * r, c + Math.sin(a) * r));
+    }
+    g.fillStyle(0xffffff).fillPoints(pts, true);
+    g.fillCircle(c, c, 5);
+    g.generateTexture('sparkle', 32, 32);
     g.destroy();
   }
 
