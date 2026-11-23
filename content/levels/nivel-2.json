@@ -1,0 +1,25 @@
+{
+  "ambient": "flores",
+  "length": 145,
+  "steps": [
+    { "x": 24, "width": 5, "height": 1 },
+    { "x": 52, "width": 4, "height": 1 },
+    { "x": 56, "width": 5, "height": 2 }
+  ],
+  "platforms": [],
+  "blocks": [
+    { "x": 14, "row": "low" },
+    { "x": 15.2, "row": "low" },
+    { "x": 26.5, "row": "low", "on": "step" },
+    { "x": 40, "row": "high" },
+    { "x": 41.2, "row": "high" },
+    { "x": 58.5, "row": "low", "on": "step" },
+    { "x": 70, "row": "low" },
+    { "x": 80, "row": "low" },
+    { "x": 81.2, "row": "low" },
+    { "x": 96, "row": "high" },
+    { "x": 108, "row": "low" },
+    { "x": 109.2, "row": "low" },
+    { "x": 122, "row": "low" }
+  ]
+}

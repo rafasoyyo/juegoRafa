@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
+import { AMBIENTS, skyKey } from '../levels/ambients';
 import { RUN_COLORS } from '../ui/run-cycle';
 
 const FONT_TIMEOUT_MS = 3000;
@@ -77,8 +78,10 @@ export class BootScene extends Phaser.Scene {
       [0.55, '#CFF0C2'],
       [1, '#A9E3A0'],
     ]);
+    for (const ambient of Object.values(AMBIENTS)) this.makeGradient(skyKey(ambient.id), ambient.sky);
     this.makeShowcase();
     this.makeDust();
+    this.makeDecor();
 
     // Espera a Baloo 2 para que los dígitos no se dibujen con la fuente de reserva.
     const fontReady = document.fonts?.load('800 48px "Baloo 2"') ?? Promise.resolve();
@@ -89,7 +92,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   /** Degradado vertical de 720 px de alto; se estira a lo ancho al usarlo. */
-  private makeGradient(key: string, stops: [number, string][]): void {
+  private makeGradient(key: string, stops: readonly (readonly [number, string])[]): void {
     const tex = this.textures.createCanvas(key, 8, 720);
     if (!tex) return;
     const ctx = tex.context;
@@ -105,6 +108,76 @@ export class BootScene extends Phaser.Scene {
     const g = this.make.graphics({}, false);
     g.fillStyle(RUN_COLORS.dust).fillCircle(16, 16, 16);
     g.generateTexture('dust', 32, 32);
+    g.destroy();
+  }
+
+  /**
+   * Decoración del fondo de los ambientes, propia y dibujada por código (ver LICENSES.md):
+   * árbol verde, árbol de otoño, mata de flores, sol bajo, luna y estrella.
+   */
+  private makeDecor(): void {
+    const g = this.make.graphics({}, false);
+    const tree = (key: string, dark: number, light: number, accent: number): void => {
+      g.clear();
+      g.fillStyle(0x9a6a3f).fillRoundedRect(60, 120, 22, 80, 8);
+      g.fillStyle(dark).fillCircle(70, 76, 62);
+      g.fillStyle(dark).fillCircle(36, 108, 34).fillCircle(106, 104, 34);
+      g.fillStyle(light).fillCircle(50, 88, 36);
+      g.fillStyle(accent).fillCircle(96, 60, 14).fillCircle(74, 30, 10);
+      g.generateTexture(key, 142, 200);
+    };
+    tree('decor-tree', 0x3fa652, 0x5cc46b, 0x6fd07c);
+    tree('decor-tree-autumn', 0xd9772f, 0xf2a94a, 0xffd07a);
+
+    // Mata de flores: arbusto redondeado con flores rosas, blancas y amarillas.
+    g.clear();
+    g.fillStyle(0x4aac55).fillEllipse(60, 52, 116, 52);
+    g.fillStyle(0x5fbf63).fillEllipse(44, 44, 60, 34);
+    const flowers: [number, number, number][] = [
+      [22, 36, 0xff9ec4],
+      [46, 22, 0xffffff],
+      [70, 30, 0xff9ec4],
+      [92, 40, 0xffffff],
+      [58, 48, 0xffd23f],
+      [34, 52, 0xffffff],
+      [84, 56, 0xff9ec4],
+    ];
+    for (const [x, y, color] of flowers) {
+      g.fillStyle(color);
+      for (let k = 0; k < 5; k++) {
+        const a = (k / 5) * Math.PI * 2;
+        g.fillCircle(x + Math.cos(a) * 6, y + Math.sin(a) * 6, 5);
+      }
+      g.fillStyle(0xffd23f).fillCircle(x, y, 4);
+    }
+    g.generateTexture('decor-flowers', 120, 80);
+
+    // Sol bajo del atardecer: crema pálido con halo, para que el zorro naranja y los bloques
+    // amarillos destaquen siempre delante de él.
+    g.clear();
+    g.fillStyle(0xfff4e8, 0.3).fillCircle(140, 140, 140);
+    g.fillStyle(0xfff0e0, 0.45).fillCircle(140, 140, 116);
+    g.fillStyle(0xffe6d2).fillCircle(140, 140, 92);
+    g.generateTexture('decor-sun', 280, 280);
+
+    // Luna llena suave con un par de manchas.
+    g.clear();
+    g.fillStyle(0xfff4d6, 0.25).fillCircle(80, 80, 80);
+    g.fillStyle(0xfff4d6).fillCircle(80, 80, 60);
+    g.fillStyle(0xf0e2b8).fillCircle(60, 66, 12).fillCircle(98, 96, 9).fillCircle(92, 58, 6);
+    g.generateTexture('decor-moon', 160, 160);
+
+    // Estrella redondeada de cinco puntas.
+    g.clear();
+    const pts: Phaser.Math.Vector2[] = [];
+    for (let k = 0; k < 10; k++) {
+      const r = k % 2 === 0 ? 13 : 6;
+      const a = -Math.PI / 2 + (k * Math.PI) / 5;
+      pts.push(new Phaser.Math.Vector2(14 + Math.cos(a) * r, 14 + Math.sin(a) * r));
+    }
+    g.fillStyle(0xfff4d6).fillPoints(pts, true);
+    g.fillCircle(14, 14, 5);
+    g.generateTexture('decor-star', 28, 28);
     g.destroy();
   }
 

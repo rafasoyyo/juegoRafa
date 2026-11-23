@@ -1,0 +1,30 @@
+{
+  "ambient": "bosque",
+  "length": 150,
+  "steps": [
+    { "x": 26, "width": 5, "height": 1 },
+    { "x": 68, "width": 4, "height": 1 },
+    { "x": 72, "width": 4, "height": 2 },
+    { "x": 106, "width": 6, "height": 1 }
+  ],
+  "platforms": [
+    { "x": 46, "width": 4, "height": 1.5 },
+    { "x": 94, "width": 5, "height": 1.25 }
+  ],
+  "blocks": [
+    { "x": 14, "row": "low" },
+    { "x": 15.2, "row": "low" },
+    { "x": 16.4, "row": "low" },
+    { "x": 36, "row": "high" },
+    { "x": 48, "row": "low", "on": "platform" },
+    { "x": 58, "row": "low" },
+    { "x": 59.2, "row": "low" },
+    { "x": 74, "row": "low", "on": "step" },
+    { "x": 84, "row": "high" },
+    { "x": 85.2, "row": "high" },
+    { "x": 96.5, "row": "low", "on": "platform" },
+    { "x": 109, "row": "high", "on": "step" },
+    { "x": 120, "row": "low" },
+    { "x": 121.2, "row": "low" }
+  ]
+}

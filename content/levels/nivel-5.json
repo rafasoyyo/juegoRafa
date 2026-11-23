@@ -1,0 +1,39 @@
+{
+  "ambient": "atardecer",
+  "length": 165,
+  "steps": [
+    { "x": 24, "width": 4, "height": 1 },
+    { "x": 28, "width": 5, "height": 2 },
+    { "x": 58, "width": 5, "height": 1 },
+    { "x": 94, "width": 4, "height": 1 },
+    { "x": 98, "width": 4, "height": 2 },
+    { "x": 130, "width": 6, "height": 1 }
+  ],
+  "platforms": [
+    { "x": 40, "width": 4, "height": 1.5 },
+    { "x": 68, "width": 4, "height": 1.25 },
+    { "x": 76, "width": 4, "height": 1.5 },
+    { "x": 110, "width": 5, "height": 1.5 },
+    { "x": 140, "width": 3, "height": 1.25 }
+  ],
+  "blocks": [
+    { "x": 14, "row": "low" },
+    { "x": 15.2, "row": "low" },
+    { "x": 16.4, "row": "low" },
+    { "x": 30.5, "row": "high", "on": "step" },
+    { "x": 42, "row": "low", "on": "platform" },
+    { "x": 50, "row": "high" },
+    { "x": 51.2, "row": "high" },
+    { "x": 60.5, "row": "low", "on": "step" },
+    { "x": 70, "row": "low", "on": "platform" },
+    { "x": 78, "row": "low", "on": "platform" },
+    { "x": 86, "row": "low" },
+    { "x": 87.2, "row": "low" },
+    { "x": 100, "row": "low", "on": "step" },
+    { "x": 111.5, "row": "low", "on": "platform" },
+    { "x": 113.5, "row": "low", "on": "platform" },
+    { "x": 122, "row": "high" },
+    { "x": 133, "row": "high", "on": "step" },
+    { "x": 150, "row": "low" }
+  ]
+}

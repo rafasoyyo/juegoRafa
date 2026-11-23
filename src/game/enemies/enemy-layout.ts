@@ -3,18 +3,41 @@
  * TypeScript puro (sin Phaser) para poder probarlo en Vitest.
  *
  * El recorrido se divide en «tramos libres»: lo que queda entre la salida y la bandera (con margen)
- * tras quitar cada bloque «?» ampliado por los dos lados. Va como mucho un enemigo por tramo, así que
- * entre dos enemigos hay siempre al menos una columna de bloques ampliada y nunca hay uno bajo un bloque.
+ * tras quitar cada zona a evitar (bloques «?», escalones y plataformas) ampliada por los dos lados.
+ * Va como mucho un enemigo por tramo, así que entre dos enemigos hay siempre al menos una zona ampliada
+ * y nunca hay uno bajo un bloque, sobre un escalón o bajo una plataforma: todos van por el suelo llano.
  */
 
+import { BLOCK_SIZE } from '../level-course';
+import type { WorldLevel } from '../levels/types';
 import { BEE_DRIFT } from './enemy-motion';
 
 export type EnemyKind = 'hedgehog' | 'bee';
 
+/** Zona a evitar: `x` es su centro y `width` su ancho, en px. */
+export interface ClearZone {
+  x: number;
+  width: number;
+}
+
 export interface Course {
   startX: number;
   flagX: number;
-  blocks: readonly { x: number; width: number }[];
+  /** Bloques «?», escalones y plataformas. */
+  keepClear: readonly ClearZone[];
+}
+
+/** Recorrido de un nivel para colocar enemigos: bloques, escalones y plataformas como zonas a evitar. */
+export function courseFor(world: WorldLevel): Course {
+  return {
+    startX: world.startX,
+    flagX: world.flagX,
+    keepClear: [
+      ...world.blocks.map((b) => ({ x: b.x, width: BLOCK_SIZE })),
+      ...world.steps.map((s) => ({ x: s.x + s.width / 2, width: s.width })),
+      ...world.platforms.map((p) => ({ x: p.x + p.width / 2, width: p.width })),
+    ],
+  };
 }
 
 export interface Stretch {
@@ -47,7 +70,7 @@ export const ENEMIES_PER_LEVEL: readonly number[] = [1, 2, 2, 3, 3, 4];
 export const START_CLEAR = 600;
 /** Margen sin enemigos antes de la bandera. */
 export const FLAG_CLEAR = 400;
-/** Margen sin enemigos a cada lado de un bloque «?». */
+/** Margen sin enemigos a cada lado de una zona a evitar (bloque, escalón o plataforma). */
 export const BLOCK_CLEAR = 150;
 /** Tramo libre más corto en el que cabe un enemigo. */
 export const MIN_STRETCH = 200;
@@ -69,7 +92,7 @@ export function enemyCount(level: number): number {
 export function freeStretches(course: Course): Stretch[] {
   const from = course.startX + START_CLEAR;
   const to = course.flagX - FLAG_CLEAR;
-  const blocked = course.blocks
+  const blocked = course.keepClear
     .map((b) => ({ from: b.x - b.width / 2 - BLOCK_CLEAR, to: b.x + b.width / 2 + BLOCK_CLEAR }))
     .sort((a, b) => a.from - b.from);
 

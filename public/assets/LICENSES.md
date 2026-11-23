@@ -63,6 +63,25 @@ Licencia: la del repositorio.
 | `svg/star.svg` | lienzo de diseño |
 | `svg/tree.svg` | lienzo de diseño |
 
+## Gráficos generados por código
+
+Propios del proyecto, dibujados con formas planas en el código del juego (no hay archivo de imagen).
+Licencia: la del repositorio.
+
+| Clave / elemento | Dónde se dibuja | Origen |
+|---|---|---|
+| `sky-prado`, `sky-flores`, `sky-bosque`, `sky-otono`, `sky-atardecer`, `sky-noche` | `src/game/scenes/BootScene.ts` | propio: degradados del cielo de cada ambiente (`src/game/levels/ambients.ts`) |
+| `decor-tree` | `src/game/scenes/BootScene.ts` | propio: árbol verde redondeado de la decoración del bosque |
+| `decor-tree-autumn` | `src/game/scenes/BootScene.ts` | propio: árbol ocre y naranja de la decoración del otoño |
+| `decor-flowers` | `src/game/scenes/BootScene.ts` | propio: mata de flores del campo de flores |
+| `decor-sun` | `src/game/scenes/BootScene.ts` | propio: sol bajo del atardecer |
+| `decor-moon` | `src/game/scenes/BootScene.ts` | propio: luna de la noche |
+| `decor-star` | `src/game/scenes/BootScene.ts` | propio: estrella redondeada de la noche |
+| `dust` | `src/game/scenes/BootScene.ts` | propio: mota de polvo de la carrera |
+| Plataformas (tronco y nube mullida) | `src/game/ui/widgets.ts` (`drawPlatform`) | propio: plataformas de un solo sentido de los niveles |
+| Escalones (hierba sobre tierra) | `src/game/ui/widgets.ts` (`drawStep`) | propio: escalones de los niveles |
+| Colinas, suelo y piernas del zorro | `src/game/ui/widgets.ts`, `src/game/scenes/LevelScene.ts` | propio |
+
 ## Sonido
 
 No hay archivos de audio. La música (melodías del mapa y del nivel y jingle de victoria) y los efectos

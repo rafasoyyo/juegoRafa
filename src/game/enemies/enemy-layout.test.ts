@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { BLOCK_SIZE, BLOCKS, FLAG_X, START_X } from '../level-course';
+import { LEVELS } from '../levels/catalog';
+import { toWorld } from '../levels/parse';
 import {
   BLOCK_CLEAR,
+  courseFor,
   ENEMIES_PER_LEVEL,
   FLAG_CLEAR,
   freeStretches,
@@ -24,7 +26,10 @@ function seeded(seed: number): () => number {
   };
 }
 
-const COURSE: Course = { startX: START_X, flagX: FLAG_X, blocks: BLOCKS.map((b) => ({ x: b.x, width: BLOCK_SIZE })) };
+/** Recorridos reales de los niveles 1 a 6 (`COURSES[0]` es el nivel 1). */
+const WORLDS = LEVELS.map(toWorld);
+const COURSES: Course[] = WORLDS.map(courseFor);
+const course = (level: number): Course => COURSES[level - 1]!;
 const SEEDS = Array.from({ length: 50 }, (_, i) => i + 1);
 /** Medio cuerpo del dibujo más ancho (erizo ~100 px, abeja ~90 px). */
 const HALF_BODY = 50;
@@ -37,40 +42,65 @@ function reach(e: EnemySpawn): { from: number; to: number } {
 describe('layoutEnemies', () => {
   it('nivel 1: exactamente un enemigo y es un erizo', () => {
     for (const seed of SEEDS) {
-      const enemies = layoutEnemies(1, COURSE, seeded(seed));
+      const enemies = layoutEnemies(1, course(1), seeded(seed));
       expect(enemies).toHaveLength(1);
       expect(enemies[0]!.kind).toBe('hedgehog');
     }
   });
 
-  it('niveles 1 a 6: 1, 2, 2, 3, 3 y 4 enemigos con el recorrido actual', () => {
+  it('niveles 1 a 6: 1, 2, 2, 3, 3 y 4 enemigos; los 6 recorridos reales tienen sitio para todos', () => {
     expect(ENEMIES_PER_LEVEL).toEqual([1, 2, 2, 3, 3, 4]);
     for (let level = 1; level <= 6; level++) {
-      for (const seed of SEEDS) expect(layoutEnemies(level, COURSE, seeded(seed))).toHaveLength(ENEMIES_PER_LEVEL[level - 1]!);
+      expect(freeStretches(course(level)).length, `nivel ${level}`).toBeGreaterThanOrEqual(ENEMIES_PER_LEVEL[level - 1]!);
+      for (const seed of SEEDS) expect(layoutEnemies(level, course(level), seeded(seed))).toHaveLength(ENEMIES_PER_LEVEL[level - 1]!);
     }
   });
 
-  it('respeta las zonas seguras de la salida, la bandera y los bloques', () => {
+  it('respeta las zonas seguras de la salida, la bandera, los bloques, los escalones y las plataformas', () => {
     for (let level = 1; level <= 6; level++) {
+      const c = course(level);
       for (const seed of SEEDS) {
-        for (const e of layoutEnemies(level, COURSE, seeded(seed))) {
+        for (const e of layoutEnemies(level, c, seeded(seed))) {
           const r = reach(e);
-          expect(r.from - HALF_BODY).toBeGreaterThanOrEqual(START_X + START_CLEAR);
-          expect(r.to + HALF_BODY).toBeLessThanOrEqual(FLAG_X - FLAG_CLEAR);
-          for (const b of COURSE.blocks) {
-            const left = b.x - b.width / 2 - BLOCK_CLEAR;
-            const right = b.x + b.width / 2 + BLOCK_CLEAR;
+          expect(r.from - HALF_BODY).toBeGreaterThanOrEqual(c.startX + START_CLEAR);
+          expect(r.to + HALF_BODY).toBeLessThanOrEqual(c.flagX - FLAG_CLEAR);
+          for (const z of c.keepClear) {
+            const left = z.x - z.width / 2 - BLOCK_CLEAR;
+            const right = z.x + z.width / 2 + BLOCK_CLEAR;
             const clear = r.to + HALF_BODY <= left || r.from - HALF_BODY >= right;
-            expect(clear, `${e.kind} en [${r.from}, ${r.to}] junto al bloque ${b.x}`).toBe(true);
+            expect(clear, `nivel ${level}: ${e.kind} en [${r.from}, ${r.to}] junto a la zona ${z.x}`).toBe(true);
           }
         }
       }
     }
   });
 
+  it('ningún enemigo cae sobre un escalón, junto a sus lados ni bajo una plataforma', () => {
+    for (let level = 1; level <= 6; level++) {
+      const world = WORLDS[level - 1]!;
+      const zones = [...world.steps, ...world.platforms].map((z) => ({ from: z.x - BLOCK_CLEAR, to: z.x + z.width + BLOCK_CLEAR }));
+      for (const seed of SEEDS) {
+        for (const e of layoutEnemies(level, course(level), seeded(seed))) {
+          const r = reach(e);
+          for (const z of zones) {
+            const clear = r.to + HALF_BODY <= z.from || r.from - HALF_BODY >= z.to;
+            expect(clear, `nivel ${level}: ${e.kind} en [${r.from}, ${r.to}] sobre o bajo [${z.from}, ${z.to}]`).toBe(true);
+          }
+        }
+      }
+    }
+  });
+
+  it('courseFor evita bloques, escalones y plataformas', () => {
+    const world = WORLDS[5]!;
+    expect(course(6).keepClear).toHaveLength(world.blocks.length + world.steps.length + world.platforms.length);
+    const step = world.steps[0]!;
+    expect(course(6).keepClear).toContainEqual({ x: step.x + step.width / 2, width: step.width });
+  });
+
   it('nunca pone dos enemigos en el mismo tramo libre', () => {
     for (const seed of SEEDS) {
-      const enemies = layoutEnemies(6, COURSE, seeded(seed));
+      const enemies = layoutEnemies(6, course(6), seeded(seed));
       const froms = enemies.map((e) => e.stretch.from);
       expect(new Set(froms).size).toBe(enemies.length);
     }
@@ -78,7 +108,7 @@ describe('layoutEnemies', () => {
 
   it('con semillas distintas cambian las posiciones o los tipos', () => {
     const signature = (seed: number): string =>
-      layoutEnemies(4, COURSE, seeded(seed))
+      layoutEnemies(4, course(4), seeded(seed))
         .map((e) => `${e.kind}@${Math.round(reach(e).from)}`)
         .join('|');
     const distinct = new Set(SEEDS.map(signature));
@@ -87,21 +117,26 @@ describe('layoutEnemies', () => {
 
   it('desde el nivel 2 aparecen abejas con alguna semilla', () => {
     for (let level = 2; level <= 6; level++) {
-      const kinds = SEEDS.flatMap((seed) => layoutEnemies(level, COURSE, seeded(seed)).map((e) => e.kind));
+      const kinds = SEEDS.flatMap((seed) => layoutEnemies(level, course(level), seeded(seed)).map((e) => e.kind));
       expect(kinds).toContain('bee');
       expect(kinds).toContain('hedgehog');
     }
   });
 
   it('si hay menos tramos que enemigos devuelve los que caben, sin error', () => {
-    const crowded: Course = { startX: 0, flagX: 2000, blocks: [{ x: 1000, width: 84 }] };
+    const crowded: Course = { startX: 0, flagX: 2000, keepClear: [{ x: 1000, width: 84 }] };
     expect(freeStretches(crowded)).toHaveLength(2);
     expect(layoutEnemies(6, crowded, seeded(7))).toHaveLength(2);
-    const noRoom: Course = { startX: 0, flagX: 1100, blocks: [] };
+    const noRoom: Course = { startX: 0, flagX: 1100, keepClear: [] };
     expect(layoutEnemies(6, noRoom, seeded(7))).toEqual([]);
   });
 
-  it('el recorrido actual tiene 4 tramos libres', () => {
-    expect(freeStretches(COURSE)).toHaveLength(4);
+  it('un escalón o una plataforma parten un tramo libre igual que un bloque', () => {
+    const open: Course = { startX: 0, flagX: 3000, keepClear: [] };
+    expect(freeStretches(open)).toHaveLength(1);
+    const withStep: Course = { ...open, keepClear: [{ x: 1500, width: 420 }] };
+    const [left, right] = freeStretches(withStep);
+    expect(left!.to).toBe(1500 - 210 - BLOCK_CLEAR);
+    expect(right!.from).toBe(1500 + 210 + BLOCK_CLEAR);
   });
 });

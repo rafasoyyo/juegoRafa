@@ -1,10 +1,14 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
-import { COLORS, GAME_H, MAX_W } from '../config';
-import { layoutEnemies } from '../enemies/enemy-layout';
+import { COLORS, GAME_H } from '../config';
+import { courseFor, layoutEnemies } from '../enemies/enemy-layout';
 import { overlaps } from '../enemies/enemy-motion';
 import { createEnemyView, type EnemyView } from '../enemies/enemy-views';
-import { BLOCK_SIZE, BLOCKS, FLAG_X, GROUND_TOP, SCALE, START_X, WORLD_W } from '../level-course';
+import { BLOCK_SIZE, GROUND_TOP, SCALE } from '../level-course';
+import { AMBIENTS, type Ambient } from '../levels/ambients';
+import { levelData } from '../levels/catalog';
+import { toWorld } from '../levels/parse';
+import { RUN_SPEED, type WorldLevel } from '../levels/types';
 import { LEVEL_COUNT, session } from '../state';
 import { drawLalo, FOX_UNITS, makeHat, placeHat, type FoxPose } from '../ui/characters';
 import { RoundButton } from '../ui/round-button';
@@ -25,9 +29,8 @@ import {
   type RunState,
 } from '../ui/run-cycle';
 import { enter, goTo, onResize } from '../ui/transition';
-import { addClouds, addSky, bump, cookieCounter, drawGround, drawHills, fixToCamera, type CookieCounter } from '../ui/widgets';
+import { addScenery, bump, cookieCounter, drawPlatform, drawStep, fixToCamera, type CookieCounter } from '../ui/widgets';
 
-const RUN_SPEED = 110 * SCALE;
 const JUMP_SPEED = 330 * SCALE;
 const VARIABLE_JUMP_MIN = 140 * SCALE;
 const MAX_VELOCITY = { x: 300 * SCALE, y: 600 * SCALE };
@@ -55,16 +58,25 @@ const BLINK_ALPHA = 0.35;
 const KNOCK_VX = 0.9 * RUN_SPEED;
 const KNOCK_VY = 0.55 * JUMP_SPEED;
 
+/**
+ * Grosor del cuerpo físico de una plataforma: más que lo que cae el zorro en un fotograma a velocidad
+ * máxima (1 920 px/s ≈ 32 px a 60 fps), para que nunca la atraviese al caer.
+ */
+const PLATFORM_BODY = 40;
+
 interface LevelData {
   level?: number;
 }
 
 /**
  * Nivel de plataformas: mover, saltar, golpear bloques «?» desde abajo y llegar a la bandera.
- * Todavía sin retos educativos (fase 2): los 6 niveles del mapa usan este mismo recorrido.
+ * Cada nivel se construye con su recorrido (`content/levels/`) y su ambiente. Todavía sin retos
+ * educativos (fase 2).
  */
 export class LevelScene extends Phaser.Scene {
   private level = 1;
+  private world!: WorldLevel;
+  private ambient!: Ambient;
   private fox!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
   private hat!: Phaser.GameObjects.Image;
   private controls!: TouchControls;
@@ -100,6 +112,8 @@ export class LevelScene extends Phaser.Scene {
 
   init(data: LevelData): void {
     this.level = Phaser.Math.Clamp(data?.level ?? 1, 1, LEVEL_COUNT);
+    this.world = toWorld(levelData(this.level));
+    this.ambient = AMBIENTS[this.world.ambient];
     this.cookies = 0;
     this.blocksHit = 0;
     this.finished = false;
@@ -123,21 +137,26 @@ export class LevelScene extends Phaser.Scene {
   create(): void {
     enter(this);
     audio.playMusic('level');
-    this.physics.world.setBounds(0, 0, WORLD_W, GAME_H);
-    this.cameras.main.setBounds(0, 0, WORLD_W, GAME_H);
+    const worldW = this.world.width;
+    this.physics.world.setBounds(0, 0, worldW, GAME_H);
+    this.cameras.main.setBounds(0, 0, worldW, GAME_H);
 
-    this.buildScenery();
-    const ground = this.add.zone(WORLD_W / 2, GROUND_TOP + 50, WORLD_W, 100);
+    addScenery(this, this.ambient, worldW, GROUND_TOP);
+    const ground = this.add.zone(worldW / 2, GROUND_TOP + 50, worldW, 100);
     this.physics.add.existing(ground, true);
+    const steps = this.buildSteps();
+    const platforms = this.buildPlatforms();
     const blocks = this.buildBlocks();
     this.buildFox();
     this.buildGoal();
     this.buildEnemies();
 
     this.physics.add.collider(this.fox, ground);
+    this.physics.add.collider(this.fox, steps);
+    this.physics.add.collider(this.fox, platforms);
     this.physics.add.collider(this.fox, blocks, (_f, block) => this.onBlockCollision(block as Phaser.Physics.Arcade.Image));
 
-    this.cameras.main.startFollow(this.fox, true, 0.15, 0.15);
+    this.cameras.main.startFollow(this.fox, false, 1, 0.15);
     this.cameras.main.setDeadzone(40 * SCALE, 20 * SCALE);
 
     this.controls = new TouchControls(this);
@@ -220,10 +239,8 @@ export class LevelScene extends Phaser.Scene {
       sx = rising ? 0.92 : 0.97;
       sy = rising ? 1.09 : 1.03;
     } else if (pose === 'run') {
-      const stride = Math.sin(this.run.phase * Math.PI * 2);
-      angle = stride * 6 * (1 - mix) + dirSign * RUN_LEAN_DEG * mix;
-      // Mismo rebote que el antiguo balanceo: la caja de Arcade escala con el sprite.
-      sy = 1 + Math.abs(stride) * 0.03;
+      // Sin balanceo ni rebote por zancada: vibraban. Solo la inclinación fija de la rueda.
+      angle = dirSign * RUN_LEAN_DEG * mix;
     } else {
       const breath = Math.sin(time * 0.004);
       sy = 1 + breath * 0.025;
@@ -253,10 +270,9 @@ export class LevelScene extends Phaser.Scene {
     this.legs.setAlpha(alpha);
   }
 
-  /** Enemigos al azar en zonas seguras; cambian cada vez que se entra en el nivel. */
+  /** Enemigos al azar en zonas seguras (suelo llano); cambian cada vez que se entra en el nivel. */
   private buildEnemies(): void {
-    const course = { startX: START_X, flagX: FLAG_X, blocks: BLOCKS.map((b) => ({ x: b.x, width: BLOCK_SIZE })) };
-    this.enemies = layoutEnemies(this.level, course).map((spawn) => createEnemyView(this, spawn, GROUND_TOP));
+    this.enemies = layoutEnemies(this.level, courseFor(this.world)).map((spawn) => createEnemyView(this, spawn, GROUND_TOP));
     for (const enemy of this.enemies) enemy.update(this.time.now);
   }
 
@@ -371,25 +387,39 @@ export class LevelScene extends Phaser.Scene {
     });
   }
 
-  private buildScenery(): void {
-    addSky(this);
-    addClouds(this, 120, WORLD_W * 0.3 + MAX_W, 520, 0.3);
-    drawHills(this, GROUND_TOP, -200, WORLD_W * 0.45 + MAX_W, 900, COLORS.hillLight, 0.45);
-    drawHills(this, GROUND_TOP + 30, -200, WORLD_W * 0.6 + MAX_W, 800, COLORS.hill, 0.6, 420);
-    drawGround(this, 0, WORLD_W, GROUND_TOP);
+  /** Escalones: tramos de suelo elevado, sólidos por arriba y por los lados. */
+  private buildSteps(): Phaser.GameObjects.Zone[] {
+    return this.world.steps.map((s) => {
+      drawStep(this, s.x, s.width, s.top, GROUND_TOP, this.ambient);
+      const zone = this.add.zone(s.x + s.width / 2, (s.top + GROUND_TOP) / 2, s.width, s.height);
+      this.physics.add.existing(zone, true);
+      return zone;
+    });
   }
 
+  /** Plataformas de un solo sentido: se atraviesan saltando desde abajo y se aterriza encima. */
+  private buildPlatforms(): Phaser.GameObjects.Zone[] {
+    return this.world.platforms.map((p) => {
+      drawPlatform(this, p.x, p.width, p.top, this.ambient);
+      const zone = this.add.zone(p.x + p.width / 2, p.top + PLATFORM_BODY / 2, p.width, PLATFORM_BODY);
+      this.physics.add.existing(zone, true);
+      const body = zone.body as Phaser.Physics.Arcade.StaticBody;
+      body.checkCollision.down = false;
+      body.checkCollision.left = false;
+      body.checkCollision.right = false;
+      return zone;
+    });
+  }
+
+  /** Bloques «?» apoyados en la superficie que tienen debajo (suelo, escalón o plataforma). */
   private buildBlocks(): Phaser.Physics.Arcade.StaticGroup {
     const group = this.physics.add.staticGroup();
-    for (const { x, high } of BLOCKS) {
-      const bottom = GROUND_TOP - (high ? 62 : 44) * SCALE;
-      group.create(x, bottom - BLOCK_SIZE / 2, 'block');
-    }
+    for (const b of this.world.blocks) group.create(b.x, b.bottom - BLOCK_SIZE / 2, 'block');
     return group;
   }
 
   private buildFox(): void {
-    this.fox = this.physics.add.sprite(START_X, GROUND_TOP - 2, 'fox-idle').setOrigin(0.5, 1);
+    this.fox = this.physics.add.sprite(this.world.startX, GROUND_TOP - 2, 'fox-idle').setOrigin(0.5, 1);
     this.fox.body.setSize(56, 87, false).setOffset(32, 30);
     this.fox.setCollideWorldBounds(true);
     this.fox.setMaxVelocity(MAX_VELOCITY.x, MAX_VELOCITY.y);
@@ -403,8 +433,9 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private buildGoal(): void {
-    this.add.image(FLAG_X, GROUND_TOP + 4, 'flag').setOrigin(0.1, 1).setDepth(5);
-    const zone = this.add.zone(FLAG_X, GROUND_TOP - 20 * SCALE, 24 * SCALE, 40 * SCALE);
+    const flagX = this.world.flagX;
+    this.add.image(flagX, GROUND_TOP + 4, 'flag').setOrigin(0.1, 1).setDepth(5);
+    const zone = this.add.zone(flagX, GROUND_TOP - 20 * SCALE, 24 * SCALE, 40 * SCALE);
     this.physics.add.existing(zone, true);
     this.physics.add.overlap(this.fox, zone, () => this.onGoal());
   }
@@ -440,7 +471,7 @@ export class LevelScene extends Phaser.Scene {
       goTo(this, 'LevelComplete', {
         level: this.level,
         blocksHit: this.blocksHit,
-        blocksTotal: BLOCKS.length,
+        blocksTotal: this.world.blocks.length,
         cookies: this.cookies,
       }),
     );
@@ -481,7 +512,8 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private updateProgress(force?: number): void {
-    const t = force ?? Phaser.Math.Clamp((this.fox.x - START_X) / (FLAG_X - START_X), 0, 1);
+    const { startX, flagX } = this.world;
+    const t = force ?? Phaser.Math.Clamp((this.fox.x - startX) / (flagX - startX), 0, 1);
     const barX = this.progress.container.getData('barX') as number;
     const w = Math.max(16, this.progress.barW * t);
     this.progress.fill.clear().fillStyle(COLORS.grass).fillRoundedRect(barX, -8, w, 16, 8);

@@ -1,0 +1,20 @@
+{
+  "ambient": "prado",
+  "length": 140,
+  "steps": [],
+  "platforms": [],
+  "blocks": [
+    { "x": 14, "row": "low" },
+    { "x": 24, "row": "low" },
+    { "x": 25.2, "row": "low" },
+    { "x": 26.4, "row": "low" },
+    { "x": 42, "row": "high" },
+    { "x": 56, "row": "high" },
+    { "x": 57.2, "row": "high" },
+    { "x": 72, "row": "low" },
+    { "x": 86, "row": "low" },
+    { "x": 87.2, "row": "low" },
+    { "x": 102, "row": "high" },
+    { "x": 116, "row": "low" }
+  ]
+}

@@ -15,7 +15,7 @@ const game = new Phaser.Game({
   height: GAME_H,
   backgroundColor: '#8FD3FF',
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 900 * 3.2 }, debug: false } },
+  physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 900 * 3.2 }, fixedStep: false, debug: false } },
   input: { activePointers: 4 },
   scene: [BootScene, TitleScene, MapScene, LevelScene, LevelCompleteScene, WardrobeScene],
 });
