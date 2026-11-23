@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { RUN_COLORS } from '../ui/run-cycle';
 
 const FONT_TIMEOUT_MS = 3000;
 
@@ -17,7 +18,7 @@ export class BootScene extends Phaser.Scene {
       this.load.svg(key, `${file}.svg`, { width, height });
     };
 
-    for (const pose of ['idle', 'jump', 'celebrate']) {
+    for (const pose of ['idle', 'run', 'jump', 'celebrate']) {
       svg(`fox-${pose}`, `fox-${pose}`, 120);
       svg(`fox-${pose}-l`, `fox-${pose}`, 400);
     }
@@ -71,6 +72,7 @@ export class BootScene extends Phaser.Scene {
       [1, '#A9E3A0'],
     ]);
     this.makeShowcase();
+    this.makeDust();
 
     // Espera a Baloo 2 para que los dígitos no se dibujen con la fuente de reserva.
     const fontReady = document.fonts?.load('800 48px "Baloo 2"') ?? Promise.resolve();
@@ -90,6 +92,14 @@ export class BootScene extends Phaser.Scene {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 8, 720);
     tex.refresh();
+  }
+
+  /** Mota de polvo de la carrera: círculo crema (se tiñe y escala al usarlo). */
+  private makeDust(): void {
+    const g = this.make.graphics({}, false);
+    g.fillStyle(RUN_COLORS.dust).fillCircle(16, 16, 16);
+    g.generateTexture('dust', 32, 32);
+    g.destroy();
   }
 
   /** Escaparate redondeado de «mi personaje»: cielo y suelo recortados con esquinas redondas. */

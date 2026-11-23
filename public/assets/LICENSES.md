@@ -29,6 +29,7 @@ Licencia: la del repositorio.
 | `svg/fox-celebrate.svg` | lienzo de diseño |
 | `svg/fox-idle.svg` | lienzo de diseño |
 | `svg/fox-jump.svg` | derivado del zorro del lienzo (pose de salto) |
+| `svg/fox-run.svg` | derivado de `fox-idle.svg`: cuerpo sin pies y algo más alto, para correr con las piernas dibujadas por código |
 | `svg/hat-cap.svg` | lienzo de diseño |
 | `svg/hat-crown.svg` | lienzo de diseño |
 | `svg/hat-helmet.svg` | lienzo de diseño |

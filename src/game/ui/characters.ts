@@ -3,7 +3,7 @@ import { COLORS } from '../config';
 import type { HatId } from '../state';
 import { RoundButton } from './round-button';
 
-export type FoxPose = 'idle' | 'jump' | 'celebrate';
+export type FoxPose = 'idle' | 'run' | 'jump' | 'celebrate';
 
 /** Lado de la caja del dibujo del zorro (viewBox 120×120). */
 export const FOX_UNITS = 120;
@@ -16,6 +16,8 @@ const LARGE_FROM = 180;
  */
 export const HAT_OFFSETS: Readonly<Record<FoxPose, { x: number; y: number; angle: number }>> = {
   idle: { x: 0, y: -77, angle: 0 },
+  // Mismo dibujo que `idle` sin pies y subido 10 unidades.
+  run: { x: 0, y: -87, angle: 0 },
   jump: { x: 0, y: -77, angle: 0 },
   celebrate: { x: 0, y: -77, angle: -4 },
 };

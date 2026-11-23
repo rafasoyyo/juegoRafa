@@ -1,9 +1,24 @@
 import Phaser from 'phaser';
 import { COLORS, GAME_H, MAX_W } from '../config';
 import { LEVEL_COUNT, session } from '../state';
-import { drawLalo, makeHat, placeHat, type FoxPose } from '../ui/characters';
+import { drawLalo, FOX_UNITS, makeHat, placeHat, type FoxPose } from '../ui/characters';
 import { RoundButton } from '../ui/round-button';
 import { TouchControls } from '../ui/touch-controls';
+import {
+  FOOT_RX,
+  FOOT_RY,
+  footPath,
+  GHOSTS,
+  HIPS,
+  initialRun,
+  LEG_WIDTH,
+  legFeet,
+  RUN_COLORS,
+  stepRun,
+  wheelMix,
+  type FootPoint,
+  type RunState,
+} from '../ui/run-cycle';
 import { enter, goTo, onResize } from '../ui/transition';
 import { addClouds, addSky, bump, coinCounter, drawGround, drawHills, fixToCamera, type CoinCounter } from '../ui/widgets';
 
@@ -31,6 +46,15 @@ const FOX_SIZE = 120;
 const CELEBRATE_MS = 1200;
 const HUD_DEPTH = 100;
 
+/** Altura del suelo en unidades del zorro respecto a la base de su textura (la caja acaba en 117). */
+const FOX_GROUND_Y = -3;
+/** Inclinación hacia delante con las piernas en rueda, en grados. */
+const RUN_LEAN_DEG = 10;
+/** Polvo al correr en rueda. */
+const DUST_POOL = 6;
+const DUST_EVERY_MS = 90;
+const DUST_LIFE_MS = 350;
+
 interface LevelData {
   level?: number;
 }
@@ -57,6 +81,10 @@ export class LevelScene extends Phaser.Scene {
   private fallSpeed = 0;
   private squash = { amount: 0 };
   private nextHopAt = 0;
+  private run: RunState = initialRun();
+  private legs!: Phaser.GameObjects.Graphics;
+  private dust: Phaser.GameObjects.Image[] = [];
+  private nextDustAt = 0;
 
   private home!: RoundButton;
   private progress!: { container: Phaser.GameObjects.Container; fill: Phaser.GameObjects.Graphics; face: Phaser.GameObjects.Image; barW: number };
@@ -79,6 +107,9 @@ export class LevelScene extends Phaser.Scene {
     this.wasGrounded = true;
     this.fallSpeed = 0;
     this.squash = { amount: 0 };
+    this.run = initialRun();
+    this.dust = [];
+    this.nextDustAt = 0;
   }
 
   create(): void {
@@ -105,7 +136,7 @@ export class LevelScene extends Phaser.Scene {
     onResize(this, (w, h) => this.layout(w, h));
   }
 
-  override update(time: number): void {
+  override update(time: number, delta: number): void {
     const body = this.fox.body;
     const grounded = body.blocked.down || body.touching.down;
 
@@ -115,7 +146,7 @@ export class LevelScene extends Phaser.Scene {
         this.fox.setVelocityY(-JUMP_SPEED * 0.5);
         this.nextHopAt = time + 450;
       }
-      this.animateFox(time, grounded, 0);
+      this.animateFox(time, delta, grounded, 0);
       return;
     }
 
@@ -139,26 +170,33 @@ export class LevelScene extends Phaser.Scene {
     // Salto variable: soltar pronto = salto más corto.
     if (!input.jump && body.velocity.y < -VARIABLE_JUMP_MIN) this.fox.setVelocityY(body.velocity.y * 0.6);
 
-    this.animateFox(time, grounded, dir);
+    this.animateFox(time, delta, grounded, dir);
     this.updateProgress();
   }
 
-  /** Poses, balanceo al andar, estiramiento al saltar, aplastamiento al aterrizar y respiración. */
-  private animateFox(time: number, grounded: boolean, dir: number): void {
+  /**
+   * Poses, carrera con piernas que pasan de zancadas a rueda, estiramiento al saltar,
+   * aplastamiento al aterrizar y respiración.
+   */
+  private animateFox(time: number, delta: number, grounded: boolean, dir: number): void {
     const vy = this.fox.body.velocity.y;
-    if (grounded && !this.wasGrounded && this.fallSpeed > 300) {
-      this.squash.amount = 1;
-      this.tweens.add({ targets: this.squash, amount: 0, duration: 180, ease: 'Quad.easeOut' });
-    }
+    if (grounded && !this.wasGrounded && this.fallSpeed > 300) this.squashFox(1);
     this.wasGrounded = grounded;
     if (!grounded) this.fallSpeed = Math.max(0, vy);
 
-    const pose: FoxPose = this.finished ? 'celebrate' : grounded ? 'idle' : 'jump';
+    const running = dir !== 0;
+    this.run = stepRun(this.run, delta, { running, grounded, finished: this.finished });
+    const mix = wheelMix(this.run.intensity);
+
+    const pose: FoxPose = this.finished ? 'celebrate' : !grounded ? 'jump' : running ? 'run' : 'idle';
     if (pose !== this.pose) {
+      // Al frenar, el cuerpo baja a la pose quieta: un aplastamiento lo convierte en un frenazo.
+      if (this.pose === 'run' && pose === 'idle') this.squashFox(0.5);
       this.pose = pose;
       this.fox.setTexture(`fox-${pose}`);
     }
 
+    const dirSign = this.faceLeft ? -1 : 1;
     let sx = 1;
     let sy = 1;
     let angle = 0;
@@ -166,10 +204,11 @@ export class LevelScene extends Phaser.Scene {
       const rising = vy < 0;
       sx = rising ? 0.92 : 0.97;
       sy = rising ? 1.09 : 1.03;
-    } else if (dir !== 0) {
-      const wave = Math.sin(time * 0.02);
-      angle = wave * 6;
-      sy = 1 + Math.abs(wave) * 0.03;
+    } else if (pose === 'run') {
+      const stride = Math.sin(this.run.phase * Math.PI * 2);
+      angle = stride * 6 * (1 - mix) + dirSign * RUN_LEAN_DEG * mix;
+      // Mismo rebote que el antiguo balanceo: la caja de Arcade escala con el sprite.
+      sy = 1 + Math.abs(stride) * 0.03;
     } else {
       const breath = Math.sin(time * 0.004);
       sy = 1 + breath * 0.025;
@@ -181,6 +220,99 @@ export class LevelScene extends Phaser.Scene {
     // El dibujo mira de frente con la cola a la derecha: para ir a la derecha, la cola va detrás.
     this.fox.setFlipX(!this.faceLeft);
     placeHat(this.hat, this.fox, this.pose, this.faceLeft);
+
+    this.drawLegs(pose === 'run', mix, dirSign);
+    if (pose === 'run' && mix > 0.5 && time >= this.nextDustAt) {
+      this.puffDust(dirSign);
+      this.nextDustAt = time + DUST_EVERY_MS;
+    }
+  }
+
+  private squashFox(amount: number): void {
+    this.tweens.killTweensOf(this.squash);
+    this.squash.amount = amount;
+    this.tweens.add({ targets: this.squash, amount: 0, duration: 180, ease: 'Quad.easeOut' });
+  }
+
+  /**
+   * Piernas en el espacio local del zorro: «delante» es +x y el suelo está en `FOX_GROUND_Y`.
+   * Con `mix` 0 se ven dos piernas nítidas; con 1, una rueda borrosa de pies con estela y líneas
+   * de velocidad.
+   */
+  private drawLegs(visible: boolean, mix: number, dirSign: number): void {
+    const g = this.legs.clear();
+    g.setVisible(visible);
+    if (!visible) return;
+    const u = this.fox.displayHeight / FOX_UNITS / Math.abs(this.fox.scaleY);
+    g.setPosition(this.fox.x, this.fox.y)
+      .setRotation(this.fox.rotation)
+      .setScale(dirSign * u * this.fox.scaleX, u * this.fox.scaleY);
+
+    const { phase, intensity } = this.run;
+    const y0 = FOX_GROUND_Y;
+    const foot = (f: FootPoint, alpha: number): void => {
+      g.fillStyle(RUN_COLORS.foot, alpha).fillEllipse(f.x + 2, y0 + f.y - FOOT_RY, FOOT_RX * 2, FOOT_RY * 2);
+    };
+    const leg = (hip: { x: number; y: number }, f: FootPoint, alpha: number): void => {
+      g.lineStyle(LEG_WIDTH, RUN_COLORS.leg, alpha).lineBetween(hip.x, y0 + hip.y, f.x, y0 + f.y - FOOT_RY);
+      g.fillStyle(RUN_COLORS.leg, alpha).fillCircle(f.x, y0 + f.y - FOOT_RY, LEG_WIDTH / 2);
+    };
+
+    if (mix > 0) {
+      // Líneas de velocidad detrás del cuerpo.
+      for (const [i, ly] of [-36, -52, -68].entries()) {
+        const len = 20 + Math.random() * 16 + i * 4;
+        const lx = -40 - i * 4;
+        g.lineStyle(5, RUN_COLORS.speedLine, 0.2 * mix).lineBetween(lx, y0 + ly, lx - len, y0 + ly);
+      }
+      // Rueda: borrón naranja de piernas (arcos que giran) y estela de pies fantasma.
+      const path = footPath(intensity);
+      const cx = path.dx;
+      const cy = y0 + path.cy - FOOT_RY;
+      const rx = path.rx + 6;
+      const ry = path.ry;
+      g.fillStyle(RUN_COLORS.leg, 0.28 * mix).fillEllipse(cx, cy, rx * 2, ry * 2);
+      const spin = phase * Math.PI * 2;
+      for (let k = 0; k < 3; k++) {
+        const a0 = spin + (k * Math.PI * 2) / 3;
+        g.lineStyle(5, RUN_COLORS.leg, 0.75 * mix).beginPath();
+        for (let t = 0; t <= 8; t++) {
+          const a = a0 - (t / 8) * 1.3;
+          const px = cx + rx * 0.85 * Math.cos(a);
+          const py = cy + ry * 0.85 * Math.sin(a);
+          if (t === 0) g.moveTo(px, py);
+          else g.lineTo(px, py);
+        }
+        g.strokePath();
+      }
+      for (const ghost of GHOSTS) {
+        for (const f of legFeet(phase - ghost.lag, intensity)) foot(f, ghost.alpha * mix);
+      }
+    }
+    const feet = legFeet(phase, intensity);
+    const legAlpha = 1 - 0.65 * mix;
+    feet.forEach((f, i) => leg(HIPS[i]!, f, legAlpha));
+    for (const f of feet) foot(f, 1 - 0.3 * mix);
+  }
+
+  /** Suelta una mota de polvo del pool en el pie trasero, que crece y se desvanece. */
+  private puffDust(dirSign: number): void {
+    const mote = this.dust.find((d) => !d.active);
+    if (!mote) return;
+    this.tweens.killTweensOf(mote);
+    const x = this.fox.x - dirSign * (14 + Math.random() * 10);
+    const y = this.fox.y + FOX_GROUND_Y - 4;
+    mote.setActive(true).setVisible(true).setPosition(x, y).setScale(0.35).setAlpha(0.85);
+    this.tweens.add({
+      targets: mote,
+      x: x - dirSign * 18,
+      y: y - 10,
+      scale: 0.9,
+      alpha: 0,
+      duration: DUST_LIFE_MS,
+      ease: 'Quad.easeOut',
+      onComplete: () => mote.setActive(false).setVisible(false),
+    });
   }
 
   private buildScenery(): void {
@@ -206,6 +338,10 @@ export class LevelScene extends Phaser.Scene {
     this.fox.setCollideWorldBounds(true);
     this.fox.setMaxVelocity(MAX_VELOCITY.x, MAX_VELOCITY.y);
     this.fox.setDepth(10);
+    this.legs = this.add.graphics().setDepth(9).setVisible(false);
+    for (let i = 0; i < DUST_POOL; i++) {
+      this.dust.push(this.add.image(0, 0, 'dust').setDepth(8).setActive(false).setVisible(false));
+    }
     this.hat = makeHat(this, session.hat, FOX_SIZE).setDepth(11);
     placeHat(this.hat, this.fox, 'idle', false);
   }
