@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
 import { layoutEnemies } from '../enemies/enemy-layout';
 import { overlaps } from '../enemies/enemy-motion';
@@ -121,6 +122,7 @@ export class LevelScene extends Phaser.Scene {
 
   create(): void {
     enter(this);
+    audio.playMusic('level');
     this.physics.world.setBounds(0, 0, WORLD_W, GAME_H);
     this.cameras.main.setBounds(0, 0, WORLD_W, GAME_H);
 
@@ -175,6 +177,7 @@ export class LevelScene extends Phaser.Scene {
     const canJump = time - this.lastGrounded <= COYOTE_MS;
     if (wantsJump && canJump) {
       this.fox.setVelocityY(-JUMP_SPEED);
+      audio.sfx('jump');
       this.jumpBufferedAt = -Infinity;
       this.lastGrounded = -Infinity;
     }
@@ -278,6 +281,7 @@ export class LevelScene extends Phaser.Scene {
     this.jumpBufferedAt = -Infinity;
     this.lastGrounded = -Infinity;
     enemy.gesture();
+    audio.sfx('bump');
   }
 
   private squashFox(amount: number): void {
@@ -408,6 +412,8 @@ export class LevelScene extends Phaser.Scene {
   private onBlockCollision(block: Phaser.Physics.Arcade.Image): void {
     if (this.finished || !this.fox.body.touching.up || block.getData('used')) return;
     block.setData('used', true);
+    audio.sfx('block');
+    audio.sfx('cookie');
     block.setTexture('block-used');
     this.tweens.add({ targets: block, y: block.y - 14, duration: 80, yoyo: true });
 
@@ -424,6 +430,8 @@ export class LevelScene extends Phaser.Scene {
   private onGoal(): void {
     if (this.finished) return;
     this.finished = true;
+    audio.stopMusic(300);
+    audio.sfx('goal');
     this.fox.setVelocity(0, Math.min(this.fox.body.velocity.y, 0));
     this.nextHopAt = this.time.now + 120;
     this.controls.read();

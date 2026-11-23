@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { audio } from '../audio/audio-engine';
 import { RUN_COLORS } from '../ui/run-cycle';
 
 const FONT_TIMEOUT_MS = 3000;
@@ -54,6 +55,7 @@ export class BootScene extends Phaser.Scene {
     svg('icon-check-white', 'icon-check-white', 64);
     svg('icon-lock', 'icon-lock', 48);
     svg('icon-speaker', 'icon-speaker', 50);
+    svg('icon-speaker-off', 'icon-speaker-off', 50);
     svg('icon-flag', 'icon-flag', 56);
     svg('icon-fox-face', 'icon-fox-face', 64);
     svg('icon-no-hat', 'icon-no-hat', 72);
@@ -64,6 +66,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    audio.init(this.game);
     this.makeGradient('sky', [
       [0, '#8FD3FF'],
       [0.7, '#E6F6FF'],

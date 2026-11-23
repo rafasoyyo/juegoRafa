@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
 import { buyHat, HAT_PRICES, HATS, session, type HatId } from '../state';
 import { drawFox, hatTexture } from '../ui/characters';
@@ -18,6 +19,7 @@ export class WardrobeScene extends Phaser.Scene {
 
   create(): void {
     enter(this);
+    audio.playMusic('map');
     this.build(this.scale.width);
     onResize(this, (w) => this.rebuild(w));
   }
@@ -135,7 +137,10 @@ export class WardrobeScene extends Phaser.Scene {
   }
 
   private choose(hat: HatId, cell: RoundButton): void {
-    if (buyHat(session, hat)) this.rebuild();
-    else cell.shake();
+    const isNew = !session.ownedHats.has(hat);
+    if (buyHat(session, hat)) {
+      if (isNew) audio.sfx('prize');
+      this.rebuild();
+    } else cell.shake();
   }
 }

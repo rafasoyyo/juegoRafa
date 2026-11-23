@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { audio } from '../audio/audio-engine';
 import { COLORS, MAX_W } from '../config';
 import { session } from '../state';
 import { drawFox } from '../ui/characters';
@@ -52,6 +53,8 @@ export class TitleScene extends Phaser.Scene {
 
   private start(): void {
     unlockAudio(this);
+    audio.start();
+    audio.playMusic('map');
     goTo(this, 'Map');
   }
 }

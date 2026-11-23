@@ -56,11 +56,20 @@ Licencia: la del repositorio.
 | `svg/icon-replay.svg` | lienzo de diseño |
 | `svg/icon-shapes.svg` | lienzo de diseño |
 | `svg/icon-speaker.svg` | lienzo de diseño |
+| `svg/icon-speaker-off.svg` | derivado de `icon-speaker.svg`: mismo altavoz con un aspa en lugar de las ondas (silencio) |
 | `svg/lalo-blink.svg` | derivado de Lalo del lienzo (ojos cerrados) |
 | `svg/lalo.svg` | lienzo de diseño |
 | `svg/star-empty.svg` | lienzo de diseño |
 | `svg/star.svg` | lienzo de diseño |
 | `svg/tree.svg` | lienzo de diseño |
+
+## Sonido
+
+No hay archivos de audio. La música (melodías del mapa y del nivel y jingle de victoria) y los efectos
+de sonido son composiciones y síntesis propias del proyecto: las partituras y las recetas de cada
+efecto están en `src/game/audio/` y el juego las genera en tiempo real con Web Audio. No transcriben
+ni imitan ninguna música existente (ningún tema de juegos de Nintendo ni de terceros). Licencia: la
+del repositorio.
 
 ## Iconos de la PWA (`icons/`)
 

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
 import { starsFor, type Stars } from '../../learning/scoring';
 import { completeLevel, LEVEL_COUNT, session } from '../state';
@@ -15,6 +16,12 @@ export interface LevelCompleteData {
 }
 
 const GROUND_TOP = 615;
+const MUSIC_AFTER_STARS_MS = 900;
+
+/** Retardo con el que aparece (y suena) la estrella `i`. */
+function starDelay(i: number): number {
+  return 200 + i * 180;
+}
 const CONFETTI_COLORS = [COLORS.coral, COLORS.yellow, COLORS.purple, COLORS.grass, 0x4da3ff];
 
 /** Celebración sin texto: confeti, estrellas, galletas ganadas y tres caminos. */
@@ -42,11 +49,14 @@ export class LevelCompleteScene extends Phaser.Scene {
 
     enter(this);
     this.build(this.scale.width, true);
+    // La melodía del mapa vuelve cuando han sonado los tintineos de las estrellas.
+    this.time.delayedCall(starDelay(this.stars - 1) + MUSIC_AFTER_STARS_MS, () => audio.playMusic('map'));
     onResize(this, (w) => {
       this.tweens.killAll();
       this.time.removeAllEvents();
       this.children.removeAll(true);
       this.build(w, false);
+      audio.playMusic('map');
     });
   }
 
@@ -111,7 +121,8 @@ export class LevelCompleteScene extends Phaser.Scene {
       if (filled && animate) {
         const target = star.scale;
         star.setScale(0);
-        this.tweens.add({ targets: star, scale: target, delay: 200 + i * 180, duration: 320, ease: 'Back.easeOut' });
+        this.tweens.add({ targets: star, scale: target, delay: starDelay(i), duration: 320, ease: 'Back.easeOut' });
+        this.time.delayedCall(starDelay(i), () => audio.sfx('star', { index: i }));
       }
     });
 

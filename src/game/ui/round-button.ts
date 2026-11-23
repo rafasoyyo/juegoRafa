@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { audio } from '../audio/audio-engine';
 import { FONT, INK_CSS } from '../config';
 
 export interface RoundButtonOptions {
@@ -20,6 +21,8 @@ export interface RoundButtonOptions {
   onTap?: () => void;
   /** `false` para botones que controla otra lógica (p. ej. `TouchControls`). */
   interactive?: boolean;
+  /** `false` para no sonar con el «pop» al pulsarlo. */
+  sound?: boolean;
 }
 
 /**
@@ -76,7 +79,10 @@ export class RoundButton extends Phaser.GameObjects.Container {
     if (opts.interactive !== false) {
       this.setSize(w, h + this.depthPx);
       this.setInteractive({ useHandCursor: true });
-      this.on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => this.setPressed(true));
+      this.on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
+        this.setPressed(true);
+        if (this.opts.sound !== false) audio.sfx('tap');
+      });
       this.on(Phaser.Input.Events.GAMEOBJECT_POINTER_OUT, () => this.setPressed(false));
       this.on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => {
         if (!this.pressed) return;
@@ -100,6 +106,7 @@ export class RoundButton extends Phaser.GameObjects.Container {
 
   /** Temblor corto para indicar «todavía no se puede». */
   shake(): void {
+    audio.sfx('nope');
     if (this.shakeTween?.isPlaying()) {
       this.shakeTween.stop();
       this.x = this.shakeBaseX;
