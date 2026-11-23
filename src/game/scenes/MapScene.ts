@@ -4,7 +4,7 @@ import { currentLevel, LEVEL_COUNT, levelStatus, session } from '../state';
 import { drawFox, drawLalo } from '../ui/characters';
 import { RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
-import { coinCounter } from '../ui/widgets';
+import { cookieCounter } from '../ui/widgets';
 
 /** Posición de los nodos en el artboard de diseño (1180×820); se escala al ancho real. */
 const NODES: readonly [number, number][] = [
@@ -61,8 +61,8 @@ export class MapScene extends Phaser.Scene {
     const fox = drawFox(this, foxAt.x, foxAt.y - nodeR + 6, 'idle', session.hat, 104);
     this.tweens.add({ targets: fox, y: fox.y - 8, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
-    // Barra superior: monedas, Lalo y acceso a mi personaje.
-    const counter = coinCounter(this, 0, 76, session.coins);
+    // Barra superior: galletas, Lalo y acceso a mi personaje.
+    const counter = cookieCounter(this, 0, 76, session.cookies);
     counter.container.x = 32 + counter.width / 2;
     drawLalo(this, 32, 140);
     new RoundButton(this, width - 32 - 48, 76, {

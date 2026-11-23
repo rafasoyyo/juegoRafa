@@ -11,13 +11,13 @@ export interface LevelCompleteData {
   level: number;
   blocksHit: number;
   blocksTotal: number;
-  coins: number;
+  cookies: number;
 }
 
 const GROUND_TOP = 615;
 const CONFETTI_COLORS = [COLORS.coral, COLORS.yellow, COLORS.purple, COLORS.grass, 0x4da3ff];
 
-/** Celebración sin texto: confeti, estrellas, monedas ganadas y tres caminos. */
+/** Celebración sin texto: confeti, estrellas, galletas ganadas y tres caminos. */
 export class LevelCompleteScene extends Phaser.Scene {
   private result!: LevelCompleteData;
   private stars: Stars = 1;
@@ -31,14 +31,14 @@ export class LevelCompleteScene extends Phaser.Scene {
       level: data?.level ?? 1,
       blocksHit: data?.blocksHit ?? 0,
       blocksTotal: data?.blocksTotal ?? 0,
-      coins: data?.coins ?? 0,
+      cookies: data?.cookies ?? 0,
     };
   }
 
   create(): void {
     // Se guarda una sola vez al llegar, no en cada recolocación.
     this.stars = starsFor(this.result.blocksHit, this.result.blocksTotal);
-    completeLevel(session, this.result.level, this.stars, this.result.coins);
+    completeLevel(session, this.result.level, this.stars, this.result.cookies);
 
     enter(this);
     this.build(this.scale.width, true);
@@ -115,13 +115,13 @@ export class LevelCompleteScene extends Phaser.Scene {
       }
     });
 
-    // Monedas ganadas: icono y número.
+    // Galletas ganadas: icono y número.
     const pw = 200;
     const ph = 76;
     const py = top + ch - 30 - ph / 2;
     g.fillStyle(0xfff4d6).fillRoundedRect(width / 2 - pw / 2, py - ph / 2, pw, ph, ph / 2);
-    fitImage(this.add.image(width / 2 - 36, py, 'coin'), 54);
-    digits(this, width / 2 + 30, py + 2, String(this.result.coins), 48);
+    fitImage(this.add.image(width / 2 - 36, py, 'cookie'), 54);
+    digits(this, width / 2 + 30, py + 2, String(this.result.cookies), 48);
   }
 
   private confetti(width: number): void {

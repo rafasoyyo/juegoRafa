@@ -24,7 +24,7 @@ Licencia: la del repositorio.
 | `svg/block-used.svg` | derivado de los bloques del lienzo («?» y bloque usado) |
 | `svg/block.svg` | derivado de los bloques del lienzo («?» y bloque usado) |
 | `svg/cloud.svg` | lienzo de diseño |
-| `svg/coin.svg` | derivado: moneda en la paleta del lienzo |
+| `svg/cookie.svg` | derivado: galleta con pepitas de chocolate en la paleta del lienzo |
 | `svg/flag.svg` | derivado de la bandera del lienzo |
 | `svg/fox-celebrate.svg` | lienzo de diseño |
 | `svg/fox-idle.svg` | lienzo de diseño |

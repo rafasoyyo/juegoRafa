@@ -38,21 +38,21 @@ export function addClouds(scene: Phaser.Scene, from: number, to: number, step: n
   }
 }
 
-export interface CoinCounter {
+export interface CookieCounter {
   container: Phaser.GameObjects.Container;
   setValue(value: number): void;
   readonly width: number;
 }
 
-/** Píldora blanca con una moneda y un número. (x, y) es su centro. */
-export function coinCounter(scene: Phaser.Scene, x: number, y: number, value: number, shadowColor: number = COLORS.shadow): CoinCounter {
+/** Píldora blanca con una galleta y un número. (x, y) es su centro. */
+export function cookieCounter(scene: Phaser.Scene, x: number, y: number, value: number, shadowColor: number = COLORS.shadow): CookieCounter {
   const h = 80;
   const minW = 170;
   const container = scene.add.container(x, y);
   const g = scene.add.graphics();
-  const coin = fitImage(scene.add.image(0, 0, 'coin'), 46);
+  const cookie = fitImage(scene.add.image(0, 0, 'cookie'), 46);
   const text = digits(scene, 0, 0, String(value), 42);
-  container.add([g, coin, text]);
+  container.add([g, cookie, text]);
 
   const counter = {
     container,
@@ -64,8 +64,8 @@ export function coinCounter(scene: Phaser.Scene, x: number, y: number, value: nu
       g.clear();
       g.fillStyle(shadowColor).fillRoundedRect(-w / 2, -h / 2 + 6, w, h, h / 2);
       g.fillStyle(COLORS.white).fillRoundedRect(-w / 2, -h / 2, w, h, h / 2);
-      coin.setPosition(-w / 2 + 28 + 23, 0);
-      text.setOrigin(0, 0.5).setPosition(coin.x + 23 + 14, 2);
+      cookie.setPosition(-w / 2 + 28 + 23, 0);
+      text.setOrigin(0, 0.5).setPosition(cookie.x + 23 + 14, 2);
     },
   };
   counter.setValue(value);

@@ -20,7 +20,7 @@ import {
   type RunState,
 } from '../ui/run-cycle';
 import { enter, goTo, onResize } from '../ui/transition';
-import { addClouds, addSky, bump, coinCounter, drawGround, drawHills, fixToCamera, type CoinCounter } from '../ui/widgets';
+import { addClouds, addSky, bump, cookieCounter, drawGround, drawHills, fixToCamera, type CookieCounter } from '../ui/widgets';
 
 // Recorrido y físicas de la fase 0 escalados ×3,2 (de 225 a 720 px de alto).
 const SCALE = 3.2;
@@ -68,7 +68,7 @@ export class LevelScene extends Phaser.Scene {
   private fox!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
   private hat!: Phaser.GameObjects.Image;
   private controls!: TouchControls;
-  private coins = 0;
+  private cookies = 0;
   private blocksHit = 0;
   private finished = false;
   private pose: FoxPose = 'idle';
@@ -88,7 +88,7 @@ export class LevelScene extends Phaser.Scene {
 
   private home!: RoundButton;
   private progress!: { container: Phaser.GameObjects.Container; fill: Phaser.GameObjects.Graphics; face: Phaser.GameObjects.Image; barW: number };
-  private counter!: CoinCounter;
+  private counter!: CookieCounter;
 
   constructor() {
     super('Level');
@@ -96,7 +96,7 @@ export class LevelScene extends Phaser.Scene {
 
   init(data: LevelData): void {
     this.level = Phaser.Math.Clamp(data?.level ?? 1, 1, LEVEL_COUNT);
-    this.coins = 0;
+    this.cookies = 0;
     this.blocksHit = 0;
     this.finished = false;
     this.pose = 'idle';
@@ -359,12 +359,12 @@ export class LevelScene extends Phaser.Scene {
     block.setTexture('block-used');
     this.tweens.add({ targets: block, y: block.y - 14, duration: 80, yoyo: true });
 
-    const coin = this.add.image(block.x, block.y - BLOCK_SIZE / 2 - 20, 'coin').setDepth(6);
-    this.tweens.add({ targets: coin, y: coin.y - 110, alpha: 0, duration: 520, ease: 'Quad.easeOut', onComplete: () => coin.destroy() });
+    const cookie = this.add.image(block.x, block.y - BLOCK_SIZE / 2 - 20, 'cookie').setDepth(6);
+    this.tweens.add({ targets: cookie, y: cookie.y - 110, alpha: 0, duration: 520, ease: 'Quad.easeOut', onComplete: () => cookie.destroy() });
 
     this.blocksHit += 1;
-    this.coins += 1;
-    this.counter.setValue(this.coins);
+    this.cookies += 1;
+    this.counter.setValue(this.cookies);
     this.layout(this.scale.width, this.scale.height);
     bump(this, this.counter.container);
   }
@@ -381,7 +381,7 @@ export class LevelScene extends Phaser.Scene {
         level: this.level,
         blocksHit: this.blocksHit,
         blocksTotal: BLOCKS.length,
-        coins: this.coins,
+        cookies: this.cookies,
       }),
     );
   }
@@ -413,7 +413,7 @@ export class LevelScene extends Phaser.Scene {
     container.setData('barX', barX);
     this.progress = { container, fill, face, barW };
 
-    this.counter = coinCounter(this, 0, 0, 0);
+    this.counter = cookieCounter(this, 0, 0, 0);
     const lalo = drawLalo(this, 32, 140);
 
     for (const obj of [this.home, container, this.counter.container, lalo]) fixToCamera(obj.setDepth(HUD_DEPTH));

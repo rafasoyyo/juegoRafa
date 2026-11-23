@@ -1,18 +1,18 @@
 # character-wardrobe Specification
 
 ## Purpose
-Dejar que el niño personalice su zorro con gorros que consigue con las monedas del juego, para que
+Dejar que el niño personalice su zorro con gorros que consigue con las galletas del juego, para que
 sienta suyo el personaje y tenga un motivo para seguir jugando.
 
 ## Requirements
 
 ### Requirement: Escaparate del zorro
 La pantalla de mi personaje SHALL mostrar a la izquierda el zorro grande sobre el paisaje del juego,
-con el gorro puesto, y arriba a la derecha el contador de monedas.
+con el gorro puesto, y arriba a la derecha el contador de galletas.
 
 #### Scenario: Abrir mi personaje
 - **WHEN** el niño abre mi personaje desde el mapa
-- **THEN** ve su zorro grande con el gorro actual y sus monedas
+- **THEN** ve su zorro grande con el gorro actual y sus galletas
 
 ### Requirement: Categorías de complementos
 La pantalla SHALL mostrar cuatro categorías con icono (gorros, gafas, capas y colores). Solo la de
@@ -30,18 +30,18 @@ corona y «sin gorro». El gorro puesto SHALL llevar borde verde y una marca de 
 - **WHEN** el zorro lleva la gorra azul
 - **THEN** la casilla de la gorra azul tiene borde verde y la marca de verificación
 
-### Requirement: Comprar gorros con monedas
-Los gorros no conseguidos SHALL mostrarse atenuados con su precio (icono de moneda y número). Tocar uno
-con monedas suficientes SHALL restar el precio, desbloquearlo y ponérselo al zorro; sin monedas
+### Requirement: Comprar gorros con galletas
+Los gorros no conseguidos SHALL mostrarse atenuados con su precio (icono de la galleta y número). Tocar
+uno con galletas suficientes SHALL restar el precio, desbloquearlo y ponérselo al zorro; sin galletas
 suficientes SHALL NOT cambiar nada y la casilla SHALL temblar.
 
-#### Scenario: Compra con monedas suficientes
-- **WHEN** el niño tiene 12 monedas y toca un gorro que cuesta 10
-- **THEN** le quedan 2 monedas, el gorro queda desbloqueado y el zorro lo lleva puesto
+#### Scenario: Compra con galletas suficientes
+- **WHEN** el niño tiene 12 galletas y toca un gorro que cuesta 10
+- **THEN** le quedan 2 galletas, el gorro queda desbloqueado y el zorro lo lleva puesto
 
-#### Scenario: Monedas insuficientes
-- **WHEN** el niño tiene 3 monedas y toca un gorro que cuesta 10
-- **THEN** la casilla tiembla y las monedas siguen siendo 3
+#### Scenario: Galletas insuficientes
+- **WHEN** el niño tiene 3 galletas y toca un gorro que cuesta 10
+- **THEN** la casilla tiembla y las galletas siguen siendo 3
 
 ### Requirement: Cambiar de gorro
 Tocar un gorro ya conseguido o «sin gorro» SHALL ponérselo al zorro al instante sin coste. Al empezar,

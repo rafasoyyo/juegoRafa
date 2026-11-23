@@ -1,5 +1,5 @@
 /**
- * Estado del juego en memoria: progreso del mundo, monedas y gorros.
+ * Estado del juego en memoria: progreso del mundo, galletas y gorros.
  * TypeScript puro (sin Phaser) para poder probarlo y, en la fase 3, guardarlo en Firestore.
  */
 
@@ -8,7 +8,7 @@ export const LEVEL_COUNT = 6;
 export const HATS = ['cap', 'wool', 'party', 'helmet', 'crown', 'none'] as const;
 export type HatId = (typeof HATS)[number];
 
-/** Precios provisionales en monedas; se ajustarán tras jugarlo. */
+/** Precios provisionales en galletas; se ajustarán tras jugarlo. */
 export const HAT_PRICES: Readonly<Record<HatId, number>> = {
   cap: 0,
   wool: 10,
@@ -23,13 +23,13 @@ export type LevelStatus = 'done' | 'current' | 'locked';
 export interface GameState {
   /** Mejor puntuación en estrellas de cada nivel completado (1..3). */
   stars: Map<number, number>;
-  coins: number;
+  cookies: number;
   ownedHats: Set<HatId>;
   hat: HatId;
 }
 
 export function createGameState(): GameState {
-  return { stars: new Map(), coins: 0, ownedHats: new Set<HatId>(['cap', 'none']), hat: 'cap' };
+  return { stars: new Map(), cookies: 0, ownedHats: new Set<HatId>(['cap', 'none']), hat: 'cap' };
 }
 
 /** Primer nivel sin completar, o `null` si están todos hechos. */
@@ -49,11 +49,11 @@ export function canPlay(state: GameState, level: number): boolean {
   return levelStatus(state, level) !== 'locked';
 }
 
-/** Guarda la mejor puntuación en estrellas, suma las monedas y desbloquea el siguiente nivel. */
-export function completeLevel(state: GameState, level: number, stars: number, coins: number): void {
+/** Guarda la mejor puntuación en estrellas, suma las galletas y desbloquea el siguiente nivel. */
+export function completeLevel(state: GameState, level: number, stars: number, cookies: number): void {
   const clamped = Math.max(1, Math.min(3, Math.round(stars)));
   state.stars.set(level, Math.max(state.stars.get(level) ?? 0, clamped));
-  state.coins += Math.max(0, Math.floor(coins));
+  state.cookies += Math.max(0, Math.floor(cookies));
 }
 
 /** Se pone un gorro ya conseguido. Devuelve `false` si no lo tiene. */
@@ -65,13 +65,13 @@ export function wearHat(state: GameState, hat: HatId): boolean {
 
 /**
  * Compra (si hace falta) y se pone un gorro. Si ya lo tiene, solo se lo pone.
- * Devuelve `false`, sin cambiar nada, si no hay monedas suficientes.
+ * Devuelve `false`, sin cambiar nada, si no hay galletas suficientes.
  */
 export function buyHat(state: GameState, hat: HatId): boolean {
   if (state.ownedHats.has(hat)) return wearHat(state, hat);
   const price = HAT_PRICES[hat];
-  if (state.coins < price) return false;
-  state.coins -= price;
+  if (state.cookies < price) return false;
+  state.cookies -= price;
   state.ownedHats.add(hat);
   state.hat = hat;
   return true;

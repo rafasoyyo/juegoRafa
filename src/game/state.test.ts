@@ -40,7 +40,7 @@ describe('mapa del mundo', () => {
     completeLevel(a, 1, 3, 5);
     const b = createGameState();
     expect(levelStatus(b, 1)).toBe('current');
-    expect(b.coins).toBe(0);
+    expect(b.cookies).toBe(0);
   });
 });
 
@@ -52,11 +52,18 @@ describe('nivel completado', () => {
     expect(s.stars.get(1)).toBe(3);
   });
 
-  it('suma las monedas: 5 + 4 = 9', () => {
+  it('suma las galletas: 5 + 4 = 9', () => {
     const s = createGameState();
-    s.coins = 5;
+    s.cookies = 5;
     completeLevel(s, 1, 2, 4);
-    expect(s.coins).toBe(9);
+    expect(s.cookies).toBe(9);
+  });
+
+  it('un nivel sin galletas no cambia el total', () => {
+    const s = createGameState();
+    s.cookies = 5;
+    completeLevel(s, 1, 1, 0);
+    expect(s.cookies).toBe(5);
   });
 
   it('nunca guarda 0 estrellas', () => {
@@ -75,33 +82,33 @@ describe('mi personaje', () => {
     expect(s.ownedHats.size).toBe(2);
   });
 
-  it('con 12 monedas compra un gorro de 10 y le quedan 2', () => {
+  it('con 12 galletas compra un gorro de 10 y le quedan 2', () => {
     const s = createGameState();
-    s.coins = 12;
+    s.cookies = 12;
     expect(HAT_PRICES.wool).toBe(10);
     expect(buyHat(s, 'wool')).toBe(true);
-    expect(s.coins).toBe(2);
+    expect(s.cookies).toBe(2);
     expect(s.ownedHats.has('wool')).toBe(true);
     expect(s.hat).toBe('wool');
   });
 
-  it('con 3 monedas no puede comprar un gorro de 10 y nada cambia', () => {
+  it('con 3 galletas no puede comprar un gorro de 10 y nada cambia', () => {
     const s = createGameState();
-    s.coins = 3;
+    s.cookies = 3;
     expect(buyHat(s, 'wool')).toBe(false);
-    expect(s.coins).toBe(3);
+    expect(s.cookies).toBe(3);
     expect(s.ownedHats.has('wool')).toBe(false);
     expect(s.hat).toBe('cap');
   });
 
   it('cambiar a un gorro conseguido no cuesta nada', () => {
     const s = createGameState();
-    s.coins = 4;
+    s.cookies = 4;
     expect(buyHat(s, 'none')).toBe(true);
     expect(s.hat).toBe('none');
     expect(buyHat(s, 'cap')).toBe(true);
     expect(s.hat).toBe('cap');
-    expect(s.coins).toBe(4);
+    expect(s.cookies).toBe(4);
   });
 
   it('no se puede poner un gorro no conseguido', () => {

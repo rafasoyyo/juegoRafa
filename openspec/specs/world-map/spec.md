@@ -54,18 +54,22 @@ bloqueado). Solo el mundo de los números SHALL estar disponible; los demás SHA
 - **WHEN** el niño toca un mundo que no es el de los números
 - **THEN** el botón tiembla y el mapa no cambia
 
-### Requirement: Monedas y acceso a mi personaje
-El mapa SHALL mostrar el contador de monedas con un icono de moneda y un botón con la cara del zorro
-que abre la pantalla de mi personaje.
+### Requirement: Galletas y acceso a mi personaje
+El mapa SHALL mostrar el contador de galletas con el icono de la galleta con pepitas de chocolate y un
+botón con la cara del zorro que abre la pantalla de mi personaje.
 
 #### Scenario: Ir a mi personaje
 - **WHEN** el niño toca el botón con la cara del zorro
 - **THEN** se abre la pantalla de mi personaje
 
+#### Scenario: Ver las galletas
+- **WHEN** el niño abre el mapa con 9 galletas
+- **THEN** arriba se ve una galleta con pepitas de chocolate junto al número 9
+
 ### Requirement: Progreso solo durante la sesión
-El progreso, las monedas y los gorros SHALL mantenerse mientras la aplicación siga abierta y MAY
+El progreso, las galletas y los gorros SHALL mantenerse mientras la aplicación siga abierta y MAY
 perderse al recargarla.
 
 #### Scenario: Recarga
 - **WHEN** se recarga la aplicación tras completar niveles
-- **THEN** el mapa vuelve al estado de primera partida
+- **THEN** el mapa vuelve al estado de primera partida, con 0 galletas

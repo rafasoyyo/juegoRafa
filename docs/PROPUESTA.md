@@ -28,7 +28,7 @@ Plataformas 2D de estilo vectorial plano y redondeado (la referencia inicial fue
 |---|---|---|
 | **Cantidad** | Contar 1-5, luego 1-10; subitizar (ver «3» sin contar) | «Golpea el bloque con 3 puntos» |
 | **Número** | Reconocer el símbolo 1-10 y asociarlo a la cantidad | Une el cartel «4» con la puerta de 4 puntos |
-| **Comparar** | Más / menos / igual, grande / pequeño | «Coge el montón con más monedas» |
+| **Comparar** | Más / menos / igual, grande / pequeño | «Coge el montón con más galletas» |
 | **Patrones** | Continuar secuencias de color o forma (ABAB) | Completa 🔴🔵🔴❓ saltando al color correcto |
 | **Formas y colores** | Círculo, cuadrado, triángulo; colores básicos | «Pisa solo los círculos» |
 | **Letras (fase 2)** | Reconocer vocales y la letra inicial por *sonido* | «¿Con qué letra empieza SOL?» (se oye la voz) |
@@ -37,14 +37,14 @@ Primera versión: **Cantidad, Número y Patrones**. Esto permite validar el jueg
 
 ### 1.3 Cómo se enseña dentro de la acción
 La respuesta se da **jugando**, no parando para un examen:
-- **Bloques «?»**: contienen cantidades. Golpear el correcto suelta monedas y abre el camino.
+- **Bloques «?»**: contienen cantidades. Golpear el correcto suelta galletas y abre el camino.
 - **Puertas/tubos**: piden una cantidad (puntos en el cartel). Se atraviesan al llevar esa cantidad.
 - **Enemigo**: no mata; si lo tocas, rebotas. Se «derrota» saltando sobre el que lleva el patrón o la cantidad correcta.
 - **Meta**: bandera al final, con celebración.
 
 ### 1.4 Pruebas y puntuación (sin presión)
 - **Estrellas 1 a 3 por nivel**, según aciertos al primer intento. Nunca 0: terminar siempre da al menos 1.
-- **Monedas**: se ganan por acertar y se gastan en cosméticos del personaje (sombreros, colores).
+- **Galletas** (con pepitas de chocolate): son el premio del juego; se ganan por acertar y se gastan en cosméticos del personaje (sombreros, colores).
 - **Sin vidas ni «game over»**. Un fallo = rebote suave + pista, y se reintenta.
 - **Pistas progresivas**: 1.er fallo, la voz repite la consigna; 2.º, la respuesta correcta brilla; 3.º, la mascota la señala.
 - **Mini-prueba al final de cada mundo** (el «castillo»): 5 retos cortos mezclados. Da una **medalla**, no una nota.
@@ -64,7 +64,7 @@ La respuesta se da **jugando**, no parando para un examen:
   - Derecha: **saltar** (botón enorme).
 - **Opción «autoavance»** (recomendada por defecto a los 4 años): el personaje avanza solo; el niño solo salta. Se cambia en el panel de padres.
 - **Salto tolerante**: *coyote time* y *input buffer* para que un toque un poco tarde o pronto funcione.
-- **HUD sin texto**: icono de la misión (dibujo + altavoz para repetir la voz), estrellas y monedas con iconos.
+- **HUD sin texto**: icono de la misión (dibujo + altavoz para repetir la voz), estrellas y galletas con iconos.
 - **Mascota** que habla y señala (voz grabada), en lugar de texto.
 - **Accesibilidad**: contraste alto, no depender solo del color, volumen separado de música/voz, sin parpadeos fuertes.
 - **Candado de adulto** para ajustes: «mantén pulsado 3 s» (sin pedir leer números).
@@ -99,7 +99,7 @@ juegoRafa/
 │   ├── learning/              TypeScript puro, sin Phaser ni Firebase
 │   │   ├── challenges/        generadores: contar, número, patrón, forma
 │   │   ├── adaptive.ts        sube/baja dificultad por habilidad
-│   │   ├── scoring.ts         estrellas, monedas, medallas
+│   │   ├── scoring.ts         estrellas, galletas, medallas
 │   │   └── spaced-review.ts   qué repetir y cuándo
 │   ├── data/                  Repositorios (Firebase): progreso, perfiles
 │   ├── i18n/                  claves de audio por idioma (es, va)
@@ -126,7 +126,7 @@ Regla: `learning/` no importa `phaser` ni `firebase`. Se prueba con Vitest, sin 
 families/{uid}                       uid del padre/madre (o anónimo)
   settings:   { idioma, limiteDiarioMin, autoavance, mundos[] }
   children/{childId}
-    profile:  { alias, avatar, cosmeticos: { sombrero, color } , monedas }
+    profile:  { alias, avatar, cosmeticos: { sombrero, color } , galletas }
     skills/{skillId}                 { nivelActual, racha, aciertos, fallos, ultimaVez }
     levels/{levelId}                 { estrellas, mejorTiempo, intentos }
     sessions/{date}                  { minutos, nivelesJugados }
@@ -162,7 +162,7 @@ Reglas de seguridad: solo el `uid` dueño lee/escribe `families/{uid}/**`. Sin l
 | **1. Prototipo jugable** | Personaje, un nivel con bloques «?» y bandera, salto con tolerancia | Tu hijo juega 2 min sin ayuda |
 | **2. Primer reto** | Bloques con cantidades, voz, pistas, estrellas | ¿Entiende la consigna sin leer? |
 | **3. Núcleo** | Auth anónima, progreso en Firestore, adaptación | Retomar donde lo dejó |
-| **4. Mundo 1 completo** | 6 niveles, mapa, monedas, cosméticos, prueba final | Sesiones de 10 min |
+| **4. Mundo 1 completo** | 6 niveles, mapa, galletas, cosméticos, prueba final | Sesiones de 10 min |
 | **5. Padres** | Candado, panel, límite de tiempo, idioma | Lo configuras tú |
 | **6. Ampliar** | Mundos 2 a 4, letras, formas | — |
 
@@ -178,7 +178,7 @@ La fase 1 y 2 deciden si el juego funciona. Se prueba con él lo antes posible.
 
 ## 6. Decisiones tomadas
 
-1. **Personaje:** al niño le gusta Mario Bros. Como se va a **publicar**, no se pueden usar Mario ni sus assets (propiedad de Nintendo). Se crea un **personaje original**: el **zorro** del lienzo de diseño, con gorros que se compran con monedas. Le acompaña **Lalo el búho**, mascota guía que dará las consignas con voz en la fase 2. Para uso privado en casa, un *skin* de Mario es un asunto distinto, pero no entra en el repositorio publicado.
+1. **Personaje:** al niño le gusta Mario Bros. Como se va a **publicar**, no se pueden usar Mario ni sus assets (propiedad de Nintendo). Se crea un **personaje original**: el **zorro** del lienzo de diseño, con gorros que se compran con galletas. Le acompaña **Lalo el búho**, mascota guía que dará las consignas con voz en la fase 2. Para uso privado en casa, un *skin* de Mario es un asunto distinto, pero no entra en el repositorio publicado.
 2. **Control manual** de movimiento (izquierda, derecha, saltar). El autoavance se queda como opción en el panel de padres.
 3. **Idiomas de voz:** español e inglés. Las claves de audio van por idioma (`audio/es`, `audio/en`).
 4. **Se publicará.** Hay que cumplir normativa de menores desde el principio (ver 7).

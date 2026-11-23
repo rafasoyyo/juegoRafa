@@ -4,13 +4,13 @@ import { buyHat, HAT_PRICES, HATS, session, type HatId } from '../state';
 import { drawFox, hatTexture } from '../ui/characters';
 import { digits, fitImage, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
-import { coinCounter } from '../ui/widgets';
+import { cookieCounter } from '../ui/widgets';
 
 const PANEL = { x: 28, y: 28, w: 400, h: 664, groundTop: 530 };
 const COL_X = PANEL.x + PANEL.w + 32;
 const SHADOW = 0xd9cfe0;
 
-/** Mi personaje: escaparate del zorro y rejilla de gorros que se compran con monedas. */
+/** Mi personaje: escaparate del zorro y rejilla de gorros que se compran con galletas. */
 export class WardrobeScene extends Phaser.Scene {
   constructor() {
     super('Wardrobe');
@@ -37,7 +37,7 @@ export class WardrobeScene extends Phaser.Scene {
     const fox = drawFox(this, PANEL.x + PANEL.w / 2, PANEL.y + PANEL.groundTop + 14, 'idle', session.hat, 320);
     this.tweens.add({ targets: fox, scaleY: 1.025, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
-    // Arriba: volver y monedas.
+    // Arriba: volver y galletas.
     new RoundButton(this, COL_X + 48, 28 + 48, {
       width: 96,
       color: COLORS.white,
@@ -46,7 +46,7 @@ export class WardrobeScene extends Phaser.Scene {
       iconSize: 50,
       onTap: () => goTo(this, 'Map'),
     });
-    const counter = coinCounter(this, 0, 28 + 48, session.coins, SHADOW);
+    const counter = cookieCounter(this, 0, 28 + 48, session.cookies, SHADOW);
     counter.container.x = width - 28 - counter.width / 2;
 
     this.buildCategories();
@@ -127,9 +127,9 @@ export class WardrobeScene extends Phaser.Scene {
         const pill = this.add.graphics();
         pill.fillStyle(COLORS.white).fillRoundedRect(-pw / 2, cellH / 2 - 14 - ph, pw, ph, ph / 2);
         const py = cellH / 2 - 14 - ph / 2;
-        const coin = fitImage(this.add.image(-24, py, 'coin'), 30);
+        const cookie = fitImage(this.add.image(-24, py, 'cookie'), 30);
         const price = digits(this, 16, py + 1, String(HAT_PRICES[hat]), 30);
-        cell.addContent(pill, coin, price);
+        cell.addContent(pill, cookie, price);
       }
     });
   }

@@ -1,7 +1,7 @@
 # level-complete Specification
 
 ## Purpose
-Celebrar el final de cada nivel sin presión: el niño ve cuántas estrellas y monedas ha ganado y elige
+Celebrar el final de cada nivel sin presión: el niño ve cuántas estrellas y galletas ha ganado y elige
 con un toque si sigue, repite o vuelve al mapa.
 
 ## Requirements
@@ -31,13 +31,17 @@ llegar, otra por golpear al menos la mitad de los bloques «?» y otra por golpe
 - **WHEN** el niño repite un nivel que ya tenía con 3 estrellas y esta vez consigue 1
 - **THEN** el mapa sigue mostrando 3 estrellas en ese nivel
 
-### Requirement: Monedas ganadas
-La tarjeta SHALL mostrar las monedas recogidas en el nivel con el icono de moneda y un número, y esas
-monedas SHALL sumarse al total del niño.
+### Requirement: Galletas ganadas
+La tarjeta SHALL mostrar las galletas recogidas en el nivel con el icono de la galleta con pepitas de
+chocolate y un número, y esas galletas SHALL sumarse al total del niño.
 
-#### Scenario: Suma de monedas
-- **WHEN** el niño tenía 5 monedas y termina un nivel recogiendo 4
-- **THEN** la tarjeta muestra 4 monedas y el mapa muestra 9
+#### Scenario: Suma de galletas
+- **WHEN** el niño tenía 5 galletas y termina un nivel recogiendo 4
+- **THEN** la tarjeta muestra 4 galletas y el mapa muestra 9
+
+#### Scenario: Nivel sin galletas
+- **WHEN** el niño termina un nivel sin golpear ningún bloque «?»
+- **THEN** la tarjeta muestra la galleta con el número 0 y su total no cambia
 
 ### Requirement: Tres caminos tras la celebración
 La pantalla SHALL ofrecer tres botones sin texto: mapa (icono de mapa), siguiente nivel (flecha, el más
@@ -50,7 +54,7 @@ llevar al mapa.
 
 #### Scenario: Repetir
 - **WHEN** el niño toca la flecha circular
-- **THEN** el mismo nivel empieza de nuevo con el contador de monedas del nivel a cero
+- **THEN** el mismo nivel empieza de nuevo con el contador de galletas del nivel a cero
 
 #### Scenario: Volver al mapa
 - **WHEN** el niño toca el icono de mapa
