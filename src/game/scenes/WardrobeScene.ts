@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
+import { saveActive } from '../profile/active';
 import { buyHat, HAT_PRICES, HATS, session, type HatId } from '../state';
 import { drawFox, hatTexture } from '../ui/characters';
 import { digits, fitImage, RoundButton } from '../ui/round-button';
@@ -139,6 +140,7 @@ export class WardrobeScene extends Phaser.Scene {
   private choose(hat: HatId, cell: RoundButton): void {
     const isNew = !session.ownedHats.has(hat);
     if (buyHat(session, hat)) {
+      saveActive();
       if (isNew) audio.sfx('prize');
       this.rebuild();
     } else cell.shake();

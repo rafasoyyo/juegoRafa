@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
 import { COLORS, MAX_W } from '../config';
+import { savedProfiles } from '../profile/active';
 import { session } from '../state';
 import { drawFox } from '../ui/characters';
 import { RoundButton } from '../ui/round-button';
@@ -9,7 +10,7 @@ import { addClouds, addSky, drawGround, drawHills } from '../ui/widgets';
 
 const GROUND_TOP = 600;
 
-/** Pantalla de inicio: el zorro y un botón grande de jugar. Cualquier toque abre el mapa. */
+/** Pantalla de inicio: el zorro y un botón grande de jugar. Cualquier toque abre la elección de perfil. */
 export class TitleScene extends Phaser.Scene {
   constructor() {
     super('Title');
@@ -55,7 +56,7 @@ export class TitleScene extends Phaser.Scene {
     unlockAudio(this);
     audio.start();
     audio.playMusic('map');
-    goTo(this, 'Map');
+    goTo(this, savedProfiles().length > 0 ? 'Profiles' : 'NewProfile');
   }
 }
 

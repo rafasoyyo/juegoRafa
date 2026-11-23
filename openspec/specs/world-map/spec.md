@@ -8,11 +8,16 @@ entra a personalizar su zorro, sin tener que leer nada.
 
 ### Requirement: Pantalla de inicio
 Al abrir la aplicación el juego SHALL mostrar una pantalla con el zorro y un botón grande de jugar, y
-SHALL ir al mapa al primer toque en cualquier punto de la pantalla.
+SHALL pasar al primer toque en cualquier punto de la pantalla a la pantalla de perfil (elegir o crear
+el perfil del niño); una vez elegido o creado el perfil, SHALL abrir el mapa con su progreso.
 
 #### Scenario: Primer toque
 - **WHEN** el niño toca la pantalla de inicio
-- **THEN** se abre el mapa del mundo y, desde ese momento, el juego puede reproducir sonido también en iOS
+- **THEN** se abre la pantalla de perfil y, desde ese momento, el juego puede reproducir sonido también en iOS
+
+#### Scenario: Del perfil al mapa
+- **WHEN** el niño elige un perfil guardado o acepta uno nuevo
+- **THEN** se abre el mapa del mundo con el progreso de ese perfil
 
 ### Requirement: Niveles del mundo en un camino
 El mapa SHALL mostrar 6 niveles unidos por un camino, numerados del 1 al 6 con dígitos grandes, el

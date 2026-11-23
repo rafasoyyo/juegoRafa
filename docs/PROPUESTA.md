@@ -120,6 +120,7 @@ Regla: `learning/` no importa `phaser` ni `firebase`. Se prueba con Vitest, sin 
 - **Cuenta de padre/madre opcional** (email por enlace, sin contraseña) para **vincular** el progreso (`linkWithCredential`) y no perderlo al cambiar de tablet o limpiar el navegador.
 - **Varios niños por familia**: un perfil por niño (nombre o avatar), no un usuario por niño.
 - **Privacidad:** no se recoge nada del menor más allá de progreso y avatar. Esto importa por RGPD y el artículo 8 (menores de 14 años en España) → ver 5.
+- **Perfil local (implementado):** la pantalla de bienvenida pide un alias (puede ser un apodo, no hace falta el nombre real) y una edad; con ellos se crea el id del perfil (`alias-edad`, p. ej. `lucia-5`) y el progreso se guarda en el `localStorage` del navegador. Mientras no exista Firebase, alias y edad no salen del dispositivo; al sincronizar (fase 3) habrá que revisarlo con el consentimiento del tutor.
 
 ### 3.4 Modelo de datos (Firestore)
 ```
@@ -189,7 +190,7 @@ La fase 1 y 2 deciden si el juego funciona. Se prueba con él lo antes posible.
 - **Sin publicidad** ni analítica con identificadores personales. Analytics solo con datos agregados, o desactivada.
 - **Consentimiento verificable del tutor** antes de guardar datos del niño (RGPD, art. 8 en España: menores de 14; COPPA en EE. UU. al ofrecerlo en inglés: menores de 13). La cuenta es del adulto; el niño solo tiene un perfil con alias y avatar.
 - **Política de privacidad** clara, con derecho a borrar todos los datos desde el panel de padres.
-- **Datos mínimos:** alias, avatar y progreso. Nada de nombre real, foto, ubicación ni audio.
+- **Datos mínimos:** alias (puede ser un apodo), edad, avatar y progreso. Nada de nombre real obligatorio, foto, ubicación ni audio. Hoy alias y edad solo viven en el `localStorage` del dispositivo.
 - **Sin enlaces externos ni chat** dentro del juego infantil.
 - **Licencias de todos los assets** documentadas (arte, música, efectos, voces TTS: revisar términos del proveedor para uso comercial).
 - **Tiendas:** si se publica en App Store o Google Play (no solo web), exigen cumplir sus políticas para apps infantiles.

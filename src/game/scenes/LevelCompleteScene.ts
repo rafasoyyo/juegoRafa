@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
 import { starsFor, type Stars } from '../../learning/scoring';
+import { saveActive } from '../profile/active';
 import { completeLevel, LEVEL_COUNT, session } from '../state';
 import { drawFox } from '../ui/characters';
 import { digits, fitImage, RoundButton } from '../ui/round-button';
@@ -46,6 +47,7 @@ export class LevelCompleteScene extends Phaser.Scene {
     // Se guarda una sola vez al llegar, no en cada recolocación.
     this.stars = starsFor(this.result.blocksHit, this.result.blocksTotal);
     completeLevel(session, this.result.level, this.stars, this.result.cookies);
+    saveActive();
 
     enter(this);
     this.build(this.scale.width, true);
