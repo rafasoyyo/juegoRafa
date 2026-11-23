@@ -1,5 +1,9 @@
 import Phaser from 'phaser';
 import { COLORS, GAME_H, MAX_W } from '../config';
+import { layoutEnemies } from '../enemies/enemy-layout';
+import { overlaps } from '../enemies/enemy-motion';
+import { createEnemyView, type EnemyView } from '../enemies/enemy-views';
+import { BLOCK_SIZE, BLOCKS, FLAG_X, GROUND_TOP, SCALE, START_X, WORLD_W } from '../level-course';
 import { LEVEL_COUNT, session } from '../state';
 import { drawLalo, FOX_UNITS, makeHat, placeHat, type FoxPose } from '../ui/characters';
 import { RoundButton } from '../ui/round-button';
@@ -22,19 +26,6 @@ import {
 import { enter, goTo, onResize } from '../ui/transition';
 import { addClouds, addSky, bump, cookieCounter, drawGround, drawHills, fixToCamera, type CookieCounter } from '../ui/widgets';
 
-// Recorrido y físicas de la fase 0 escalados ×3,2 (de 225 a 720 px de alto).
-const SCALE = 3.2;
-const WORLD_W = 1600 * SCALE;
-const GROUND_TOP = 620;
-const START_X = 150 * SCALE;
-const FLAG_X = WORLD_W - 100 * SCALE;
-const BLOCK_SIZE = 84;
-/** Posiciones x de los bloques «?» (datos del nivel hasta los niveles en JSON de la fase 4). */
-const BLOCKS: readonly { x: number; high: boolean }[] = [220, 252, 284, 620, 652, 900, 932, 964, 1000, 1240].map((x) => ({
-  x: Math.round(x * SCALE),
-  high: x > 800 && x < 1100,
-}));
-
 const RUN_SPEED = 110 * SCALE;
 const JUMP_SPEED = 330 * SCALE;
 const VARIABLE_JUMP_MIN = 140 * SCALE;
@@ -54,6 +45,14 @@ const RUN_LEAN_DEG = 10;
 const DUST_POOL = 6;
 const DUST_EVERY_MS = 90;
 const DUST_LIFE_MS = 350;
+
+/** Rebote al tocar un enemigo: sin control, protegido (parpadeando) y ritmo del parpadeo. */
+const KNOCK_MS = 300;
+const PROTECT_MS = 1000;
+const BLINK_MS = 80;
+const BLINK_ALPHA = 0.35;
+const KNOCK_VX = 0.9 * RUN_SPEED;
+const KNOCK_VY = 0.55 * JUMP_SPEED;
 
 interface LevelData {
   level?: number;
@@ -85,6 +84,10 @@ export class LevelScene extends Phaser.Scene {
   private legs!: Phaser.GameObjects.Graphics;
   private dust: Phaser.GameObjects.Image[] = [];
   private nextDustAt = 0;
+  private enemies: EnemyView[] = [];
+  private knockUntil = -Infinity;
+  private protectedUntil = -Infinity;
+  private hitAt = -Infinity;
 
   private home!: RoundButton;
   private progress!: { container: Phaser.GameObjects.Container; fill: Phaser.GameObjects.Graphics; face: Phaser.GameObjects.Image; barW: number };
@@ -110,6 +113,10 @@ export class LevelScene extends Phaser.Scene {
     this.run = initialRun();
     this.dust = [];
     this.nextDustAt = 0;
+    this.enemies = [];
+    this.knockUntil = -Infinity;
+    this.protectedUntil = -Infinity;
+    this.hitAt = -Infinity;
   }
 
   create(): void {
@@ -123,6 +130,7 @@ export class LevelScene extends Phaser.Scene {
     const blocks = this.buildBlocks();
     this.buildFox();
     this.buildGoal();
+    this.buildEnemies();
 
     this.physics.add.collider(this.fox, ground);
     this.physics.add.collider(this.fox, blocks, (_f, block) => this.onBlockCollision(block as Phaser.Physics.Arcade.Image));
@@ -139,6 +147,7 @@ export class LevelScene extends Phaser.Scene {
   override update(time: number, delta: number): void {
     const body = this.fox.body;
     const grounded = body.blocked.down || body.touching.down;
+    for (const enemy of this.enemies) enemy.update(time);
 
     if (this.finished) {
       this.fox.setVelocityX(0);
@@ -153,11 +162,13 @@ export class LevelScene extends Phaser.Scene {
     const input = this.controls.read();
     if (grounded) this.lastGrounded = time;
 
-    const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-    this.fox.setVelocityX(dir * RUN_SPEED);
+    // Durante el rebote se ignoran las flechas y el salto: si no, volvería a chocar.
+    const knocked = time < this.knockUntil;
+    const dir = knocked ? 0 : (input.right ? 1 : 0) - (input.left ? 1 : 0);
+    if (!knocked) this.fox.setVelocityX(dir * RUN_SPEED);
     if (dir !== 0) this.faceLeft = dir < 0;
 
-    if (input.jump && !this.prevJump) this.jumpBufferedAt = time;
+    if (input.jump && !this.prevJump && !knocked) this.jumpBufferedAt = time;
     this.prevJump = input.jump;
 
     const wantsJump = time - this.jumpBufferedAt <= BUFFER_MS;
@@ -167,9 +178,10 @@ export class LevelScene extends Phaser.Scene {
       this.jumpBufferedAt = -Infinity;
       this.lastGrounded = -Infinity;
     }
-    // Salto variable: soltar pronto = salto más corto.
-    if (!input.jump && body.velocity.y < -VARIABLE_JUMP_MIN) this.fox.setVelocityY(body.velocity.y * 0.6);
+    // Salto variable: soltar pronto = salto más corto (no recorta el saltito del rebote).
+    if (!knocked && !input.jump && body.velocity.y < -VARIABLE_JUMP_MIN) this.fox.setVelocityY(body.velocity.y * 0.6);
 
+    this.checkEnemies(time);
     this.animateFox(time, delta, grounded, dir);
     this.updateProgress();
   }
@@ -226,6 +238,46 @@ export class LevelScene extends Phaser.Scene {
       this.puffDust(dirSign);
       this.nextDustAt = time + DUST_EVERY_MS;
     }
+    this.blinkFox(time);
+  }
+
+  /** Parpadeo del zorro (con gorro y piernas) mientras está protegido tras chocar. */
+  private blinkFox(time: number): void {
+    const blinking = !this.finished && time < this.protectedUntil;
+    const alpha = blinking && Math.floor((time - this.hitAt) / BLINK_MS) % 2 === 0 ? BLINK_ALPHA : 1;
+    this.fox.setAlpha(alpha);
+    this.hat.setAlpha(alpha);
+    this.legs.setAlpha(alpha);
+  }
+
+  /** Enemigos al azar en zonas seguras; cambian cada vez que se entra en el nivel. */
+  private buildEnemies(): void {
+    const course = { startX: START_X, flagX: FLAG_X, blocks: BLOCKS.map((b) => ({ x: b.x, width: BLOCK_SIZE })) };
+    this.enemies = layoutEnemies(this.level, course).map((spawn) => createEnemyView(this, spawn, GROUND_TOP));
+    for (const enemy of this.enemies) enemy.update(this.time.now);
+  }
+
+  /** Los enemigos no se tocan: cualquier contacto, también desde arriba, es un rebote suave. */
+  private checkEnemies(time: number): void {
+    if (time < this.protectedUntil) return;
+    const body = this.fox.body;
+    const fox = { x: body.x, y: body.y, w: body.width, h: body.height };
+    const enemy = this.enemies.find((e) => overlaps(fox, e.box()));
+    if (enemy) this.onEnemyHit(enemy, time);
+  }
+
+  /** Rebote sin penalización: no toca galletas, bloques ni estrellas. */
+  private onEnemyHit(enemy: EnemyView, time: number): void {
+    const box = enemy.box();
+    let side = Math.sign(this.fox.x - (box.x + box.w / 2));
+    if (side === 0) side = this.faceLeft ? 1 : -1;
+    this.fox.setVelocity(side * KNOCK_VX, -KNOCK_VY);
+    this.knockUntil = time + KNOCK_MS;
+    this.protectedUntil = time + PROTECT_MS;
+    this.hitAt = time;
+    this.jumpBufferedAt = -Infinity;
+    this.lastGrounded = -Infinity;
+    enemy.gesture();
   }
 
   private squashFox(amount: number): void {

@@ -21,6 +21,8 @@ Licencia: la del repositorio.
 
 | Archivo | Origen |
 |---|---|
+| `svg/bee-wing.svg` | derivado: ala de la abeja, blanca semitransparente, en la paleta del lienzo |
+| `svg/bee.svg` | derivado: abeja zumbona propia (enemigo), en la paleta y el estilo del lienzo |
 | `svg/block-used.svg` | derivado de los bloques del lienzo («?» y bloque usado) |
 | `svg/block.svg` | derivado de los bloques del lienzo («?» y bloque usado) |
 | `svg/cloud.svg` | lienzo de diseño |
@@ -35,6 +37,7 @@ Licencia: la del repositorio.
 | `svg/hat-helmet.svg` | lienzo de diseño |
 | `svg/hat-party.svg` | lienzo de diseño |
 | `svg/hat-wool.svg` | lienzo de diseño |
+| `svg/hedgehog.svg` | derivado: erizo de pinchos propio (enemigo), en la paleta y el estilo del lienzo |
 | `svg/icon-arrow-left.svg` | flechas del lienzo |
 | `svg/icon-arrow-right.svg` | flechas del lienzo |
 | `svg/icon-arrow-up-white.svg` | flechas del lienzo |
