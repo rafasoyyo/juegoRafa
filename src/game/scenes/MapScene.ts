@@ -3,7 +3,7 @@ import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
 import { currentLevel, LEVEL_COUNT, levelStatus, session } from '../state';
 import { drawFox, drawLalo } from '../ui/characters';
-import { fitImage, RoundButton } from '../ui/round-button';
+import { RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
 import { cookieCounter } from '../ui/widgets';
 
@@ -75,24 +75,8 @@ export class MapScene extends Phaser.Scene {
       iconSize: 64,
       onTap: () => goTo(this, 'Wardrobe'),
     });
-    this.buildMuteButton(width - 32 - 48 - 96 - 16, 76);
 
     this.buildWorldSelector(width);
-  }
-
-  /** Silencio total: altavoz normal o tachado (la forma cambia, no solo el color). */
-  private buildMuteButton(x: number, y: number): void {
-    const iconKey = (): string => (audio.muted ? 'icon-speaker-off' : 'icon-speaker');
-    const icon = fitImage(this.add.image(0, 0, iconKey()), 52);
-    new RoundButton(this, x, y, {
-      width: 96,
-      color: COLORS.white,
-      shadowColor: COLORS.shadow,
-      onTap: () => {
-        audio.setMuted(!audio.muted);
-        fitImage(icon.setTexture(iconKey()), 52);
-      },
-    }).addContent(icon);
   }
 
   private drawPath(points: Phaser.Math.Vector2[]): void {

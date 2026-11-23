@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
+import { audio } from '../audio/audio-engine';
 import { COLORS } from '../config';
 import type { HatId } from '../state';
-import { RoundButton } from './round-button';
+import { fitImage, RoundButton } from './round-button';
 
 export type FoxPose = 'idle' | 'run' | 'jump' | 'celebrate';
 
@@ -90,7 +91,8 @@ export function drawFox(scene: Phaser.Scene, x: number, y: number, pose: FoxPose
 
 /**
  * Lalo el búho con su botón de altavoz. Tocar a Lalo o el altavoz le hace saltar y parpadear.
- * Hasta la fase 2 no suena nada. (x, y) es la esquina superior izquierda.
+ * El altavoz es el único control de silencio total del juego: normal o tachado según `audio.muted`.
+ * (x, y) es la esquina superior izquierda.
  */
 export function drawLalo(scene: Phaser.Scene, x: number, y: number): Phaser.GameObjects.Container {
   const lalo = scene.add.image(0, 0, 'lalo').setOrigin(0, 0);
@@ -118,14 +120,18 @@ export function drawLalo(scene: Phaser.Scene, x: number, y: number): Phaser.Game
     });
   };
 
+  const speakerKey = (): string => (audio.muted ? 'icon-speaker-off' : 'icon-speaker');
+  const speakerIcon = fitImage(scene.add.image(0, 0, speakerKey()), 50);
   const speaker = new RoundButton(scene, lalo.width + 12 + 48, 50, {
     width: 96,
     color: COLORS.purpleSoft,
     shadowColor: 0xcabcf0,
-    icon: 'icon-speaker',
-    iconSize: 50,
-    onTap: react,
-  });
+    onTap: () => {
+      audio.setMuted(!audio.muted);
+      fitImage(speakerIcon.setTexture(speakerKey()), 50);
+      react();
+    },
+  }).addContent(speakerIcon);
   lalo.setInteractive({ useHandCursor: true }).on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, react);
   container.add([lalo, speaker]);
 
