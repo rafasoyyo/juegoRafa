@@ -1,0 +1,112 @@
+import { describe, expect, it } from 'vitest';
+import { buyHat, canPlay, completeLevel, createGameState, currentLevel, HAT_PRICES, levelStatus, wearHat } from './state';
+
+describe('mapa del mundo', () => {
+  it('en la primera partida el 1 es el actual y del 2 al 6 están bloqueados', () => {
+    const s = createGameState();
+    expect(levelStatus(s, 1)).toBe('current');
+    for (let l = 2; l <= 6; l++) expect(levelStatus(s, l)).toBe('locked');
+  });
+
+  it('tras completar 1 (3★) y 2 (2★) el 3 es el actual', () => {
+    const s = createGameState();
+    completeLevel(s, 1, 3, 0);
+    completeLevel(s, 2, 2, 0);
+    expect(levelStatus(s, 1)).toBe('done');
+    expect(levelStatus(s, 2)).toBe('done');
+    expect(s.stars.get(1)).toBe(3);
+    expect(s.stars.get(2)).toBe(2);
+    expect(levelStatus(s, 3)).toBe('current');
+    expect(currentLevel(s)).toBe(3);
+    for (let l = 4; l <= 6; l++) expect(levelStatus(s, l)).toBe('locked');
+  });
+
+  it('solo se pueden jugar los hechos y el actual', () => {
+    const s = createGameState();
+    completeLevel(s, 1, 1, 0);
+    expect(canPlay(s, 1)).toBe(true);
+    expect(canPlay(s, 2)).toBe(true);
+    expect(canPlay(s, 3)).toBe(false);
+  });
+
+  it('con todos los niveles hechos no hay nivel actual', () => {
+    const s = createGameState();
+    for (let l = 1; l <= 6; l++) completeLevel(s, l, 1, 0);
+    expect(currentLevel(s)).toBeNull();
+  });
+
+  it('cada partida nueva empieza desde cero', () => {
+    const a = createGameState();
+    completeLevel(a, 1, 3, 5);
+    const b = createGameState();
+    expect(levelStatus(b, 1)).toBe('current');
+    expect(b.coins).toBe(0);
+  });
+});
+
+describe('nivel completado', () => {
+  it('mantiene la mejor puntuación en estrellas', () => {
+    const s = createGameState();
+    completeLevel(s, 1, 3, 0);
+    completeLevel(s, 1, 1, 0);
+    expect(s.stars.get(1)).toBe(3);
+  });
+
+  it('suma las monedas: 5 + 4 = 9', () => {
+    const s = createGameState();
+    s.coins = 5;
+    completeLevel(s, 1, 2, 4);
+    expect(s.coins).toBe(9);
+  });
+
+  it('nunca guarda 0 estrellas', () => {
+    const s = createGameState();
+    completeLevel(s, 1, 0, 0);
+    expect(s.stars.get(1)).toBe(1);
+  });
+});
+
+describe('mi personaje', () => {
+  it('empieza con la gorra azul puesta y «sin gorro» conseguido', () => {
+    const s = createGameState();
+    expect(s.hat).toBe('cap');
+    expect(s.ownedHats.has('cap')).toBe(true);
+    expect(s.ownedHats.has('none')).toBe(true);
+    expect(s.ownedHats.size).toBe(2);
+  });
+
+  it('con 12 monedas compra un gorro de 10 y le quedan 2', () => {
+    const s = createGameState();
+    s.coins = 12;
+    expect(HAT_PRICES.wool).toBe(10);
+    expect(buyHat(s, 'wool')).toBe(true);
+    expect(s.coins).toBe(2);
+    expect(s.ownedHats.has('wool')).toBe(true);
+    expect(s.hat).toBe('wool');
+  });
+
+  it('con 3 monedas no puede comprar un gorro de 10 y nada cambia', () => {
+    const s = createGameState();
+    s.coins = 3;
+    expect(buyHat(s, 'wool')).toBe(false);
+    expect(s.coins).toBe(3);
+    expect(s.ownedHats.has('wool')).toBe(false);
+    expect(s.hat).toBe('cap');
+  });
+
+  it('cambiar a un gorro conseguido no cuesta nada', () => {
+    const s = createGameState();
+    s.coins = 4;
+    expect(buyHat(s, 'none')).toBe(true);
+    expect(s.hat).toBe('none');
+    expect(buyHat(s, 'cap')).toBe(true);
+    expect(s.hat).toBe('cap');
+    expect(s.coins).toBe(4);
+  });
+
+  it('no se puede poner un gorro no conseguido', () => {
+    const s = createGameState();
+    expect(wearHat(s, 'crown')).toBe(false);
+    expect(s.hat).toBe('cap');
+  });
+});

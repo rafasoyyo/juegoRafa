@@ -1,11 +1,11 @@
 # juegoRafa — Propuesta técnica y educativa
 
-Plataformas 2D de estética pixel art (referencia: la imagen de Super Mario Bros.) para niños de 4 a 6 años que aún no leen ni suman. Móvil y táctil primero, instalable como PWA, con Firebase como backend.
+Plataformas 2D de estilo vectorial plano y redondeado (la referencia inicial fue la imagen de Super Mario Bros.; el estilo final está en el lienzo de diseño «Juego educativo - diseños») para niños de 4 a 6 años que aún no leen ni suman. Móvil y táctil primero, instalable como PWA, con Firebase como backend.
 
 ## 0. Qué tomamos de la referencia (y qué no)
 
 **Sí:** la gramática del género, que un niño ya entiende sin explicación.
-- Pixel art de baja resolución con paleta plana y cielo azul.
+- Paleta plana y cielo azul (en estilo vectorial redondeado, no en pixel art: ver 3.6).
 - Bloques «?» que se golpean desde abajo y sueltan algo.
 - Ladrillos, tubos, nubes, colinas y arbustos de fondo.
 - Un enemigo simple que patrulla el suelo.
@@ -58,7 +58,7 @@ La respuesta se da **jugando**, no parando para un examen:
 
 ## 2. Propuesta de interfaz y control (móvil táctil)
 
-- **Horizontal fijo**, tamaño base 400×225 px lógicos, escalado con *integer scaling* para píxeles nítidos.
+- **Horizontal fijo**, 720 px lógicos de alto y ancho adaptado a la pantalla (de 4:3 a 21:9), sin bandas.
 - **Dos controles** (zonas grandes ≥ 96 px):
   - Izquierda: **mover** con botón de flecha derecha «mantener para andar» (solo se avanza; no hace falta retroceder).
   - Derecha: **saltar** (botón enorme).
@@ -77,7 +77,7 @@ La respuesta se da **jugando**, no parando para un examen:
 | Motor | **Phaser 3** + **TypeScript** | Plataformas 2D, físicas arcade, tilemaps, audio, táctil. El más probado en web. |
 | Build | **Vite** | Arranque rápido, `base` simple para Hosting. |
 | Niveles | **Tiled** (JSON) | Editor visual gratuito; Phaser lo carga directo. |
-| Arte | Pixel art 16×16 (tiles) y 16×32 (personaje) | Fiel al estilo de la imagen y barato de producir. |
+| Arte | SVG propios en estilo vectorial plano y redondeado; tipografía Baloo 2 (OFL) local | Sale del lienzo de diseño, se ve nítido a cualquier tamaño y atrae más a 4-6 años. |
 | Estado de UI | Capa propia ligera (Phaser scenes) | No hace falta framework web para un juego. |
 | Hosting | **Firebase Hosting** | Ya decidido; CDN, HTTPS, PWA. |
 | Auth | **Firebase Auth** | Ver 3.3. |
@@ -144,7 +144,7 @@ Reglas de seguridad: solo el `uid` dueño lee/escribe `families/{uid}/**`. Sin l
 - Música y efectos con **Web Audio** (Phaser), con tres controles de volumen: música, efectos, voz.
 
 ### 3.6 Rendimiento en móvil
-- `pixelArt: true`, resolución lógica baja y escalado entero: rápido incluso en tablets antiguas.
+- SVG rasterizados una vez al tamaño de uso y 720 px lógicos de alto: nítido y ligero también en tablets antiguas.
 - Texture atlas por mundo, carga diferida por escena.
 - Objetivo: 60 fps, primera carga < 3 MB, shell offline con service worker.
 - Bloqueo de zoom, selección de texto y *pull-to-refresh*; `screen.orientation.lock('landscape')` donde exista, con aviso visual de «gira el móvil» donde no.
@@ -178,7 +178,7 @@ La fase 1 y 2 deciden si el juego funciona. Se prueba con él lo antes posible.
 
 ## 6. Decisiones tomadas
 
-1. **Personaje:** al niño le gusta Mario Bros. Como se va a **publicar**, no se pueden usar Mario ni sus assets (propiedad de Nintendo). Se crea un **personaje original con la misma sensación**: gorra y mono de colores, salto característico, bloques «?». Nombre y diseño por decidir. Para uso privado en casa, un *skin* de Mario es un asunto distinto, pero no entra en el repositorio publicado.
+1. **Personaje:** al niño le gusta Mario Bros. Como se va a **publicar**, no se pueden usar Mario ni sus assets (propiedad de Nintendo). Se crea un **personaje original**: el **zorro** del lienzo de diseño, con gorros que se compran con monedas. Le acompaña **Lalo el búho**, mascota guía que dará las consignas con voz en la fase 2. Para uso privado en casa, un *skin* de Mario es un asunto distinto, pero no entra en el repositorio publicado.
 2. **Control manual** de movimiento (izquierda, derecha, saltar). El autoavance se queda como opción en el panel de padres.
 3. **Idiomas de voz:** español e inglés. Las claves de audio van por idioma (`audio/es`, `audio/en`).
 4. **Se publicará.** Hay que cumplir normativa de menores desde el principio (ver 7).

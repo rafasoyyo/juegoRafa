@@ -1,4 +1,7 @@
 import Phaser from 'phaser';
+import { COLORS } from '../config';
+import { RoundButton } from './round-button';
+import { fixToCamera } from './widgets';
 
 export interface ControlState {
   left: boolean;
@@ -13,39 +16,82 @@ interface Zone {
   h: number;
 }
 
+const MOVE_SIZE = 120;
+const JUMP_SIZE = 168;
+const MARGIN = 40;
+const GAP = 24;
+
 /**
  * Controles táctiles (izquierda, derecha, saltar) + teclado para probar en escritorio.
- * Zonas grandes y generosas: se detecta el dedo por posición, no por el sprite del botón,
- * así un toque ligeramente desviado sigue contando.
+ * Zonas grandes y generosas: se detecta el dedo por posición, no por el botón dibujado,
+ * así un toque ligeramente desviado sigue contando. El botón activo se ve hundido.
  */
 export class TouchControls {
-  private readonly zones: Record<keyof ControlState, Zone>;
+  private zones!: Record<keyof ControlState, Zone>;
   private readonly cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
   private readonly keyA: Phaser.Input.Keyboard.Key | undefined;
   private readonly keyD: Phaser.Input.Keyboard.Key | undefined;
   private readonly keyW: Phaser.Input.Keyboard.Key | undefined;
-  private readonly buttons: Phaser.GameObjects.Image[] = [];
+  private readonly buttons: Record<keyof ControlState, RoundButton>;
 
-  constructor(private readonly scene: Phaser.Scene, width: number, height: number) {
-    this.zones = {
-      left: { x: 0, y: height * 0.45, w: width * 0.17, h: height * 0.55 },
-      right: { x: width * 0.17, y: height * 0.45, w: width * 0.17, h: height * 0.55 },
-      jump: { x: width * 0.66, y: height * 0.35, w: width * 0.34, h: height * 0.65 },
-    };
-
+  constructor(private readonly scene: Phaser.Scene) {
     const kb = scene.input.keyboard;
     this.cursors = kb?.createCursorKeys();
     this.keyA = kb?.addKey(Phaser.Input.Keyboard.KeyCodes.A);
     this.keyD = kb?.addKey(Phaser.Input.Keyboard.KeyCodes.D);
     this.keyW = kb?.addKey(Phaser.Input.Keyboard.KeyCodes.W);
 
-    this.drawButtons(width, height);
+    const move = (icon: string): RoundButton =>
+      new RoundButton(scene, 0, 0, {
+        width: MOVE_SIZE,
+        color: COLORS.white,
+        shadowColor: COLORS.shadow,
+        shadowDepth: 8,
+        icon,
+        iconSize: 56,
+        interactive: false,
+      });
+    this.buttons = {
+      left: move('icon-arrow-left'),
+      right: move('icon-arrow-right'),
+      jump: new RoundButton(scene, 0, 0, {
+        width: JUMP_SIZE,
+        color: COLORS.coral,
+        shadowColor: COLORS.coralDark,
+        shadowDepth: 10,
+        icon: 'icon-arrow-up-white',
+        iconSize: 84,
+        interactive: false,
+      }),
+    };
+    for (const b of Object.values(this.buttons)) fixToCamera(b.setDepth(100));
+    this.layout(scene.scale.width, scene.scale.height);
+  }
+
+  /** Recoloca botones y zonas al cambiar el ancho lógico. */
+  layout(width: number, height: number): void {
+    const moveY = height - MARGIN - 10 - MOVE_SIZE / 2;
+    const leftX = MARGIN + MOVE_SIZE / 2;
+    const rightX = leftX + MOVE_SIZE + GAP;
+    const jumpX = width - MARGIN - JUMP_SIZE / 2;
+    const jumpY = height - MARGIN - 10 - JUMP_SIZE / 2;
+    this.buttons.left.setPosition(leftX, moveY);
+    this.buttons.right.setPosition(rightX, moveY);
+    this.buttons.jump.setPosition(jumpX, jumpY);
+
+    const split = leftX + (MOVE_SIZE + GAP) / 2;
+    const moveTop = height * 0.45;
+    this.zones = {
+      left: { x: 0, y: moveTop, w: split, h: height - moveTop },
+      right: { x: split, y: moveTop, w: rightX + MOVE_SIZE / 2 + 60 - split, h: height - moveTop },
+      jump: { x: width * 0.66, y: height * 0.35, w: width * 0.34, h: height * 0.65 },
+    };
   }
 
   read(): ControlState {
     const pointers = [this.scene.input.mousePointer, ...this.scene.input.manager.pointers];
     const down = (zone: Zone): boolean =>
-      pointers.some((p) => p.isDown && p.x >= zone.x && p.x <= zone.x + zone.w && p.y >= zone.y && p.y <= zone.y + zone.h);
+      pointers.some((p) => p?.isDown && p.x >= zone.x && p.x <= zone.x + zone.w && p.y >= zone.y && p.y <= zone.y + zone.h);
 
     const state: ControlState = {
       left: down(this.zones.left) || !!this.cursors?.left.isDown || !!this.keyA?.isDown,
@@ -53,38 +99,9 @@ export class TouchControls {
       jump:
         down(this.zones.jump) || !!this.cursors?.up.isDown || !!this.cursors?.space.isDown || !!this.keyW?.isDown,
     };
-    this.buttons[0]?.setAlpha(state.left ? 0.95 : 0.55);
-    this.buttons[1]?.setAlpha(state.right ? 0.95 : 0.55);
-    this.buttons[2]?.setAlpha(state.jump ? 0.95 : 0.55);
+    this.buttons.left.setPressed(state.left);
+    this.buttons.right.setPressed(state.right);
+    this.buttons.jump.setPressed(state.jump);
     return state;
-  }
-
-  private drawButtons(width: number, height: number): void {
-    const make = (key: string, size: number, draw: (g: Phaser.GameObjects.Graphics) => void): void => {
-      const g = this.scene.make.graphics({ x: 0, y: 0 }, false);
-      draw(g);
-      g.generateTexture(key, size, size);
-      g.destroy();
-    };
-    make('btn-left', 44, (g) => {
-      g.fillStyle(0xffffff).fillCircle(22, 22, 22);
-      g.fillStyle(0x2b2340).fillTriangle(28, 10, 28, 34, 12, 22);
-    });
-    make('btn-right', 44, (g) => {
-      g.fillStyle(0xffffff).fillCircle(22, 22, 22);
-      g.fillStyle(0x2b2340).fillTriangle(16, 10, 16, 34, 32, 22);
-    });
-    make('btn-jump', 64, (g) => {
-      g.fillStyle(0xff6b5e).fillCircle(32, 32, 32);
-      g.fillStyle(0xffffff).fillTriangle(32, 14, 14, 38, 50, 38).fillRect(26, 36, 12, 14);
-    });
-
-    const add = (key: string, x: number, y: number): void => {
-      const img = this.scene.add.image(x, y, key).setScrollFactor(0).setDepth(100).setAlpha(0.55);
-      this.buttons.push(img);
-    };
-    add('btn-left', 36, height - 34);
-    add('btn-right', 36 + 56, height - 34);
-    add('btn-jump', width - 48, height - 42);
   }
 }

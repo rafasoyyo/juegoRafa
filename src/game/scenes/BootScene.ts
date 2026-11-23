@@ -1,64 +1,119 @@
 import Phaser from 'phaser';
 
+const FONT_TIMEOUT_MS = 3000;
+
 /**
- * Genera el arte PROVISIONAL por código (sin archivos).
- * El personaje es un placeholder: el juego no depende de quién sea.
- * Se sustituye por sprites propios en public/assets/ cuando estén listos.
+ * Carga los gráficos SVG propios (public/assets/svg/, ver LICENSES.md) al tamaño en que se
+ * dibujan, crea los degradados de fondo y espera a la tipografía antes de abrir el juego.
  */
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('Boot');
   }
 
-  create(): void {
-    this.makeTexture('ground', 16, 16, (g) => {
-      g.fillStyle(0xc8662a).fillRect(0, 0, 16, 16);
-      g.fillStyle(0x8f3f14).fillRect(0, 7, 16, 1).fillRect(0, 15, 16, 1).fillRect(7, 0, 1, 8).fillRect(3, 8, 1, 8).fillRect(11, 8, 1, 8);
-    });
-    this.makeTexture('block', 16, 16, (g) => {
-      g.fillStyle(0xffc83c).fillRect(0, 0, 16, 16);
-      g.fillStyle(0xc88c14).fillRect(0, 0, 16, 1).fillRect(0, 15, 16, 1).fillRect(0, 0, 1, 16).fillRect(15, 0, 1, 16);
-    });
-    this.makeTexture('block-used', 16, 16, (g) => {
-      g.fillStyle(0x9a7a4a).fillRect(0, 0, 16, 16);
-      g.fillStyle(0x6b5230).fillRect(0, 0, 16, 1).fillRect(0, 15, 16, 1).fillRect(0, 0, 1, 16).fillRect(15, 0, 1, 16);
-    });
-    this.makeTexture('player', 14, 22, (g) => {
-      // Niño original: cabeza grande, pelo castaño, camiseta verde, pantalón azul.
-      g.fillStyle(0x3fa652).fillRect(3, 11, 8, 5); // camiseta
-      g.fillStyle(0xffd2a1).fillRect(1, 12, 2, 4).fillRect(11, 12, 2, 4); // brazos
-      g.fillStyle(0x2f6fe0).fillRect(3, 16, 8, 4); // pantalón
-      g.fillStyle(0x6b3a1a).fillRect(2, 20, 4, 2).fillRect(8, 20, 4, 2); // zapatillas
-      g.fillStyle(0xffd2a1).fillRect(2, 2, 10, 9); // cabeza
-      g.fillStyle(0x6b3a1a).fillRect(2, 0, 10, 3).fillRect(2, 3, 2, 3); // pelo
-      g.fillStyle(0x2b2340).fillRect(8, 6, 2, 2); // ojo
-      g.fillStyle(0xff8f8f).fillRect(10, 8, 1, 1); // mejilla
-    });
-    this.makeTexture('coin', 8, 10, (g) => {
-      g.fillStyle(0xffd23f).fillRect(1, 0, 6, 10).fillRect(0, 2, 8, 6);
-    });
-    this.makeTexture('cloud', 48, 20, (g) => {
-      g.fillStyle(0xffffff).fillRect(6, 8, 36, 10).fillRect(12, 2, 14, 8).fillRect(24, 4, 12, 6);
-    });
-    this.makeTexture('hill', 96, 40, (g) => {
-      g.fillStyle(0x3fa652);
-      for (let y = 0; y < 40; y++) {
-        const half = 8 + y * 1.1;
-        g.fillRect(48 - half, y, half * 2, 1);
-      }
-    });
-    this.makeTexture('flag', 24, 40, (g) => {
-      g.fillStyle(0xffffff).fillRect(2, 0, 2, 40);
-      g.fillStyle(0xff6b5e).fillRect(4, 2, 18, 12);
-    });
+  preload(): void {
+    this.load.setPath('assets/svg/');
+    const svg = (key: string, file: string, width: number, height = width): void => {
+      this.load.svg(key, `${file}.svg`, { width, height });
+    };
 
-    this.scene.start('Level');
+    for (const pose of ['idle', 'jump', 'celebrate']) {
+      svg(`fox-${pose}`, `fox-${pose}`, 120);
+      svg(`fox-${pose}-l`, `fox-${pose}`, 400);
+    }
+    for (const hat of ['cap', 'wool', 'party', 'helmet', 'crown']) {
+      svg(`hat-${hat}`, `hat-${hat}`, 96);
+      svg(`hat-${hat}-l`, `hat-${hat}`, 320);
+    }
+    svg('lalo', 'lalo', 84, 95);
+    svg('lalo-blink', 'lalo-blink', 84, 95);
+
+    svg('cloud', 'cloud', 180, 80);
+    svg('tree', 'tree', 90, 120);
+    svg('block', 'block', 84);
+    svg('block-used', 'block-used', 84);
+    svg('flag', 'flag', 80, 190);
+    svg('coin', 'coin', 56);
+    svg('star', 'star', 40);
+    svg('star-empty', 'star-empty', 40);
+    svg('star-l', 'star', 170);
+    svg('star-empty-l', 'star-empty', 170);
+
+    svg('icon-home', 'icon-home', 48);
+    svg('icon-arrow-left', 'icon-arrow-left', 56);
+    svg('icon-arrow-right', 'icon-arrow-right', 56);
+    svg('icon-arrow-up-white', 'icon-arrow-up-white', 84);
+    svg('icon-next-white', 'icon-next-white', 88);
+    svg('icon-play-white', 'icon-play-white', 96);
+    svg('icon-map', 'icon-map', 52);
+    svg('icon-replay', 'icon-replay', 52);
+    svg('icon-check-white', 'icon-check-white', 64);
+    svg('icon-lock', 'icon-lock', 48);
+    svg('icon-speaker', 'icon-speaker', 50);
+    svg('icon-flag', 'icon-flag', 56);
+    svg('icon-fox-face', 'icon-fox-face', 64);
+    svg('icon-no-hat', 'icon-no-hat', 72);
+    svg('icon-glasses', 'icon-glasses', 60);
+    svg('icon-cape', 'icon-cape', 60);
+    svg('icon-colors', 'icon-colors', 60);
+    svg('icon-shapes', 'icon-shapes', 96, 48);
   }
 
-  private makeTexture(key: string, w: number, h: number, draw: (g: Phaser.GameObjects.Graphics) => void): void {
-    const g = this.make.graphics({ x: 0, y: 0 }, false);
-    draw(g);
-    g.generateTexture(key, w, h);
-    g.destroy();
+  create(): void {
+    this.makeGradient('sky', [
+      [0, '#8FD3FF'],
+      [0.7, '#E6F6FF'],
+      [1, '#E6F6FF'],
+    ]);
+    this.makeGradient('sky-map', [
+      [0, '#BDE9FF'],
+      [0.55, '#CFF0C2'],
+      [1, '#A9E3A0'],
+    ]);
+    this.makeShowcase();
+
+    // Espera a Baloo 2 para que los dígitos no se dibujen con la fuente de reserva.
+    const fontReady = document.fonts?.load('800 48px "Baloo 2"') ?? Promise.resolve();
+    const timeout = new Promise((resolve) => setTimeout(resolve, FONT_TIMEOUT_MS));
+    void Promise.race([fontReady, timeout])
+      .catch(() => undefined)
+      .then(() => this.scene.start('Title'));
+  }
+
+  /** Degradado vertical de 720 px de alto; se estira a lo ancho al usarlo. */
+  private makeGradient(key: string, stops: [number, string][]): void {
+    const tex = this.textures.createCanvas(key, 8, 720);
+    if (!tex) return;
+    const ctx = tex.context;
+    const grad = ctx.createLinearGradient(0, 0, 0, 720);
+    for (const [at, color] of stops) grad.addColorStop(at, color);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 8, 720);
+    tex.refresh();
+  }
+
+  /** Escaparate redondeado de «mi personaje»: cielo y suelo recortados con esquinas redondas. */
+  private makeShowcase(): void {
+    const w = 400;
+    const h = 664;
+    const tex = this.textures.createCanvas('showcase', w, h);
+    if (!tex) return;
+    const ctx = tex.context;
+    ctx.beginPath();
+    ctx.roundRect(0, 0, w, h, 44);
+    ctx.clip();
+    const sky = ctx.createLinearGradient(0, 0, 0, h);
+    sky.addColorStop(0, '#8FD3FF');
+    sky.addColorStop(0.8, '#E6F6FF');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, w, h);
+    const groundTop = 530;
+    ctx.fillStyle = '#C98A58';
+    ctx.fillRect(0, groundTop, w, h - groundTop);
+    ctx.fillStyle = '#3FA652';
+    ctx.fillRect(0, groundTop, w, 36);
+    ctx.fillStyle = '#5CC46B';
+    ctx.fillRect(0, groundTop, w, 30);
+    tex.refresh();
   }
 }
