@@ -25,3 +25,14 @@ los activos estáticos.
 #### Scenario: Despliegue
 - **WHEN** se ejecuta `npm run deploy`
 - **THEN** se compila el proyecto y se publica en https://juegorafa-edu.web.app
+
+### Requirement: La app tiene icono y favicon con la cara del zorro
+La aplicación SHALL usar la cara del zorro, sobre el fondo azul cielo del juego, como icono de la PWA (192 px, 512 px y `apple-touch-icon` de 180 px) y como favicon de la pestaña del navegador (SVG con PNG de reserva). La cara SHALL quedar dentro de la zona segura central del icono para que no se recorte con máscaras circulares o redondeadas.
+
+#### Scenario: Instalación en móvil
+- **WHEN** se añade la app a la pantalla de inicio de un móvil o tablet
+- **THEN** el icono mostrado es la cara del zorro, completa y sin recortes con máscara circular
+
+#### Scenario: Pestaña del navegador
+- **WHEN** se abre la app en un navegador de escritorio o móvil
+- **THEN** la pestaña muestra la cara del zorro como favicon
