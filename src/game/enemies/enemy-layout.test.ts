@@ -40,16 +40,16 @@ function reach(e: EnemySpawn): { from: number; to: number } {
 }
 
 describe('layoutEnemies', () => {
-  it('nivel 1: exactamente un enemigo y es un erizo', () => {
+  it('nivel 1: exactamente dos enemigos y son erizos', () => {
     for (const seed of SEEDS) {
       const enemies = layoutEnemies(1, course(1), seeded(seed));
-      expect(enemies).toHaveLength(1);
-      expect(enemies[0]!.kind).toBe('hedgehog');
+      expect(enemies).toHaveLength(2);
+      expect(enemies.every((e) => e.kind === 'hedgehog')).toBe(true);
     }
   });
 
-  it('niveles 1 a 6: 1, 2, 2, 3, 3 y 4 enemigos; los 6 recorridos reales tienen sitio para todos', () => {
-    expect(ENEMIES_PER_LEVEL).toEqual([1, 2, 2, 3, 3, 4]);
+  it('niveles 1 a 6: 2, 3, 4, 5, 6 y 7 enemigos; los 6 recorridos reales tienen sitio para todos', () => {
+    expect(ENEMIES_PER_LEVEL).toEqual([2, 3, 4, 5, 6, 7]);
     for (let level = 1; level <= 6; level++) {
       expect(freeStretches(course(level)).length, `nivel ${level}`).toBeGreaterThanOrEqual(ENEMIES_PER_LEVEL[level - 1]!);
       for (const seed of SEEDS) expect(layoutEnemies(level, course(level), seeded(seed))).toHaveLength(ENEMIES_PER_LEVEL[level - 1]!);

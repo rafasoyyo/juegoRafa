@@ -65,7 +65,7 @@ export interface BeeSpawn {
 export type EnemySpawn = HedgehogSpawn | BeeSpawn;
 
 /** Enemigos en los niveles 1 a 6. */
-export const ENEMIES_PER_LEVEL: readonly number[] = [1, 2, 2, 3, 3, 4];
+export const ENEMIES_PER_LEVEL: readonly number[] = [2, 3, 4, 5, 6, 7];
 /** Margen sin enemigos tras la salida. */
 export const START_CLEAR = 600;
 /** Margen sin enemigos antes de la bandera. */
