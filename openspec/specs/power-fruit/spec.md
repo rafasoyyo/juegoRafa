@@ -118,12 +118,16 @@ en el registro de licencias como propia del proyecto.
 - **THEN** el gráfico de la fresa aparece como propio del proyecto
 
 ### Requirement: Los pinchos no pinchan a Rufo invencible
-Mientras dura el modo invencible, pisar o caer en una zona de pinchos SHALL NOT hacer rebotar a Rufo ni restarle galletas: Rufo SHALL correr por encima como si fuera suelo. Si el modo termina con Rufo sobre los pinchos, Rufo SHALL NOT pincharse hasta pasado 1 segundo, con el parpadeo protector de un pinchazo.
+Mientras dura el modo invencible, caer en el foso de una zona de pinchos SHALL NOT restar galletas ni hacer salir ninguna galleta despedida. Como el foso no es suelo, Rufo SHALL rebotar fuera de él igual que en un pinchazo, por el lado por el que entró, y el modo invencible SHALL seguir sin interrumpirse. Si el modo termina con Rufo en el aire sobre un foso, SHALL caer y pincharse con normalidad.
 
 #### Scenario: Correr sobre pinchos
-- **WHEN** Rufo invencible corre por una zona de pinchos sin saltar
-- **THEN** la cruza sin rebotar ni frenar y el contador no baja
+- **WHEN** Rufo invencible corre hacia una zona de pinchos sin saltar y el contador marca 5
+- **THEN** cae al foso, rebota fuera por donde entró, el contador sigue en 5 y Rufo sigue brillando
+
+#### Scenario: Saltar el foso con la fresa
+- **WHEN** Rufo invencible salta una zona de pinchos
+- **THEN** la cruza por el aire como siempre, sin rebotar ni frenar
 
 #### Scenario: Termina sobre los pinchos
-- **WHEN** el modo invencible termina mientras Rufo está sobre una zona de pinchos
-- **THEN** Rufo parpadea 1 segundo sin pincharse y, si sigue sobre los pinchos al acabar ese segundo, se pincha y rebota fuera de la zona
+- **WHEN** el modo invencible termina mientras Rufo está en el aire sobre un foso
+- **THEN** si cae dentro, se pincha y rebota fuera como en cualquier pinchazo

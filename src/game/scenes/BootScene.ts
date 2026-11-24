@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
 import { AMBIENTS, skyKey } from '../levels/ambients';
+import { CONES_PER_TILE, SPIKE_CONE_H, STEEL } from '../levels/spikes';
+import { TILE } from '../levels/types';
 import { RUN_COLORS } from '../ui/run-cycle';
 
 const FONT_TIMEOUT_MS = 3000;
@@ -333,23 +335,39 @@ export class BootScene extends Phaser.Scene {
   }
 
   /**
-   * Pinchos: una baldosa (84 px) con 3 conos de punta redondeada en morado, con brillo, sobre una base
-   * de piedra clara con sombra. Se repite a lo ancho de cada zona.
+   * Pinchos: una baldosa (84 px) con 3 conos de acero de punta afilada, cada uno con tres caras (luz,
+   * media y sombra) y un reflejo blanco, sin contorno. Se repite a lo ancho de cada foso, con la base
+   * sobre la placa del fondo. Y su destello: una estrella blanca de cuatro puntas finas.
    */
   private makeSpikes(): void {
     const g = this.make.graphics({}, false);
     const v = (x: number, y: number): Phaser.Math.Vector2 => new Phaser.Math.Vector2(x, y);
-    const base = 46;
-    for (const cx of [14, 42, 70]) {
-      g.fillStyle(0x7b5ea7).fillPoints([v(cx - 13, base + 2), v(cx - 3, 12), v(cx + 3, 12), v(cx + 13, base + 2)], true);
-      g.fillCircle(cx, 13, 4.5);
-      g.fillStyle(0x6a4f94).fillPoints([v(cx + 2, 14), v(cx + 13, base + 2), v(cx + 3, base + 2)], true);
-      g.fillStyle(0xb7a3dc).fillPoints([v(cx - 4, 18), v(cx - 1, 18), v(cx - 6, base - 4), v(cx - 10, base - 4)], true);
+    const w = TILE / CONES_PER_TILE;
+    const h = SPIKE_CONE_H;
+    const half = w / 2 - 1;
+    for (let k = 0; k < CONES_PER_TILE; k++) {
+      const cx = w * k + w / 2;
+      const tip = v(cx, 0);
+      // Caras de izquierda a derecha: luz, media y sombra, todas hasta la punta.
+      g.fillStyle(STEEL.light).fillPoints([tip, v(cx - half, h), v(cx - half * 0.3, h)], true);
+      g.fillStyle(STEEL.mid).fillPoints([tip, v(cx - half * 0.3, h), v(cx + half * 0.35, h)], true);
+      g.fillStyle(STEEL.dark).fillPoints([tip, v(cx + half * 0.35, h), v(cx + half, h)], true);
+      // Reflejo: una línea fina en la cara de luz, que no llega a la punta ni a la base.
+      g.fillStyle(0xffffff, 0.7).fillPoints([v(cx - 1.5, 7), v(cx - 0.5, 8), v(cx - half * 0.55, h - 5), v(cx - half * 0.7, h - 5)], true);
     }
-    g.fillStyle(0xa7b3c2).fillRoundedRect(0, base + 4, 84, 16, 6);
-    g.fillStyle(0xd5dee8).fillRoundedRect(0, base, 84, 14, 6);
-    g.fillStyle(0xe8eef4).fillRoundedRect(6, base + 3, 30, 4, 2);
-    g.generateTexture('spikes', 84, base + 20);
+    g.generateTexture('spikes', TILE, h);
+    g.clear();
+
+    const c = 14;
+    const pts: Phaser.Math.Vector2[] = [];
+    for (let k = 0; k < 8; k++) {
+      const r = k % 2 === 0 ? 13 : 2.5;
+      const a = -Math.PI / 2 + (k * Math.PI) / 4;
+      pts.push(v(c + Math.cos(a) * r, c + Math.sin(a) * r));
+    }
+    g.fillStyle(0xffffff).fillPoints(pts, true);
+    g.fillCircle(c, c, 3);
+    g.generateTexture('spike-glint', 2 * c, 2 * c);
     g.destroy();
   }
 

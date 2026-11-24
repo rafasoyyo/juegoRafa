@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { COLORS, GAME_H, MAX_W } from '../config';
-import { skyKey, type Ambient, type GroundStyle } from '../levels/ambients';
+import { INK, mixColor, pitWall, skyKey, type Ambient, type GroundStyle } from '../levels/ambients';
+import { PIT_DEPTH, PIT_LIP_RADIUS, type Span } from '../levels/spikes';
 import { digits, fitImage } from './round-button';
 
 /** Fondo de cielo en degradado, fijo a la cámara y del ancho máximo (no hay que recolocarlo). */
@@ -16,35 +17,96 @@ export interface GroundColors {
   ground?: GroundStyle;
 }
 
+/** Esquinas superiores redondeadas de un tramo de suelo: el lado que da a un foso. */
+export interface GroundRound {
+  left?: boolean;
+  right?: boolean;
+}
+
 /**
  * Suelo sobre su base: la capa de arriba con el borde de su ambiente. Hierba (bandas rectas, como
- * siempre), arena lisa con motas, nieve con el borde de abajo redondeado o nube festoneada.
+ * siempre), arena lisa con motas, nieve con el borde de abajo redondeado o nube festoneada. Con `round`,
+ * las esquinas de arriba de ese lado se redondean (borde de un foso) y los bultos no cuelgan sobre él.
  */
-export function drawGround(scene: Phaser.Scene, x: number, width: number, top: number, grass = 36, colors: GroundColors = COLORS): Phaser.GameObjects.Graphics {
+export function drawGround(
+  scene: Phaser.Scene,
+  x: number,
+  width: number,
+  top: number,
+  grass = 36,
+  colors: GroundColors = COLORS,
+  round: GroundRound = {},
+): Phaser.GameObjects.Graphics {
   const g = scene.add.graphics();
-  g.fillStyle(colors.earth).fillRect(x, top, width, GAME_H - top + 40);
+  const corners = { tl: round.left ? PIT_LIP_RADIUS : 0, tr: round.right ? PIT_LIP_RADIUS : 0, bl: 0, br: 0 };
+  const band = (h: number): void => {
+    if (corners.tl || corners.tr) g.fillRoundedRect(x, top, width, h, corners);
+    else g.fillRect(x, top, width, h);
+  };
+  g.fillStyle(colors.earth);
+  band(GAME_H - top + 40);
   const style = colors.ground ?? 'grass';
   if (style === 'snow' || style === 'cloud') {
     // Borde inferior de bultos: pequeños y juntos en la nieve, grandes y mullidos en la nube.
     const r = style === 'snow' ? 12 : 22;
     const step = style === 'snow' ? 30 : 46;
-    g.fillStyle(colors.grassDark).fillRect(x, top, width, grass + 6);
-    for (let px = x; px < x + width + step; px += step) g.fillCircle(px, top + grass + 6, r);
-    g.fillStyle(colors.grass).fillRect(x, top, width, grass);
-    for (let px = x; px < x + width + step; px += step) g.fillCircle(px, top + grass - 2, r);
+    // En el lado de un foso, los bultos acaban dentro del tramo.
+    const from = round.left ? x + r : x;
+    const to = round.right ? x + width - r : x + width + step;
+    const bumps = (y: number): void => {
+      let px = from;
+      for (; px < to; px += step) g.fillCircle(px, y, r);
+      if (round.right && px - step < to) g.fillCircle(to, y, r);
+    };
+    g.fillStyle(colors.grassDark);
+    band(grass + 6);
+    bumps(top + grass + 6);
+    g.fillStyle(colors.grass);
+    band(grass);
+    bumps(top + grass - 2);
     if (style === 'cloud') {
       g.fillStyle(colors.grassDark, 0.5);
       for (let px = x + step / 2; px < x + width; px += step * 2) g.fillCircle(px, top + 10, 6);
     }
     return g;
   }
-  g.fillStyle(colors.grassDark).fillRect(x, top, width, grass + 6);
-  g.fillStyle(colors.grass).fillRect(x, top, width, grass);
+  g.fillStyle(colors.grassDark);
+  band(grass + 6);
+  g.fillStyle(colors.grass);
+  band(grass);
   if (style === 'sand') {
     // Arena lisa con motas.
     g.fillStyle(colors.grassDark, 0.6);
-    for (let i = 0, px = x + 20; px < x + width; i++, px += 34 + jitter(i, 5) * 40) g.fillCircle(px, top + 10 + jitter(i, 6) * 18, 2.5 + jitter(i, 7) * 2);
+    for (let i = 0, px = x + 20; px < x + width - 10; i++, px += 34 + jitter(i, 5) * 40) g.fillCircle(px, top + 10 + jitter(i, 6) * 18, 2.5 + jitter(i, 7) * 2);
   }
+  return g;
+}
+
+/** La pared del foso asoma esto por cada lado bajo las esquinas redondeadas del suelo, en px. */
+const PIT_WALL_BLEED = 12;
+/** Sombra bajo el borde del foso: alto y opacidad de arriba. */
+const PIT_SHADOW_H = 26;
+const PIT_SHADOW_ALPHA = 0.45;
+
+/**
+ * Interior de un foso de pinchos de `x` a `x + width`, bajo el suelo en `top`: la pared con la tierra del
+ * ambiente oscurecida, una sombra en degradado bajo el borde y, bajo el fondo, la tierra con una línea
+ * más oscura. Se dibuja antes que los tramos de suelo, que lo tapan por los lados.
+ */
+export function drawPit(scene: Phaser.Scene, x: number, width: number, top: number, ambient: Ambient): Phaser.GameObjects.Graphics {
+  const g = scene.add.graphics();
+  const left = x - PIT_WALL_BLEED;
+  const w = width + 2 * PIT_WALL_BLEED;
+  const wall = pitWall(ambient);
+  const floor = top + PIT_DEPTH;
+  g.fillStyle(wall).fillRect(left, top, w, PIT_DEPTH);
+  // Degradado por bandas (alfa de 0,45 a 0) bajo el borde.
+  const bands = 8;
+  for (let k = 0; k < bands; k++) {
+    g.fillStyle(INK, PIT_SHADOW_ALPHA * (1 - k / bands)).fillRect(left, top + (k * PIT_SHADOW_H) / bands, w, PIT_SHADOW_H / bands);
+  }
+  g.fillStyle(ambient.earth).fillRect(left, floor, w, GAME_H - floor + 40);
+  g.fillStyle(mixColor(wall, INK, 0.35)).fillRect(left, floor, w, 4);
   return g;
 }
 
@@ -85,9 +147,17 @@ const DECOR_ALPHA = 0.72;
 /**
  * Escenario completo de un nivel con su ambiente, de atrás adelante: cielo, sol o luna y estrellas,
  * nubes, colinas lejanas, decoración, colinas cercanas y suelo. Con el prado queda igual que el
- * escenario de siempre (nubes, dos capas de colinas y suelo con los colores de la paleta).
+ * escenario de siempre (nubes, dos capas de colinas y suelo con los colores de la paleta). El suelo va
+ * por tramos (`spans`) y entre ellos, los fosos de los pinchos (`pits`): primero los fosos y después
+ * los tramos, con la esquina redondeada del lado del foso. Sin tramos, un solo suelo de todo el ancho.
  */
-export function addScenery(scene: Phaser.Scene, ambient: Ambient, worldW: number, groundTop: number): void {
+export function addScenery(
+  scene: Phaser.Scene,
+  ambient: Ambient,
+  worldW: number,
+  groundTop: number,
+  ground: { spans: readonly Span[]; pits: readonly Span[] } = { spans: [{ from: 0, to: worldW }], pits: [] },
+): void {
   addSky(scene, skyKey(ambient.id));
 
   if (ambient.decor === 'sunset') {
@@ -178,7 +248,11 @@ export function addScenery(scene: Phaser.Scene, ambient: Ambient, worldW: number
         .setAlpha(0.85);
     }
   }
-  drawGround(scene, 0, worldW, groundTop, 36, ambient);
+  for (const pit of ground.pits) drawPit(scene, pit.from, pit.to - pit.from, groundTop, ambient);
+  for (const span of ground.spans) {
+    const round = { left: ground.pits.some((p) => p.to === span.from), right: ground.pits.some((p) => p.from === span.to) };
+    drawGround(scene, span.from, span.to - span.from, groundTop, 36, ambient, round);
+  }
 }
 
 /** Altura (`y`) de la cima de una capa de colinas de `drawHills` en `x`. */

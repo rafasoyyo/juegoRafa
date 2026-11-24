@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { COLORS } from '../config';
-import { AMBIENTS } from './ambients';
+import { AMBIENTS, INK, pitWall, PIT_WALL_MIX } from './ambients';
+import { STEEL } from './spikes';
 import { LEVELS } from './catalog';
 import { AMBIENT_IDS } from './types';
 
@@ -29,7 +30,7 @@ function deltaE(a: number, b: number): number {
 
 /** Umbral de la prueba de contraste (el mínimo de los ambientes de los niveles 1 a 6 es ≈ 31). */
 const MIN_DELTA_E = 30;
-/** Colores que nunca cambian con el ambiente: el zorro, el bloque «?» y el morado de los pinchos. */
+/** Color que nunca cambia con el ambiente: el zorro (el bloque «?» y el acero de los pinchos van en `COLORS` y `STEEL`). */
 const FOX = 0xf28c28;
 
 describe('ambientes', () => {
@@ -91,7 +92,7 @@ describe('ambientes', () => {
     expect(b).toBeLessThan(30);
   });
 
-  it.each(AMBIENT_IDS.map((id) => [id]))('%s: el zorro, el bloque y los pinchos destacan sobre el suelo y el cielo', (id) => {
+  it.each(AMBIENT_IDS.map((id) => [id]))('%s: el zorro y el bloque destacan sobre el suelo y el cielo', (id) => {
     const a = AMBIENTS[id];
     const sky = a.sky.map(([, c]) => hex(c));
     const ground = [a.grass, a.earth];
@@ -102,10 +103,18 @@ describe('ambientes', () => {
     };
     check('zorro', FOX, [...sky, ...ground]);
     check('bloque', COLORS.yellow, [...sky, ...ground]);
-    // Los pinchos solo salen en los ambientes de los niveles 7 a 12 (la noche del 6 es morada) y
-    // están en el suelo: cuentan el suelo y la mitad baja del cielo.
-    if (AMBIENT_IDS.indexOf(id) < 6) return;
-    const lowSky = a.sky.filter(([t]) => t >= 0.5).map(([, c]) => hex(c));
-    check('pinchos', COLORS.purple, [...lowSky, ...ground]);
+  });
+
+  it('la pared del foso es la tierra mezclada al 42 % con la tinta', () => {
+    expect(PIT_WALL_MIX).toBe(0.42);
+    expect(pitWall(AMBIENTS.prado)).toBe(0x875f4e);
+    expect(pitWall({ ...AMBIENTS.prado, earth: INK })).toBe(INK);
+  });
+
+  it.each(AMBIENT_IDS.map((id) => [id]))('%s: el acero de los pinchos destaca sobre la pared del foso', (id) => {
+    const wall = pitWall(AMBIENTS[id]);
+    for (const [name, steel] of [['claro', STEEL.light], ['medio', STEEL.mid]] as const) {
+      expect(deltaE(steel, wall), `${id}: acero ${name} contra #${wall.toString(16)}`).toBeGreaterThanOrEqual(MIN_DELTA_E);
+    }
   });
 });

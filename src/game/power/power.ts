@@ -3,6 +3,14 @@
  * pierde una galleta y en qué fase está el modo invencible. Tiempos en milisegundos.
  */
 
+import { JUMP_SPEED } from '../level-course';
+import { RUN_SPEED } from '../levels/types';
+
+/** Fresa: impulso al salir del bloque (px/s) y tamaño con que se dibuja (px). */
+export const FRUIT_VX = 0.35 * RUN_SPEED;
+export const FRUIT_VY = 0.6 * JUMP_SPEED;
+export const FRUIT_SIZE = 56;
+
 /** Duración del modo invencible desde que Rufo come la fresa. */
 export const POWER_MS = 8000;
 /** Últimos milisegundos del modo invencible, en los que el brillo avisa de que se acaba. */

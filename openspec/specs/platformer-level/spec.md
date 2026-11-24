@@ -65,8 +65,7 @@ pantalla de nivel completado antes de 2 segundos.
 - **THEN** el zorro se detiene y celebra, y antes de 2 s se abre la pantalla de nivel completado
 
 ### Requirement: Sin fallo que penalice
-El nivel SHALL NOT tener vidas, estado de derrota, hoyos ni caídas fuera del recorrido: el suelo SHALL
-ser continuo de la salida a la bandera, también bajo las zonas de pinchos.
+El nivel SHALL NOT tener vidas, estado de derrota ni caídas fuera del recorrido. El suelo SHALL ser continuo de la salida a la bandera salvo en los fosos de las zonas de pinchos, que son poco hondos y de los que Rufo SHALL salir siempre rebotando, sin quedarse atrapado.
 
 #### Scenario: Recorrido completo
 - **WHEN** el niño recorre el nivel sin llegar a la meta durante varios minutos
@@ -77,8 +76,12 @@ ser continuo de la salida a la bandera, también bajo las zonas de pinchos.
 - **THEN** aterriza en el suelo o en un escalón y puede seguir jugando sin ninguna penalización
 
 #### Scenario: Caer en los pinchos
-- **WHEN** el zorro cae en una zona de pinchos
-- **THEN** pierde como mucho una galleta del contador del nivel, rebota fuera de la zona y sigue jugando sin volver a la salida
+- **WHEN** el zorro cae en el foso de una zona de pinchos
+- **THEN** pierde como mucho una galleta del contador del nivel, rebota fuera del foso y sigue jugando sin volver a la salida
+
+#### Scenario: Sin otros huecos
+- **WHEN** se recorre por el suelo un nivel de los niveles 1 a 6
+- **THEN** el suelo no tiene ningún hueco
 
 ### Requirement: Escenario del nivel
 El nivel SHALL dibujar, con los colores y la decoración del ambiente de ese nivel, un cielo en

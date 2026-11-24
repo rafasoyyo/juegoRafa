@@ -85,7 +85,9 @@ Licencia: la del repositorio.
 | `decor-pine-snow`, `decor-flake` | `src/game/scenes/BootScene.ts` | propio: pino nevado y copo de la nieve |
 | `decor-cactus` | `src/game/scenes/BootScene.ts` | propio: cactus redondeado (sin pinchos) del desierto |
 | `decor-rainbow` | `src/game/scenes/BootScene.ts` | propio: arcoíris pastel de las nubes |
-| `spikes` | `src/game/scenes/BootScene.ts` | propio: hilera de conos morados de punta redondeada sobre una base de piedra (zonas de pinchos) |
+| `spikes` | `src/game/scenes/BootScene.ts` | propio: hilera de conos de acero de punta afilada, con caras de luz y sombra (fondo de los fosos de pinchos) |
+| `spike-glint` | `src/game/scenes/BootScene.ts` | propio: destello blanco de cuatro puntas sobre una punta de cada foso |
+| Foso de los pinchos (pared, sombra y placa con remaches) | `src/game/ui/widgets.ts` (`drawPit`), `src/game/scenes/LevelScene.ts` | propio |
 | Mar de la playa y copos que caen | `src/game/ui/widgets.ts` | propio |
 | `dust` | `src/game/scenes/BootScene.ts` | propio: mota de polvo de la carrera |
 | `sparkle` | `src/game/scenes/BootScene.ts` | propio: destello de cuatro puntas del modo invencible |

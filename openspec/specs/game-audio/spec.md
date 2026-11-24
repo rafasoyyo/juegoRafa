@@ -93,8 +93,8 @@ cuando el choque resta una galleta.
 - **THEN** no suena el «boing» del choque
 
 #### Scenario: Pisar pinchos siendo invencible
-- **WHEN** el zorro invencible corre por una zona de pinchos
-- **THEN** no suena el efecto de los pinchos
+- **WHEN** el zorro invencible cae al foso de una zona de pinchos
+- **THEN** suena el mismo «¡uy!» de los pinchos junto con el rebote, aunque no pierda ninguna galleta
 
 ### Requirement: Efectos de los botones
 Todo botón que responde a un toque SHALL sonar con un «pop» suave al pulsarlo. Tocar algo bloqueado

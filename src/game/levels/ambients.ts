@@ -33,6 +33,8 @@ export interface Ambient {
   decor: DecorKind;
   platform: PlatformStyle;
   ground: GroundStyle;
+  /** Cuánta tinta lleva la pared del foso de los pinchos (0 a 1); si falta, `PIT_WALL_MIX`. */
+  pitMix?: number;
 }
 
 export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
@@ -205,6 +207,8 @@ export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
     decor: 'snow',
     platform: 'log',
     ground: 'snow',
+    // Suelo muy claro: la pared del foso lleva más tinta para que el acero destaque (ΔE ≥ 30).
+    pitMix: 0.52,
   },
   desierto: {
     id: 'desierto',
@@ -240,8 +244,26 @@ export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
     decor: 'rainbow',
     platform: 'cloud',
     ground: 'cloud',
+    // Suelo muy claro: la pared del foso lleva más tinta para que el acero destaque (ΔE ≥ 30).
+    pitMix: 0.52,
   },
 };
+
+/** Tinta de la paleta (`COLORS.ink`): oscurece la tierra en la pared del foso de los pinchos. */
+export const INK = 0x2b2340;
+/** Mezcla de tinta de la pared del foso por defecto. */
+export const PIT_WALL_MIX = 0.42;
+
+/** Mezcla `a` hacia `b` (`t` de 0 a 1), canal a canal. */
+export function mixColor(a: number, b: number, t: number): number {
+  const ch = (shift: number): number => Math.round(((a >> shift) & 0xff) * (1 - t) + ((b >> shift) & 0xff) * t) << shift;
+  return ch(16) | ch(8) | ch(0);
+}
+
+/** Color de la pared del foso de los pinchos: la tierra del ambiente oscurecida con la tinta. */
+export function pitWall(ambient: Ambient): number {
+  return mixColor(ambient.earth, INK, ambient.pitMix ?? PIT_WALL_MIX);
+}
 
 /** Clave de la textura del cielo de un ambiente (la crea `BootScene`). */
 export function skyKey(id: AmbientId): string {

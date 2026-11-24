@@ -8,9 +8,22 @@ import { BLOCK_SIZE, GROUND_TOP, JUMP_SPEED, KNOCK_VY, MAX_VELOCITY, SCALE } fro
 import { AMBIENTS, type Ambient } from '../levels/ambients';
 import { levelData } from '../levels/catalog';
 import { toWorld } from '../levels/parse';
-import { exitSide, footSpan, nudgeOffSpikes, onSpikes, reboundVelocity } from '../levels/spikes';
-import { RUN_SPEED, type WorldLevel, type WorldSpike } from '../levels/types';
-import { loseCookie, pickFruitBlock, powerPhase, type PowerPhase } from '../power/power';
+import {
+  CONES_PER_TILE,
+  exitSide,
+  groundSpans,
+  lipNudge,
+  nudgeOffSpikes,
+  PIT_DEPTH,
+  PIT_TIP,
+  pitUnder,
+  reboundVelocity,
+  SPIKE_CONE_H,
+  SPIKE_PLATE_H,
+  STEEL,
+} from '../levels/spikes';
+import { RUN_SPEED, TILE, type WorldLevel } from '../levels/types';
+import { FRUIT_SIZE, FRUIT_VX, FRUIT_VY, loseCookie, pickFruitBlock, powerPhase, type PowerPhase } from '../power/power';
 import { LEVEL_COUNT, session } from '../state';
 import type { QuizData } from './QuizScene';
 import { drawLalo, FOX_UNITS, makeHat, placeHat, type FoxPose } from '../ui/characters';
@@ -58,15 +71,15 @@ const BLINK_MS = 80;
 const BLINK_ALPHA = 0.35;
 /** Brinco del pinchazo de un enemigo: alto y corto hacia atrás (la subida es `KNOCK_VY`). */
 const KNOCK_VX = 0.6 * RUN_SPEED;
-/** Los pinchos se dibujan con la base un poco hundida en el suelo. */
-const SPIKES_SINK = 6;
+/** Remaches de la placa del fondo del foso: separación y radio. */
+const RIVET_EVERY = 28;
+const RIVET_R = 2;
+/** Velocidad con que el borde recoloca a Rufo hacia el suelo firme si se para casi sobre el hueco. */
+const LIP_NUDGE_SPEED = 0.3 * RUN_SPEED;
 /** Galleta que sale despedida de Rufo al pincharse. */
 const LOST_COOKIE_MS = 600;
 
-/** Fresa: impulso al salir del bloque y botecitos cuando se posa. */
-const FRUIT_VX = 0.35 * RUN_SPEED;
-const FRUIT_VY = 0.6 * JUMP_SPEED;
-const FRUIT_SIZE = 56;
+/** Fresa: botecitos cuando se posa (el impulso y el tamaño están en `power.ts`). */
 const FRUIT_HOP = 12;
 const FRUIT_HOP_MS = 260;
 
@@ -126,11 +139,11 @@ export class LevelScene extends Phaser.Scene {
   private knockUntil = -Infinity;
   private protectedUntil = -Infinity;
   private hitAt = -Infinity;
-  /** Último punto de suelo fuera de los pinchos que pisó Rufo: el rebote va hacia ese lado. */
+  /** Último punto de suelo fuera de los fosos que pisó Rufo: el rebote va hacia ese lado. */
   private lastSafeX: number | undefined;
   /**
    * Rebote de los pinchos en el aire: sin tocar ningún control, Rufo sigue el arco hasta aterrizar
-   * fuera de la zona aunque ya haya recuperado el control.
+   * fuera del foso aunque ya haya recuperado el control. Mientras sube, la pared del foso no le frena.
    */
   private spikeRebound = false;
 
@@ -199,19 +212,24 @@ export class LevelScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, worldW, GAME_H);
     this.cameras.main.setBounds(0, 0, worldW, GAME_H);
 
-    addScenery(this, this.ambient, worldW, GROUND_TOP);
-    const ground = this.add.zone(worldW / 2, GROUND_TOP + 50, worldW, 100);
-    this.physics.add.existing(ground, true);
+    const spans = groundSpans(worldW, this.world.spikes);
+    const pits = this.world.spikes.map((z) => ({ from: z.x, to: z.x + z.width }));
+    addScenery(this, this.ambient, worldW, GROUND_TOP, { spans, pits });
+    // Suelo por tramos entre los fosos y, en cada foso, un fondo a la altura de las puntas.
+    const ground = spans.map((span) => this.staticZone(span.from, GROUND_TOP, span.to - span.from, 100));
+    const pitFloors = pits.map((pit) => this.staticZone(pit.from, GROUND_TOP + PIT_TIP, pit.to - pit.from, 100 - PIT_TIP));
     const steps = this.buildSteps();
     const platforms = this.buildPlatforms();
     const blocks = this.buildBlocks();
     this.buildSpikes();
-    this.surfaces = [ground, ...steps, ...platforms];
+    // La fresa solo se posa en el recorrido, nunca en el fondo de un foso.
+    this.surfaces = [...ground, ...steps, ...platforms];
     this.buildFox();
     this.buildGoal();
     this.buildEnemies();
 
-    this.physics.add.collider(this.fox, ground);
+    this.physics.add.collider(this.fox, ground, undefined, () => this.groundIsSolid(), this);
+    this.physics.add.collider(this.fox, pitFloors);
     this.physics.add.collider(this.fox, steps);
     this.physics.add.collider(this.fox, platforms);
     this.physics.add.collider(this.fox, blocks, (_f, block) => this.onBlockCollision(block as Phaser.Physics.Arcade.Image));
@@ -252,6 +270,11 @@ export class LevelScene extends Phaser.Scene {
     // Tras el rebote de los pinchos, si el niño no toca nada, Rufo acaba el arco fuera de la zona.
     const coasting = this.spikeRebound && dir === 0;
     if (!knocked && !coasting) this.fox.setVelocityX(dir * RUN_SPEED);
+    // Parado en el borde de un foso casi sobre el hueco: se desliza hacia el suelo firme.
+    if (!knocked && !this.spikeRebound && dir === 0 && grounded && Math.abs(body.bottom - GROUND_TOP) <= 2) {
+      const nudge = lipNudge(body.x, body.width, this.world.spikes);
+      if (nudge !== 0) this.fox.setVelocityX(nudge * LIP_NUDGE_SPEED);
+    }
     if (dir !== 0) this.faceLeft = dir < 0;
 
     if (input.jump && !this.prevJump && !knocked) this.jumpBufferedAt = time;
@@ -379,47 +402,70 @@ export class LevelScene extends Phaser.Scene {
     this.knock(time, side, side * KNOCK_VX, 'bump');
   }
 
-  /** Zonas de pinchos: una hilera de conos repetida a lo ancho de cada zona, sobre el suelo. */
-  private buildSpikes(): void {
-    for (const z of this.world.spikes) {
-      this.add.tileSprite(z.x, GROUND_TOP + SPIKES_SINK, z.width, this.textures.get('spikes').getSourceImage().height, 'spikes').setOrigin(0, 1).setDepth(4);
-    }
-  }
-
-  /** Zona de pinchos que pisa ahora Rufo apoyado en el suelo (con el margen de perdón), o `undefined`. */
-  private spikesUnderFeet(grounded: boolean): WorldSpike | undefined {
-    const body = this.fox.body;
-    if (!grounded || body.bottom < GROUND_TOP - 2) return undefined;
-    const feet = footSpan(body.x, body.width);
-    return onSpikes(feet.from, feet.to, this.world.spikes);
+  /** Zona estática de física con la cara de arriba en `top`, de `x` a `x + width`. */
+  private staticZone(x: number, top: number, width: number, height: number): Phaser.GameObjects.Zone {
+    const zone = this.add.zone(x + width / 2, top + height / 2, width, height);
+    this.physics.add.existing(zone, true);
+    return zone;
   }
 
   /**
-   * Pinchos: solo cuentan con Rufo apoyado en el suelo, sin protección ni modo invencible. Mientras
-   * pisa algo fuera de ellos (suelo, escalón o plataforma) se recuerda dónde, para rebotar hacia ese lado.
+   * ¿Choca Rufo con un tramo de suelo? Siempre, salvo con la pared de un foso mientras sube rebotando
+   * desde el fondo (pies por debajo del suelo): así nada le corta el rebote. Al bajar sí choca, para
+   * aterrizar en el suelo.
+   */
+  private groundIsSolid(): boolean {
+    const body = this.fox.body;
+    return !(this.spikeRebound && body.velocity.y < 0 && body.bottom > GROUND_TOP);
+  }
+
+  /**
+   * Fondo de cada foso: la placa redondeada con remaches, la hilera de conos de acero con la base sobre
+   * ella y las puntas `PIT_TIP` px bajo el suelo, y un destello en la primera punta.
+   */
+  private buildSpikes(): void {
+    const plateTop = GROUND_TOP + PIT_DEPTH - SPIKE_PLATE_H;
+    for (const z of this.world.spikes) {
+      const g = this.add.graphics().setDepth(4);
+      g.fillStyle(STEEL.dark).fillRoundedRect(z.x, plateTop, z.width, SPIKE_PLATE_H, SPIKE_PLATE_H / 2);
+      g.fillStyle(STEEL.mid).fillRoundedRect(z.x + 3, plateTop, z.width - 6, 3, 1.5);
+      g.fillStyle(STEEL.light);
+      for (let x = z.x + RIVET_EVERY / 2; x < z.x + z.width; x += RIVET_EVERY) g.fillCircle(x, plateTop + SPIKE_PLATE_H / 2 + 1, RIVET_R);
+      this.add.tileSprite(z.x, plateTop, z.width, SPIKE_CONE_H, 'spikes').setOrigin(0, 1).setDepth(4);
+      this.add.image(z.x + TILE / CONES_PER_TILE / 2, GROUND_TOP + PIT_TIP + 1, 'spike-glint').setDepth(4);
+    }
+  }
+
+  /**
+   * Pinchos: Rufo apoyado en el fondo de un foso está sobre las puntas y rebota fuera por donde entró.
+   * Cuesta una galleta salvo si está protegido o es invencible. Mientras pisa algo fuera de los fosos
+   * (suelo, escalón o plataforma) se recuerda dónde, para rebotar hacia ese lado.
    */
   private checkSpikes(time: number, grounded: boolean): void {
-    const zone = this.spikesUnderFeet(grounded);
+    const zone = grounded ? pitUnder(this.fox.body.bottom, this.fox.x, this.world.spikes) : undefined;
     if (grounded && !zone) this.lastSafeX = this.fox.x;
-    if (!zone || powerPhase(time, this.powerStartedAt) !== 'off' || time < this.protectedUntil) return;
+    if (!zone) return;
+    const costsCookie = powerPhase(time, this.powerStartedAt) === 'off' && time >= this.protectedUntil;
     const side = exitSide(zone, this.lastSafeX, this.fox.x);
-    this.knock(time, side, reboundVelocity(zone, side, this.fox.x), 'spikes');
+    this.knock(time, side, reboundVelocity(zone, side, this.fox.x), 'spikes', costsCookie);
     this.spikeRebound = true;
   }
 
   /**
-   * Pinchazo común: brinco hacia arriba con `vx`, sin control un momento, protegido (parpadeando) y una
-   * galleta menos (nunca bajo 0) que sale despedida hacia `side`. No toca bloques ni estrellas.
+   * Pinchazo común: brinco hacia arriba con `vx` y sin control un momento. Si `costsCookie`, además
+   * protegido (parpadeando) y una galleta menos (nunca bajo 0) que sale despedida hacia `side`; si no
+   * (pinchos con protección o fresa), solo el brinco y el sonido. No toca bloques ni estrellas.
    */
-  private knock(time: number, side: number, vx: number, sound: 'bump' | 'spikes'): void {
+  private knock(time: number, side: number, vx: number, sound: 'bump' | 'spikes', costsCookie = true): void {
     this.fox.setVelocity(vx, -KNOCK_VY);
     this.knockUntil = time + KNOCK_MS;
-    this.protectedUntil = time + PROTECT_MS;
-    this.hitAt = time;
     this.jumpBufferedAt = -Infinity;
     this.lastGrounded = -Infinity;
     this.spikeRebound = false;
     audio.sfx(sound);
+    if (!costsCookie) return;
+    this.protectedUntil = time + PROTECT_MS;
+    this.hitAt = time;
 
     const { cookies, lost } = loseCookie(this.cookies);
     if (!lost) return;
@@ -474,7 +520,7 @@ export class LevelScene extends Phaser.Scene {
     body.setVelocity(0, 0);
     body.setAllowGravity(false);
     body.moves = false;
-    // Por seguridad: nunca se queda sobre los pinchos (las reglas de colocación ya lo evitan).
+    // Por seguridad: nunca se queda sobre un foso (las reglas de colocación ya lo evitan).
     const x = nudgeOffSpikes(fruit.x, this.world.spikes, FRUIT_SIZE / 2);
     if (x !== fruit.x) body.reset(x, fruit.y);
     this.tweens.add({ targets: fruit, y: fruit.y - FRUIT_HOP, duration: FRUIT_HOP_MS, ease: 'Quad.easeOut', yoyo: true, repeat: -1, repeatDelay: 120 });
@@ -499,17 +545,16 @@ export class LevelScene extends Phaser.Scene {
   }
 
   /**
-   * Modo invencible: brillo mientras dura y, al acabar, su tintineo. Si acaba tocando un enemigo o
-   * sobre unos pinchos, da la misma protección (con parpadeo) que un pinchazo, para no pincharse en el
-   * fotograma siguiente.
+   * Modo invencible: brillo mientras dura y, al acabar, su tintineo. Si acaba tocando un enemigo, da la
+   * misma protección (con parpadeo) que un pinchazo, para no pincharse en el fotograma siguiente. En
+   * los pinchos no hace falta: no se puede estar en un foso sin rebotar.
    */
   private tickPower(time: number): void {
     const phase = powerPhase(time, this.powerStartedAt);
     if (phase === 'off' && this.powerWas !== 'off') {
       audio.sfx('power-off');
       this.clearGlow();
-      const body = this.fox.body;
-      if (this.touchingEnemies().length > 0 || this.spikesUnderFeet(body.blocked.down || body.touching.down)) {
+      if (this.touchingEnemies().length > 0) {
         this.protectedUntil = time + PROTECT_MS;
         this.hitAt = time;
       }
