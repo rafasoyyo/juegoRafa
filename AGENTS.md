@@ -67,3 +67,5 @@ Reglas de `openspec/config.yaml`: artefactos en español, encabezados estructura
 ## Estado
 
 Hecho: esqueleto y despliegue, mundo 1 de 12 niveles con mapa, enemigos, pinchos, fresa, 12 tipos de prueba de la bandera, galletas y vestidor, perfiles locales, audio sintetizado. Pendiente: Auth y Firestore, panel de padres, voz grabada, mundos 2 a 4.
+
+En marcha, con boceto aprobado y plan por pasos: el tema del mundo 1, «El camino del arcoíris» ([docs/MUNDO-1.md](docs/MUNDO-1.md)), y el mundo 2, «El río de los números» ([docs/MUNDO-2.md](docs/MUNDO-2.md)). Esos documentos mandan sobre las specs en lo suyo; cada `openspec-propose` de esos planes parte de ellos.
