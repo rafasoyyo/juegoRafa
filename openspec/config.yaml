@@ -27,14 +27,16 @@ context: |
 
   ## Stack
 
-  Phaser 3 · TypeScript 5 (strict) · Vite · vite-plugin-pwa (Workbox) · Vitest.
+  Phaser 4 · TypeScript (strict) · Vite · vite-plugin-pwa (Workbox) · Vitest.
   Firebase: Hosting (proyecto `juegorafa-edu`), Auth anónima + enlace de email del tutor, Firestore.
   Node >= 24.
 
   ## Estructura
 
-  `src/game/` (Phaser: scenes, ui, config) · `src/learning/` (retos, adaptación, puntuación) ·
-  `src/data/` (repositorios Firebase) · `content/` (niveles y retos en JSON) · `public/` (assets, iconos).
+  `src/game/` (Phaser: scenes, ui, audio, enemies, levels, power, profile, state) ·
+  `src/learning/` (pruebas de la bandera en `quiz/`, puntuación) · `content/levels/` (12 niveles en JSON) ·
+  `public/` (assets SVG, fuentes, iconos; licencias en `public/assets/LICENSES.md`).
+  `src/data/` (repositorios Firebase) aún no existe: llegará con la fase 3.
 
   ## Comandos
 
@@ -43,8 +45,10 @@ context: |
 
   ## Estado
 
-  Fase 0 hecha y desplegada (ver `openspec/specs/`). Pendiente: fases 1 a 6 de la hoja de ruta de
-  `docs/PROPUESTA.md`.
+  Hecho (ver `openspec/specs/`): esqueleto y despliegue, mundo 1 de 12 niveles con mapa, enemigos, pinchos,
+  fresa, prueba de la bandera (12 tipos, adaptada a la edad), galletas y vestidor, perfiles locales
+  (`localStorage`), audio sintetizado. Pendiente: Auth y Firestore (fase 3), panel de padres (fase 5),
+  voz grabada y mundos 2 a 4 (fase 6). Detalle en la hoja de ruta de `docs/PROPUESTA.md`.
 
 rules:
   proposal:
