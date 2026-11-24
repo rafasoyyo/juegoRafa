@@ -39,8 +39,10 @@ function checkQuiz(qs: Question[]): void {
       expect(q.answer.correct.length).toBeGreaterThan(0);
       // Sin opciones repetidas.
       expect(new Set(q.options.map((o) => o.key)).size).toBe(q.options.length);
-    } else {
+    } else if (q.answer.form === 'multi') {
       expect(q.answer.targets.length).toBeGreaterThan(0);
+    } else {
+      expect(q.answer.slots.length).toBeGreaterThan(0);
     }
     q.options.forEach((o, i) => expect(o.id).toBe(i));
   }
@@ -66,20 +68,20 @@ describe('franjas, catálogo y azar', () => {
       4: 'shapes',
       5: 'name-letters',
       6: 'recall',
-      7: 'count',
-      8: 'compare',
-      9: 'series',
-      10: 'shapes',
-      11: 'name-letters',
-      12: 'recall',
+      7: 'share',
+      8: 'order',
+      9: 'cable-car',
+      10: 'tracks',
+      11: 'balance',
+      12: 'mirror',
     });
     expect(quizForLevel(3)).toBe('series');
   });
 
-  it('los niveles 7 a 12 repiten el ciclo: el 7 es «¿Cuántos hay?» y el 12 «¿Te acuerdas?»', () => {
-    expect(quizForLevel(7)).toBe('count');
-    expect(quizForLevel(12)).toBe('recall');
-    for (let level = 7; level <= 12; level++) expect(quizForLevel(level)).toBe(quizForLevel(level - 6));
+  it('niveles nuevos: el 7 es «Reparte las galletas» y el 12 «La otra mitad»', () => {
+    expect(quizForLevel(7)).toBe('share');
+    expect(quizForLevel(12)).toBe('mirror');
+    expect(new Set(Array.from({ length: 12 }, (_, i) => quizForLevel(i + 1))).size).toBe(12);
   });
 
   it('misma semilla, misma secuencia', () => {
@@ -91,8 +93,8 @@ describe('franjas, catálogo y azar', () => {
     for (const x of xs) expect(x >= 0 && x < 1).toBe(true);
   });
 
-  it('generateQuiz cubre los 6 tipos y franjas', () => {
-    for (let level = 1; level <= 6; level++) {
+  it('generateQuiz cubre los 12 tipos y franjas', () => {
+    for (let level = 1; level <= 12; level++) {
       for (const band of BANDS) checkQuiz(generateQuiz(quizForLevel(level), band, createRng(level * 7), ctx()));
     }
   });
@@ -372,7 +374,7 @@ describe('«Las letras de tu nombre»', () => {
             expect((right[0] as { char: string }).char).toBe(alias[idx!]);
           } else {
             expect(band).toBe('big');
-            expect(q.answer.ordered).toBe(true);
+            expect(q.answer.form === 'multi' && q.answer.ordered).toBe(true);
             expect(q.options.map((o) => (o.visual as { char: string }).char).sort().join('')).toBe([...alias].sort().join(''));
           }
         }

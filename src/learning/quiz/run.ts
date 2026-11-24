@@ -19,6 +19,8 @@ interface QuestionState {
   used: Set<number>;
   /** Opciones apagadas por la pista: tocarlas no hace nada. */
   dimmed: Set<number>;
+  /** En preguntas de repartir: toques ya dados a cada hueco (id de opción → cantidad). */
+  filled: Map<number, number>;
 }
 
 export interface QuizRun {
@@ -46,7 +48,13 @@ export function createRun(questions: readonly Question[]): QuizRun {
   return {
     questions,
     index: 0,
-    states: questions.map(() => ({ fails: 0, mark: 'pending' as Mark, used: new Set<number>(), dimmed: new Set<number>() })),
+    states: questions.map(() => ({
+      fails: 0,
+      mark: 'pending' as Mark,
+      used: new Set<number>(),
+      dimmed: new Set<number>(),
+      filled: new Map<number, number>(),
+    })),
   };
 }
 
@@ -72,12 +80,20 @@ export function usedOptions(run: QuizRun): ReadonlySet<number> {
   return run.states[run.index]?.used ?? new Set();
 }
 
-/** Las opciones que quedan por tocar para acertar la pregunta actual. */
+/** Toques ya dados a cada hueco en una pregunta de repartir (vacío en las demás). */
+export function fillLevels(run: QuizRun): ReadonlyMap<number, number> {
+  return run.states[run.index]?.filled ?? new Map();
+}
+
+/** Las opciones que quedan por tocar para acertar la pregunta actual (en repartir, una vez por cada toque que falta). */
 export function remainingAnswer(run: QuizRun): number[] {
   const q = currentQuestion(run);
   const st = run.states[run.index];
   if (!q || !st) return [];
   if (q.answer.form === 'choice') return [...q.answer.correct];
+  if (q.answer.form === 'fill') {
+    return q.answer.slots.flatMap((slot) => Array.from({ length: Math.max(0, slot.capacity - (st.filled.get(slot.option) ?? 0)) }, () => slot.option));
+  }
   if (!q.answer.ordered) return q.answer.targets.filter((t) => !st.used.has(t));
   // En orden: la opción que toca ahora (o una con la misma clave), luego las siguientes.
   return q.answer.targets.slice(st.used.size);
@@ -86,11 +102,22 @@ export function remainingAnswer(run: QuizRun): number[] {
 /** Si tocar `option` ahora es correcto. */
 function isRight(q: Question, st: QuestionState, option: number): boolean {
   if (q.answer.form === 'choice') return q.answer.correct.includes(option);
+  if (q.answer.form === 'fill') {
+    const slot = q.answer.slots.find((s) => s.option === option);
+    if (!slot || (st.filled.get(option) ?? 0) >= slot.capacity) return false;
+    return (slot.after ?? []).every((id) => isSlotFull(q, st, id));
+  }
   if (!q.answer.ordered) return q.answer.targets.includes(option);
   const expected = q.answer.targets[st.used.size];
   if (expected === undefined) return false;
   const key = q.options[expected]?.key;
   return q.options[option]?.key === key;
+}
+
+function isSlotFull(q: Question, st: QuestionState, option: number): boolean {
+  if (q.answer.form !== 'fill') return false;
+  const slot = q.answer.slots.find((s) => s.option === option);
+  return !!slot && (st.filled.get(option) ?? 0) >= slot.capacity;
 }
 
 /** Una opción incorrecta (ahora) que aún no está apagada, para la pista `dim-wrong`. */
@@ -113,6 +140,14 @@ export function tap(run: QuizRun, option: number): TapEvent {
     if (q.answer.form === 'choice') {
       st.mark = 'correct';
       return { type: 'correct', option, next: advance(run) };
+    }
+    if (q.answer.form === 'fill') {
+      st.filled.set(option, (st.filled.get(option) ?? 0) + 1);
+      if (q.answer.slots.every((slot) => isSlotFull(q, st, slot.option))) {
+        st.mark = 'correct';
+        return { type: 'correct', option, next: advance(run) };
+      }
+      return { type: 'progress', option };
     }
     st.used.add(option);
     // Al ordenar, la letra apagada solo lo estaba para este paso.

@@ -10,6 +10,7 @@ import { AMBIENTS, type DecorKind } from '../levels/ambients';
 import type { AmbientId } from '../levels/types';
 import type { Mark } from '../../learning/quiz/run';
 import type { ObjectId, QuizKind, ShapeId, TopicIcon } from '../../learning/quiz/types';
+import { drawNewPictogram } from './quiz/art';
 import { fitImage } from './round-button';
 
 type G = Phaser.GameObjects.Graphics;
@@ -249,6 +250,9 @@ export function drawQuizPictogram(scene: Phaser.Scene, kind: QuizKind, size: num
       place(fitImage(scene.add.image(0, 0, 'hedgehog'), r * 0.75), 0, -r * 0.08);
       break;
     }
+    default:
+      parts.push(...drawNewPictogram(scene, kind, size));
+      break;
   }
   return scene.add.container(0, 0, parts);
 }

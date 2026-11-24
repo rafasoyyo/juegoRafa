@@ -18,6 +18,9 @@ import {
   drawShape,
   drawTopic,
 } from '../ui/quiz-art';
+import { drawExtraVisual } from '../ui/quiz/art';
+import { createView } from '../ui/quiz/views';
+import { VIEW_KINDS, type DrawResult, type QuizView, type ViewState } from '../ui/quiz/view';
 import { digits, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
 import { addSky } from '../ui/widgets';
@@ -27,8 +30,10 @@ import {
   createRun,
   currentQuestion,
   dimmedOptions,
+  fillLevels,
   generateQuiz,
   GUIDE_TEXT,
+  type HintKind,
   isFinished,
   marks,
   quizForLevel,
@@ -70,6 +75,13 @@ const AREAS: Record<QuizKind, { prompt: Area; options: Area; cell: [number, numb
   shapes: { prompt: { top: 130, bottom: 290 }, options: { top: 310, bottom: 700 }, cell: [150, 150] },
   'name-letters': { prompt: { top: 150, bottom: 380 }, options: { top: 420, bottom: 700 }, cell: [140, 140] },
   recall: { prompt: { top: 130, bottom: 400 }, options: { top: 430, bottom: 690 }, cell: [190, 190] },
+  // Las pruebas nuevas las coloca su vista (`ui/quiz/`); estas zonas solo valen si la vista no da la suya.
+  share: { prompt: { top: 150, bottom: 400 }, options: { top: 450, bottom: 690 }, cell: [160, 200] },
+  order: { prompt: { top: 150, bottom: 400 }, options: { top: 450, bottom: 690 }, cell: [140, 150] },
+  'cable-car': { prompt: { top: 150, bottom: 520 }, options: { top: 545, bottom: 700 }, cell: [150, 150] },
+  tracks: { prompt: { top: 150, bottom: 690 }, options: { top: 190, bottom: 690 }, cell: [400, 120] },
+  balance: { prompt: { top: 150, bottom: 580 }, options: { top: 590, bottom: 705 }, cell: [150, 108] },
+  mirror: { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 705 }, cell: [200, 190] },
 };
 
 interface OptionView {
@@ -113,6 +125,11 @@ export class QuizScene extends Phaser.Scene {
   /** Demostración en curso: se cancela si empieza otra o si cambia la pregunta. */
   private demoChain: Phaser.Tweens.TweenChain | null = null;
   private demoArrow: Phaser.GameObjects.Graphics | null = null;
+  /** Vista de las pruebas nuevas (`null` en las seis antiguas, que se dibujan aquí). */
+  private view: QuizView | null = null;
+  private drawResult: DrawResult | null = null;
+  private willDemo = false;
+  private viewTopLayer: Phaser.GameObjects.Container | null = null;
 
   constructor() {
     super('Quiz');
@@ -140,6 +157,8 @@ export class QuizScene extends Phaser.Scene {
     this.busy = false;
     this.guideOpen = false;
     this.bubble = null;
+    this.view = null;
+    this.drawResult = null;
     this.shownIndex = -1;
     this.demoDone = new Set();
   }
@@ -226,8 +245,15 @@ export class QuizScene extends Phaser.Scene {
     this.demoArrow = null;
   }
 
+  private viewState(): ViewState {
+    return { used: usedOptions(this.run), fills: fillLevels(this.run), dimmed: dimmedOptions(this.run) };
+  }
+
   private showQuestion(): void {
     this.stopDemo();
+    this.view?.destroy();
+    this.view = null;
+    this.drawResult = null;
     this.layer.removeAll(true);
     this.options = [];
     this.promptObjects = [];
@@ -242,9 +268,19 @@ export class QuizScene extends Phaser.Scene {
     }
     const firstTime = this.shownIndex !== this.run.index;
     this.shownIndex = this.run.index;
+    this.willDemo = firstTime && !this.demoDone.has(this.run.index);
     const rng = createRng(this.seed + this.run.index * 101);
+    if (VIEW_KINDS.includes(this.kind)) {
+      const top = this.add.container(0, 0);
+      this.viewTopLayer = top;
+      this.view = createView(this.kind, { scene: this, layer: this.layer, top, width: this.width, usefulW: this.usefulW, state: () => this.viewState() });
+    }
     this.drawPrompt(q, rng);
     this.drawOptions(q);
+    if (this.view) {
+      const buttons = new Map(this.options.map((o) => [o.id, o.button] as const));
+      this.view.attach(buttons);
+    }
     this.restoreProgress(q);
 
     if (firstTime && !this.demoDone.has(this.run.index)) {
@@ -259,13 +295,19 @@ export class QuizScene extends Phaser.Scene {
   /** Tras recolocar la pantalla, vuelve a mostrar lo ya conseguido en la pregunta actual. */
   private restoreProgress(q: Question): void {
     const used = usedOptions(this.run);
-    for (const id of used) this.markUsed(q, id, false);
+    // Las vistas nuevas ya dibujan lo conseguido al recolocar la pantalla.
+    if (!this.view) for (const id of used) this.markUsed(q, id, false);
     for (const id of dimmedOptions(this.run)) this.dimOption(id, false);
   }
 
   // --- Modelo (parte de arriba) -------------------------------------------------------------------
 
   private drawPrompt(q: Question, rng: ReturnType<typeof createRng>): void {
+    if (this.view) {
+      this.drawResult = this.view.draw(q, this.willDemo);
+      this.promptAnchor = this.drawResult.anchor;
+      return;
+    }
     const area = AREAS[this.kind].prompt;
     const cx = this.width / 2;
     const cy = (area.top + area.bottom) / 2;
@@ -412,27 +454,71 @@ export class QuizScene extends Phaser.Scene {
   // --- Respuestas ---------------------------------------------------------------------------------
 
   private drawOptions(q: Question): void {
-    const { options: area, cell } = AREAS[this.kind];
-    const n = q.options.length;
-    let [cw, ch] = cell;
-    if (q.options.some((o) => o.visual.type === 'ambient')) cw = 250;
+    const res = this.drawResult;
+    // Las respuestas `scene` van dentro del dibujo, en el hueco que da la vista; el resto, en fila.
+    const rowOptions = this.view ? q.options.filter((o) => !res?.slots.has(o.id)) : q.options;
+    if (res) {
+      for (const o of q.options) {
+        const slot = res.slots.get(o.id);
+        if (!slot) continue;
+        const button = new RoundButton(this, slot.x, slot.y, {
+          width: slot.w,
+          height: slot.h,
+          radius: slot.radius ?? 24,
+          color: slot.color ?? COLORS.white,
+          shadowColor: slot.shadow ?? COLORS.shadow,
+          sound: false,
+          onTap: () => this.onTap(o.id),
+        });
+        if (slot.ghost) {
+          (button.list[0] as Phaser.GameObjects.Graphics).setVisible(false);
+          button.face.setAlpha(0);
+        } else {
+          button.addContent(this.drawVisual(o.visual, slot.w - 20, slot.h - 20));
+        }
+        this.layer.add(button);
+        this.options.push({ id: o.id, button, objects: [] });
+      }
+    }
+    this.drawRowOptions(rowOptions, res?.rowArea);
+    if (this.view) {
+      this.options.sort((a, b) => a.id - b.id);
+      // Lo que vuela o se anima sobre las respuestas va encima de los botones.
+      this.layer.add(this.viewTop());
+    }
+  }
+
+  private viewTop(): Phaser.GameObjects.Container {
+    return this.viewTopLayer!;
+  }
+
+  /** Respuestas en fila(s): en la zona del tipo de prueba o en la que pide la vista. */
+  private drawRowOptions(opts: Question['options'], rowArea?: DrawResult['rowArea']): void {
+    const n = opts.length;
+    if (n === 0) return;
+    const base = AREAS[this.kind];
+    const area = rowArea ?? base.options;
+    const availW = rowArea?.w ?? this.usefulW;
+    const centerX = rowArea?.cx ?? this.width / 2;
+    let [cw, ch] = rowArea?.cell ?? base.cell;
+    if (opts.some((o) => o.visual.type === 'ambient')) cw = 250;
     const gap = 24;
-    const maxCols = Math.max(1, Math.floor((this.usefulW + gap) / (cw + gap)));
+    const maxCols = Math.max(1, Math.floor((availW + gap) / (cw + gap)));
     // Repartir en filas equilibradas (8 → 4+4, 10 → 5+5).
     const rows = Math.ceil(n / maxCols);
     const cols = Math.ceil(n / rows);
     const areaH = area.bottom - area.top;
     const rowH = Math.min(ch + gap, areaH / rows);
     ch = Math.min(ch, rowH - gap);
-    cw = Math.min(cw, (this.usefulW - (cols - 1) * gap) / cols);
+    cw = Math.min(cw, (availW - (cols - 1) * gap) / cols);
     const totalH = rows * rowH - gap;
     const y0 = area.top + (areaH - totalH) / 2 + ch / 2;
 
-    q.options.forEach((o, i) => {
+    opts.forEach((o, i) => {
       const row = Math.floor(i / cols);
       const inRow = Math.min(cols, n - row * cols);
       const col = i - row * cols;
-      const x = this.width / 2 + (col - (inRow - 1) / 2) * (cw + gap);
+      const x = centerX + (col - (inRow - 1) / 2) * (cw + gap);
       const y = y0 + row * rowH;
       const button = new RoundButton(this, x, y, {
         width: cw,
@@ -491,6 +577,8 @@ export class QuizScene extends Phaser.Scene {
         return drawTopic(this, v.icon, s * 0.7);
       case 'basket':
         return drawBasket(this, v.full, s * 0.8);
+      default:
+        return drawExtraVisual(this, v, w, h) ?? this.add.container();
     }
   }
 
@@ -513,17 +601,32 @@ export class QuizScene extends Phaser.Scene {
         return;
       case 'progress':
         audio.sfx('cookie');
-        this.markUsed(q, ev.option, true);
+        if (this.view) this.view.onProgress?.(ev.option);
+        else this.markUsed(q, ev.option, true);
         return;
       case 'correct':
         audio.sfx('star', { index: Math.min(2, this.run.index) });
-        if (q.answer.form === 'multi') this.markUsed(q, ev.option, true);
+        if (q.answer.form !== 'choice') {
+          if (this.view) this.view.onProgress?.(ev.option);
+          else this.markUsed(q, ev.option, true);
+        }
         this.celebrate(ev.option);
-        this.afterQuestion(NEXT_QUESTION_MS);
+        const onCorrect = this.view?.onCorrect?.bind(this.view);
+        if (onCorrect) {
+          // La vista cuenta el resultado (la balanza se suelta, Rufo recorre las huellas…) antes de seguir.
+          const view = this.view;
+          this.busy = true;
+          this.redrawMarks();
+          void onCorrect(ev.option).then(() => {
+            if (this.view === view) this.afterQuestion(NEXT_QUESTION_MS);
+          });
+        } else {
+          this.afterQuestion(NEXT_QUESTION_MS);
+        }
         return;
       case 'wrong':
         audio.sfx('nope');
-        this.wobble(ev.option);
+        if (!this.view?.onWrong?.(ev.option)) this.wobble(ev.option);
         this.busy = true;
         this.time.delayedCall(320, () => {
           if (ev.level === 1) this.demo();
@@ -532,7 +635,7 @@ export class QuizScene extends Phaser.Scene {
         return;
       case 'failed':
         audio.sfx('nope');
-        this.wobble(ev.option);
+        if (!this.view?.onWrong?.(ev.option)) this.wobble(ev.option);
         this.busy = true;
         this.redrawMarks();
         this.time.delayedCall(300, () => this.showAnswer(ev.answer));
@@ -648,6 +751,20 @@ export class QuizScene extends Phaser.Scene {
     if (isFinished(this.run) || this.guideOpen) return;
     this.stopDemo();
     this.busy = true;
+    const view = this.view;
+    if (view?.intro) {
+      // Escena previa (el teleférico): al acabar, la flecha señala las respuestas.
+      void view.intro().then(() => {
+        if (this.view === view && !this.guideOpen && !isFinished(this.run)) this.arrowDemo();
+        else if (this.view === view) this.busy = false;
+      });
+      return;
+    }
+    this.arrowDemo();
+  }
+
+  private arrowDemo(): void {
+    this.busy = true;
     const stops: Point[] = [{ x: this.promptAnchor.x, y: this.promptAnchor.y - 40 }];
     const q = currentQuestion(this.run)!;
     const dimmed = dimmedOptions(this.run);
@@ -676,6 +793,14 @@ export class QuizScene extends Phaser.Scene {
   private hint(q: Question, kind: string, tapped: number, dimmed?: number): void {
     if (this.guideOpen) {
       this.busy = false;
+      return;
+    }
+    if (this.view && kind !== 'dim-wrong') {
+      // La pista propia de las pruebas nuevas la anima su vista.
+      const view = this.view;
+      void view.hint(kind as HintKind, { question: q, tapped, dimmed }).then(() => {
+        if (this.view === view) this.busy = false;
+      });
       return;
     }
     const done = (ms: number): void => {
@@ -772,6 +897,7 @@ export class QuizScene extends Phaser.Scene {
   /** Tras el 3.er fallo: Lalo señala la respuesta durante 2 s. */
   private showAnswer(ids: number[]): void {
     this.stopDemo();
+    if (this.view?.showAnswer?.(ids)) return;
     const views = ids.map((id) => this.optionView(id)).filter((v): v is OptionView => !!v);
     const first = views[0];
     for (const v of views) {
