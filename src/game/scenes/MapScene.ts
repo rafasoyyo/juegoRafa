@@ -5,9 +5,12 @@ import { currentLevel, LEVEL_COUNT, levelStatus, session } from '../state';
 import { drawFox, drawLalo } from '../ui/characters';
 import { digits, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
-import { cookieCounter } from '../ui/widgets';
+import { cookieCounter, fixToCamera } from '../ui/widgets';
 
-/** Posición de los nodos en el artboard de diseño (1180×820); se escala al ancho real. */
+/**
+ * Posición de los nodos en el artboard de diseño (dos pantallas de 1180×820); se escala con el ancho
+ * real de una pantalla. Los 6 primeros llenan la primera pantalla y los otros 6 siguen el camino.
+ */
 const NODES: readonly [number, number][] = [
   [150, 530],
   [330, 440],
@@ -15,17 +18,49 @@ const NODES: readonly [number, number][] = [
   [710, 390],
   [880, 490],
   [1040, 310],
+  [1220, 470],
+  // Como mucho a la altura de los más bajos de la primera pantalla: más abajo, el selector de mundos
+  // taparía sus estrellas.
+  [1400, 530],
+  [1580, 420],
+  [1760, 520],
+  [1940, 370],
+  [2150, 480],
 ];
-const TREES: readonly [number, number][] = [
-  [115, 450],
-  [605, 370],
-  [975, 680],
+/** Adornos del fondo: árboles en la primera mitad y algunos de los ambientes nuevos en la segunda. */
+const DECOR: readonly { at: [number, number]; key: string; size: number }[] = [
+  { at: [115, 450], key: 'tree', size: 0 },
+  { at: [605, 370], key: 'tree', size: 0 },
+  { at: [975, 680], key: 'tree', size: 0 },
+  { at: [1310, 360], key: 'decor-palm', size: 150 },
+  { at: [1480, 720], key: 'tree', size: 0 },
+  { at: [1690, 330], key: 'decor-pine-snow', size: 120 },
+  { at: [1860, 690], key: 'decor-cactus', size: 105 },
+  { at: [2290, 700], key: 'tree', size: 0 },
 ];
 const DESIGN_W = 1180;
 const DESIGN_H = 820;
+/** El mapa mide dos pantallas de ancho. */
+const SCREENS = 2;
+/** Lo que hay que mover el dedo para que un toque pase a ser un arrastre del mapa, en px. */
+const DRAG_THRESHOLD = 12;
+/** Las flechas desplazan el mapa esta fracción del ancho visible. */
+const ARROW_STEP = 0.7;
+const ARROW_MS = 450;
+const HUD_DEPTH = 100;
 
-/** Mapa del mundo de los números: 6 niveles en un camino, el zorro sobre el actual. */
+/**
+ * Mapa del mundo de los números: 12 niveles en un camino más ancho que la pantalla, el zorro sobre el
+ * actual. Se desplaza arrastrando o con las flechas; el contador, Lalo, mi personaje y el selector de
+ * mundos quedan fijos.
+ */
 export class MapScene extends Phaser.Scene {
+  /** Botones que se mueven con el mapa: un arrastre cancela su toque. */
+  private nodeButtons: RoundButton[] = [];
+  private arrows?: { left: RoundButton; right: RoundButton };
+  private maxScroll = 0;
+  private drag?: { startX: number; startScroll: number; dragging: boolean };
+
   constructor() {
     super('Map');
   }
@@ -33,25 +68,68 @@ export class MapScene extends Phaser.Scene {
   create(): void {
     enter(this);
     audio.playMusic('map');
+    this.drag = undefined;
     this.build(this.scale.width);
     onResize(this, (w) => {
       this.tweens.killAll();
       this.children.removeAll(true);
       this.build(w);
     });
+
+    this.input.on(Phaser.Input.Events.POINTER_DOWN, (p: Phaser.Input.Pointer) => {
+      this.drag = {
+        startX: p.x,
+        startScroll: this.cameras.main.scrollX,
+        dragging: false,
+      };
+    });
+    this.input.on(Phaser.Input.Events.POINTER_MOVE, (p: Phaser.Input.Pointer) => {
+      const drag = this.drag;
+      if (!drag || !p.isDown) return;
+      const dx = p.x - drag.startX;
+      if (!drag.dragging && Math.abs(dx) > DRAG_THRESHOLD) {
+        drag.dragging = true;
+        // Al empezar a arrastrar, ningún nivel se abre al soltar.
+        for (const b of this.nodeButtons) b.setPressed(false);
+        this.tweens.killTweensOf(this.cameras.main);
+      }
+      if (drag.dragging) this.scrollTo(drag.startScroll - dx);
+    });
+    const end = (): void => {
+      this.drag = undefined;
+    };
+    this.input.on(Phaser.Input.Events.POINTER_UP, end);
+    this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, end);
+  }
+
+  override update(): void {
+    if (!this.arrows) return;
+    const x = this.cameras.main.scrollX;
+    this.arrows.left.setVisible(x > 2);
+    this.arrows.right.setVisible(x < this.maxScroll - 2);
+  }
+
+  private scrollTo(x: number): void {
+    this.cameras.main.scrollX = Phaser.Math.Clamp(x, 0, this.maxScroll);
   }
 
   private build(width: number): void {
     const sx = width / DESIGN_W;
     const sy = GAME_H / DESIGN_H;
     const at = ([x, y]: readonly [number, number]): Phaser.Math.Vector2 => new Phaser.Math.Vector2(x * sx, y * sy);
+    const worldW = width * SCREENS;
+    this.maxScroll = worldW - width;
+    this.nodeButtons = [];
+    this.cameras.main.setBounds(0, 0, worldW, GAME_H);
 
-    this.add.image(0, 0, 'sky-map').setOrigin(0, 0).setDisplaySize(MAX_W, GAME_H);
-    for (const t of TREES) {
-      const p = at(t);
-      this.add.image(p.x, p.y, 'tree').setOrigin(0.5, 1);
+    this.add.image(0, 0, 'sky-map').setOrigin(0, 0).setDisplaySize(MAX_W, GAME_H).setScrollFactor(0);
+    for (const d of DECOR) {
+      const p = at(d.at);
+      const img = this.add.image(p.x, p.y, d.key).setOrigin(0.5, 1);
+      if (d.size > 0) img.setScale(d.size / Math.max(img.width, img.height));
     }
     this.add.image(width * 0.39, 170, 'cloud');
+    this.add.image(width * 1.45, 150, 'cloud').setScale(0.9);
 
     this.drawPath(NODES.map(at));
 
@@ -61,22 +139,64 @@ export class MapScene extends Phaser.Scene {
     const foxAt = at(NODES[current - 1]!);
     const nodeR = levelStatus(session, current) === 'current' ? 56 : 48;
     const fox = drawFox(this, foxAt.x, foxAt.y - nodeR + 6, 'idle', session.hat, 104);
-    this.tweens.add({ targets: fox, y: fox.y - 8, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.tweens.add({
+      targets: fox,
+      y: fox.y - 8,
+      duration: 650,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    // Se abre con el nivel actual centrado (o lo más centrado posible).
+    this.scrollTo(foxAt.x - width / 2);
 
-    // Barra superior: galletas, Lalo y acceso a mi personaje.
+    // Barra superior: galletas, Lalo y acceso a mi personaje (fijos a la cámara).
+    const hud: Phaser.GameObjects.GameObject[] = [];
     const counter = cookieCounter(this, 0, 76, session.cookies);
     counter.container.x = 32 + counter.width / 2;
-    drawLalo(this, 32, 140);
-    new RoundButton(this, width - 32 - 48, 76, {
-      width: 96,
-      color: COLORS.white,
-      shadowColor: COLORS.shadow,
-      icon: 'icon-fox-face',
-      iconSize: 64,
-      onTap: () => goTo(this, 'Wardrobe'),
-    });
+    hud.push(counter.container, drawLalo(this, 32, 140));
+    hud.push(
+      new RoundButton(this, width - 32 - 48, 76, {
+        width: 96,
+        color: COLORS.white,
+        shadowColor: COLORS.shadow,
+        icon: 'icon-fox-face',
+        iconSize: 64,
+        onTap: () => goTo(this, 'Wardrobe'),
+      }),
+    );
+    hud.push(...this.buildWorldSelector(width));
+    hud.push(...this.buildArrows(width));
+    for (const obj of hud) fixToCamera((obj as Phaser.GameObjects.Container).setDepth(HUD_DEPTH));
+  }
 
-    this.buildWorldSelector(width);
+  /** Flechas grandes a los lados: solo se ven si queda camino por ese lado. */
+  private buildArrows(width: number): RoundButton[] {
+    const y = GAME_H * 0.5;
+    const arrow = (x: number, icon: string, dir: -1 | 1): RoundButton =>
+      new RoundButton(this, x, y, {
+        width: 88,
+        color: COLORS.white,
+        shadowColor: COLORS.shadow,
+        icon,
+        iconSize: 52,
+        onTap: () => {
+          const cam = this.cameras.main;
+          const to = Phaser.Math.Clamp(cam.scrollX + dir * width * ARROW_STEP, 0, this.maxScroll);
+          this.tweens.killTweensOf(cam);
+          this.tweens.add({
+            targets: cam,
+            scrollX: to,
+            duration: ARROW_MS,
+            ease: 'Sine.easeInOut',
+          });
+        },
+      });
+    const left = arrow(24 + 44, 'icon-arrow-left', -1);
+    const right = arrow(width - 24 - 44, 'icon-arrow-right', 1);
+    this.arrows = { left, right };
+    this.update();
+    return [left, right];
   }
 
   private drawPath(points: Phaser.Math.Vector2[]): void {
@@ -97,7 +217,7 @@ export class MapScene extends Phaser.Scene {
     if (last) this.add.image(p.x + 46, p.y - 52, 'icon-flag').setOrigin(0.2, 0.9).setDisplaySize(64, 64);
 
     if (status === 'locked') {
-      const btn = new RoundButton(this, p.x, p.y, {
+      const btn: RoundButton = new RoundButton(this, p.x, p.y, {
         width: 96,
         color: COLORS.locked,
         shadowColor: COLORS.lockedDark,
@@ -105,36 +225,48 @@ export class MapScene extends Phaser.Scene {
         iconSize: 44,
         onTap: () => btn.shake(),
       });
+      this.nodeButtons.push(btn);
       return;
     }
 
     const play = (): void => goTo(this, 'Level', { level });
     if (status === 'current') {
       const halo = this.add.circle(p.x, p.y + 4, 66, COLORS.white, 0.55);
-      this.tweens.add({ targets: halo, scale: 1.08, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-      new RoundButton(this, p.x, p.y, {
-        width: 112,
-        color: COLORS.coral,
-        shadowColor: COLORS.coralDark,
-        shadowDepth: 9,
-        label: String(level),
-        labelSize: 64,
-        labelColor: '#FFFFFF',
-        onTap: play,
+      this.tweens.add({
+        targets: halo,
+        scale: 1.08,
+        duration: 800,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
       });
+      this.nodeButtons.push(
+        new RoundButton(this, p.x, p.y, {
+          width: 112,
+          color: COLORS.coral,
+          shadowColor: COLORS.coralDark,
+          shadowDepth: 9,
+          label: String(level),
+          labelSize: 64,
+          labelColor: '#FFFFFF',
+          onTap: play,
+        }),
+      );
       return;
     }
 
     if (status === 'pending') {
       // Jugado sin superar la prueba: amarillo, con un globo de Lalo con «?» y sin estrellas.
-      new RoundButton(this, p.x, p.y, {
-        width: 96,
-        color: COLORS.yellow,
-        shadowColor: COLORS.yellowDark,
-        label: String(level),
-        labelSize: 54,
-        onTap: play,
-      });
+      this.nodeButtons.push(
+        new RoundButton(this, p.x, p.y, {
+          width: 96,
+          color: COLORS.yellow,
+          shadowColor: COLORS.yellowDark,
+          label: String(level),
+          labelSize: 54,
+          onTap: play,
+        }),
+      );
       const bx = p.x + 50;
       const by = p.y - 50;
       const bubble = this.add.graphics();
@@ -145,22 +277,24 @@ export class MapScene extends Phaser.Scene {
       return;
     }
 
-    new RoundButton(this, p.x, p.y, {
-      width: 96,
-      color: COLORS.grass,
-      shadowColor: COLORS.grassDark,
-      label: String(level),
-      labelSize: 54,
-      labelColor: '#FFFFFF',
-      onTap: play,
-    });
+    this.nodeButtons.push(
+      new RoundButton(this, p.x, p.y, {
+        width: 96,
+        color: COLORS.grass,
+        shadowColor: COLORS.grassDark,
+        label: String(level),
+        labelSize: 54,
+        labelColor: '#FFFFFF',
+        onTap: play,
+      }),
+    );
     const stars = session.stars.get(level) ?? 0;
     for (let i = 0; i < 3; i++) {
       this.add.image(p.x + (i - 1) * 34, p.y + 48 + 26, i < stars ? 'star' : 'star-empty').setDisplaySize(34, 34);
     }
   }
 
-  private buildWorldSelector(width: number): void {
+  private buildWorldSelector(width: number): Phaser.GameObjects.GameObject[] {
     const bw = 150;
     const bh = 96;
     const gap = 12;
@@ -171,8 +305,16 @@ export class MapScene extends Phaser.Scene {
     const g = this.add.graphics();
     g.fillStyle(COLORS.shadow).fillRoundedRect(width / 2 - panelW / 2, cy - panelH / 2 + 6, panelW, panelH, 44);
     g.fillStyle(COLORS.white).fillRoundedRect(width / 2 - panelW / 2, cy - panelH / 2, panelW, panelH, 44);
+    const parts: Phaser.GameObjects.GameObject[] = [g];
 
-    const worlds: { color: number; shadow: number; label?: string; icon?: string; iconSize?: number; active?: boolean }[] = [
+    const worlds: {
+      color: number;
+      shadow: number;
+      label?: string;
+      icon?: string;
+      iconSize?: number;
+      active?: boolean;
+    }[] = [
       { color: 0xffe9e6, shadow: 0xf2c4bd, label: '123', active: true },
       { color: 0xf1ecfb, shadow: 0xd9cfe0, label: 'Aa' },
       { color: 0xe4f4e8, shadow: 0xbfe0c6, icon: 'icon-shapes', iconSize: 88 },
@@ -197,6 +339,8 @@ export class MapScene extends Phaser.Scene {
         },
       });
       if (!w.active && w.label) btn.face.setAlpha(0.7);
+      parts.push(btn);
     });
+    return parts;
   }
 }

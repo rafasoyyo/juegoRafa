@@ -72,18 +72,26 @@ Licencia: la del repositorio.
 
 | Clave / elemento | Dónde se dibuja | Origen |
 |---|---|---|
-| `sky-prado`, `sky-flores`, `sky-bosque`, `sky-otono`, `sky-atardecer`, `sky-noche` | `src/game/scenes/BootScene.ts` | propio: degradados del cielo de cada ambiente (`src/game/levels/ambients.ts`) |
+| `sky-prado`, `sky-flores`, `sky-bosque`, `sky-otono`, `sky-atardecer`, `sky-noche`, `sky-playa`, `sky-selva`, `sky-montana`, `sky-nieve`, `sky-desierto`, `sky-nubes` | `src/game/scenes/BootScene.ts` | propio: degradados del cielo de cada ambiente (`src/game/levels/ambients.ts`) |
 | `decor-tree` | `src/game/scenes/BootScene.ts` | propio: árbol verde redondeado de la decoración del bosque |
 | `decor-tree-autumn` | `src/game/scenes/BootScene.ts` | propio: árbol ocre y naranja de la decoración del otoño |
 | `decor-flowers` | `src/game/scenes/BootScene.ts` | propio: mata de flores del campo de flores |
 | `decor-sun` | `src/game/scenes/BootScene.ts` | propio: sol bajo del atardecer |
 | `decor-moon` | `src/game/scenes/BootScene.ts` | propio: luna de la noche |
 | `decor-star` | `src/game/scenes/BootScene.ts` | propio: estrella redondeada de la noche |
+| `decor-palm` | `src/game/scenes/BootScene.ts` | propio: palmera de la playa |
+| `decor-leaf`, `decor-vine` | `src/game/scenes/BootScene.ts` | propio: hoja grande y liana de la selva |
+| `decor-peak` | `src/game/scenes/BootScene.ts` | propio: pico nevado de la montaña |
+| `decor-pine-snow`, `decor-flake` | `src/game/scenes/BootScene.ts` | propio: pino nevado y copo de la nieve |
+| `decor-cactus` | `src/game/scenes/BootScene.ts` | propio: cactus redondeado (sin pinchos) del desierto |
+| `decor-rainbow` | `src/game/scenes/BootScene.ts` | propio: arcoíris pastel de las nubes |
+| `spikes` | `src/game/scenes/BootScene.ts` | propio: hilera de conos morados de punta redondeada sobre una base de piedra (zonas de pinchos) |
+| Mar de la playa y copos que caen | `src/game/ui/widgets.ts` | propio |
 | `dust` | `src/game/scenes/BootScene.ts` | propio: mota de polvo de la carrera |
 | `sparkle` | `src/game/scenes/BootScene.ts` | propio: destello de cuatro puntas del modo invencible |
 | Plataformas (tronco y nube mullida) | `src/game/ui/widgets.ts` (`drawPlatform`) | propio: plataformas de un solo sentido de los niveles |
 | Escalones (hierba sobre tierra) | `src/game/ui/widgets.ts` (`drawStep`) | propio: escalones de los niveles |
-| Colinas, suelo y piernas del zorro | `src/game/ui/widgets.ts`, `src/game/scenes/LevelScene.ts` | propio |
+| Colinas, suelo (hierba, arena, nieve y nube) y piernas del zorro | `src/game/ui/widgets.ts`, `src/game/scenes/LevelScene.ts` | propio |
 
 ## Sonido
 

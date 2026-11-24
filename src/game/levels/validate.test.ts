@@ -15,6 +15,7 @@ const VALID: LevelData = {
     { x: 36, row: 'low', on: 'platform' },
     { x: 46, row: 'high' },
   ],
+  spikes: [],
 };
 
 function withChanges(change: (level: LevelData) => void): LevelData {
@@ -104,5 +105,69 @@ describe('validateLevel', () => {
 
   it('`on` tiene que coincidir con la superficie real', () => {
     expectError(withChanges((l) => (l.blocks[0]!.on = 'platform')), 'blocks[0]', /sobre «ground»/);
+  });
+});
+
+describe('validateLevel: zonas de pinchos', () => {
+  /** El nivel válido con dos zonas bien puestas: una de 1 baldosa y otra de 2. */
+  const withSpikes = (change: (level: LevelData) => void = () => {}): LevelData =>
+    withChanges((l) => {
+      l.spikes = [
+        { x: 29, width: 1 },
+        { x: 40.5, width: 2 },
+      ];
+      change(l);
+    });
+
+  it('un nivel con pinchos bien puestos no tiene errores', () => {
+    expect(validateLevel(withSpikes())).toEqual([]);
+  });
+
+  it('ancho: entre 1 y 2 baldosas', () => {
+    expectError(withSpikes((l) => (l.spikes[0]!.width = 0.5)), 'spikes[0]', /mide 0.5 baldosas \(entre 1 y 2\)/);
+    expectError(withSpikes((l) => (l.spikes[1]!.width = 3)), 'spikes[1]', /mide 3 baldosas/);
+  });
+
+  it('saltable: el ancho más los márgenes cabe en un salto normal', () => {
+    expect(RULES.jumpReach).toBeGreaterThan(2 + 2 * RULES.spikeTakeoff);
+    const errors = validateLevel(withSpikes(), { ...RULES, jumpReach: 2.5 });
+    expect(errors.some((e) => e.startsWith('prueba: spikes[1] ') && /no se cruza con un salto normal/.test(e))).toBe(true);
+    expect(errors.some((e) => e.startsWith('prueba: spikes[0] '))).toBe(false);
+  });
+
+  it('solo en el suelo: ni sobre un escalón ni bajo una plataforma', () => {
+    expectError(withSpikes((l) => (l.spikes[0]!.x = 22)), 'spikes[0]', /está sobre steps\[0\]/);
+    expectError(withSpikes((l) => (l.spikes[0]!.x = 35)), 'spikes[0]', /está bajo platforms\[0\]/);
+  });
+
+  it('salida y bandera: a 10 baldosas o más', () => {
+    expectError(withSpikes((l) => (l.spikes[0]!.x = 12)), 'spikes[0]', /a menos de 10 baldosas de la salida/);
+    expectError(withSpikes((l) => (l.spikes[1]!.x = 47)), 'spikes[1]', /a menos de 10 baldosas de la bandera/);
+    expectError(withSpikes((l) => (l.spikes[1]!.x = 57)), 'spikes[1]', /más allá de la bandera/);
+  });
+
+  it('a 2 baldosas o más de bloques, escalones y plataformas', () => {
+    expectError(withSpikes((l) => (l.spikes[1]!.x = 43.5)), 'spikes[1]', /a menos de 2 baldosas de blocks\[3\]/);
+    expectError(withSpikes((l) => (l.spikes[0]!.x = 26)), 'spikes[0]', /a menos de 2 baldosas de steps\[0\]/);
+    expectError(withSpikes((l) => (l.spikes[1]!.x = 38.5)), 'spikes[1]', /a menos de 2 baldosas de platforms\[0\]/);
+  });
+
+  it('a 6 baldosas o más entre zonas', () => {
+    expectError(withSpikes((l) => (l.spikes[1]!.x = 31)), 'spikes[1]', /deja 1 baldosas con spikes\[0\] \(mínimo 6\)/);
+  });
+
+  it('densidad: una zona de pinchos cuenta como elemento', () => {
+    const long = withChanges((l) => (l.length = 100));
+    expectError(long, 'la bandera', /baldosas vacías/);
+    const withZone = withChanges((l) => {
+      l.length = 100;
+      l.spikes = [{ x: 70, width: 1 }];
+    });
+    expect(validateLevel(withZone)).toEqual([]);
+  });
+
+  it('cada error nombra el nivel y la zona', () => {
+    const errors = validateLevel({ ...withSpikes((l) => (l.spikes[0]!.x = 12)), id: 'nivel-9' });
+    expect(errors.some((e) => e.startsWith('nivel-9: spikes[0] '))).toBe(true);
   });
 });

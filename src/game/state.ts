@@ -3,7 +3,8 @@
  * TypeScript puro (sin Phaser) para poder probarlo y, en la fase 3, guardarlo en Firestore.
  */
 
-export const LEVEL_COUNT = 6;
+/** Niveles del mundo de los números. */
+export const LEVEL_COUNT = 12;
 
 export const HATS = ['cap', 'wool', 'party', 'helmet', 'crown', 'none'] as const;
 export type HatId = (typeof HATS)[number];

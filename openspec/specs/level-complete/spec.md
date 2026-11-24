@@ -48,12 +48,20 @@ chocolate y un número, y esas galletas SHALL sumarse al total del niño.
 
 ### Requirement: Tres caminos tras la celebración
 La pantalla SHALL ofrecer tres botones sin texto: mapa (icono de mapa), siguiente nivel (flecha, el más
-grande y en coral) y repetir (flecha circular). En el último nivel del mundo el botón de siguiente SHALL
-llevar al mapa.
+grande y en coral) y repetir (flecha circular). En el último nivel del mundo, el 12, el botón de
+siguiente SHALL llevar al mapa.
 
 #### Scenario: Siguiente nivel
 - **WHEN** el niño completa el nivel 2 y toca la flecha grande
 - **THEN** se abre el nivel 3
+
+#### Scenario: Del seis al siete
+- **WHEN** el niño completa el nivel 6 y toca la flecha grande
+- **THEN** se abre el nivel 7
+
+#### Scenario: Último nivel del mundo
+- **WHEN** el niño completa el nivel 12 y toca la flecha grande
+- **THEN** se abre el mapa
 
 #### Scenario: Repetir
 - **WHEN** el niño toca la flecha circular
@@ -79,5 +87,5 @@ Si la prueba de la bandera no se supera, el juego SHALL abrir una pantalla de á
 - **THEN** el nivel 2 empieza de nuevo y, al llegar a la bandera, vuelve a salir su prueba con preguntas nuevas
 
 #### Scenario: Último nivel
-- **WHEN** el niño no supera la prueba del nivel 6 y toca la flecha grande
+- **WHEN** el niño no supera la prueba del nivel 12 y toca la flecha grande
 - **THEN** se abre el mapa

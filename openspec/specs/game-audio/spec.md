@@ -51,9 +51,10 @@ su aparición y más agudo cada uno, y después SHALL volver la melodía del map
 
 ### Requirement: Efectos de las acciones del zorro
 El nivel SHALL tener un efecto de sonido propio para: saltar, golpear un bloque «?» y ganar su
-galleta, chocar con un enemigo, que salga la fruta, comer la fruta y que termine el modo invencible.
-El sonido del choque SHALL ser un rebote suave y gracioso, nunca un sonido de error, castigo o susto,
-también cuando el choque resta una galleta.
+galleta, chocar con un enemigo, caer en una zona de pinchos, que salga la fruta, comer la fruta y que
+termine el modo invencible. Los sonidos de chocar con un enemigo y de caer en los pinchos SHALL ser
+rebotes suaves y graciosos, distintos entre sí, nunca un sonido de error, castigo o susto, también
+cuando el choque resta una galleta.
 
 #### Scenario: Saltar
 - **WHEN** el zorro salta
@@ -71,6 +72,10 @@ también cuando el choque resta una galleta.
 - **WHEN** el zorro toca un erizo o una abeja
 - **THEN** suena un «boing» suave junto con el brinco, igual tenga o no galletas que perder
 
+#### Scenario: Caer en los pinchos
+- **WHEN** el zorro cae en una zona de pinchos
+- **THEN** suena un «¡uy!» musical corto y suave, distinto del «boing» de los enemigos, junto con el rebote, igual tenga o no galletas que perder
+
 #### Scenario: Sale la fruta
 - **WHEN** el zorro golpea el bloque que esconde la fruta
 - **THEN** tras el tintineo de la galleta suena un efecto alegre de aparición, distinto de la galleta
@@ -86,6 +91,10 @@ también cuando el choque resta una galleta.
 #### Scenario: Atravesar enemigos
 - **WHEN** el zorro invencible atraviesa un erizo o una abeja
 - **THEN** no suena el «boing» del choque
+
+#### Scenario: Pisar pinchos siendo invencible
+- **WHEN** el zorro invencible corre por una zona de pinchos
+- **THEN** no suena el efecto de los pinchos
 
 ### Requirement: Efectos de los botones
 Todo botón que responde a un toque SHALL sonar con un «pop» suave al pulsarlo. Tocar algo bloqueado

@@ -8,6 +8,7 @@
  */
 
 import { flagTile, surfaces, surfacesUnder, toWorld } from './parse';
+import { jumpReach } from './spikes';
 import { GROUND_TOP, RUN_SPEED, START_TILE, STEP_RISE, TILE, type LevelData } from './types';
 
 /** Constantes de las reglas (px salvo que se diga otra cosa). */
@@ -38,13 +39,29 @@ export const RULES = {
   maxEmpty: (8 * RUN_SPEED) / TILE,
   /** Separación mínima entre los centros de dos bloques, en baldosas. */
   minBlockSpacing: 1,
+  /** Zonas de pinchos: ancho (baldosas) y distancias mínimas a la salida y la bandera, a bloques, escalones y plataformas y entre zonas. */
+  spikeWidth: { min: 1, max: 2 },
+  spikeStartClear: 10,
+  spikeFlagClear: 10,
+  spikeClear: 2,
+  spikeGap: 6,
+  /** Margen para despegar y para aterrizar a cada lado de una zona, en baldosas. */
+  spikeTakeoff: 0.5,
+  /** Lo que recorre un salto normal, en baldosas. */
+  jumpReach: jumpReach() / TILE,
 };
 
 export type Rules = typeof RULES;
 
-/** Bloques «?» por nivel y su orden en el catálogo (se comprueban en `catalog.test.ts`). */
-export const MIN_BLOCKS = 12;
-export const MAX_BLOCKS = 20;
+/** Bloques «?» del nivel `level` (se comprueban en `catalog.test.ts`): 12–20 en los niveles 1 a 6 y 20–25 en los 7 a 12. */
+export function blockLimits(level: number): { min: number; max: number } {
+  return level <= 6 ? { min: 12, max: 20 } : { min: 20, max: 25 };
+}
+
+/** Zonas de pinchos de los niveles 1 a 12 (los 1 a 6 no tienen). */
+export const SPIKES_PER_LEVEL: readonly number[] = [0, 0, 0, 0, 0, 0, 2, 3, 3, 4, 5, 6];
+/** Hasta este nivel las zonas miden solo 1 baldosa. */
+export const NARROW_SPIKES_UNTIL = 8;
 
 interface Span {
   name: string;
@@ -147,10 +164,45 @@ export function validateLevel(level: LevelData, rules: Rules = RULES): string[] 
       if (j > i && Math.abs(b.x - o.x) < rules.minBlockSpacing) err(`blocks[${j}]`, `se solapa con blocks[${i}]`);
     });
   });
-  // Densidad: nunca más de `maxEmpty` baldosas sin ningún elemento.
+  // Pinchos: solo en el suelo, saltables y lejos de todo.
+  const spikes = level.spikes.map((z, i) => ({ name: `spikes[${i}]`, from: z.x, to: z.x + z.width }));
+  for (const z of spikes) {
+    const width = z.to - z.from;
+    if (width < rules.spikeWidth.min || width > rules.spikeWidth.max) {
+      err(z.name, `mide ${n(width)} baldosas (entre ${rules.spikeWidth.min} y ${rules.spikeWidth.max})`);
+    }
+    if (width + 2 * rules.spikeTakeoff > rules.jumpReach) {
+      err(z.name, `no se cruza con un salto normal: mide ${n(width)} baldosas más ${n(2 * rules.spikeTakeoff)} de margen y el salto recorre ${n(rules.jumpReach)}`);
+    }
+    if (z.from < start || z.to > flag) {
+      err(z.name, `está fuera del recorrido (${z.to > flag ? 'más allá de la bandera' : 'antes de la salida'})`);
+    } else if (z.from < start + rules.spikeStartClear) {
+      err(z.name, `está a menos de ${rules.spikeStartClear} baldosas de la salida`);
+    } else if (z.to > flag - rules.spikeFlagClear) {
+      err(z.name, `está a menos de ${rules.spikeFlagClear} baldosas de la bandera`);
+    }
+    level.steps.forEach((st, i) => {
+      if (z.from < st.x + st.width && st.x < z.to) err(z.name, `está sobre steps[${i}] (solo puede ir en el suelo)`);
+      else if (z.from < st.x + st.width + rules.spikeClear && st.x - rules.spikeClear < z.to) err(z.name, `está a menos de ${rules.spikeClear} baldosas de steps[${i}]`);
+    });
+    level.platforms.forEach((p, i) => {
+      if (z.from < p.x + p.width && p.x < z.to) err(z.name, `está bajo platforms[${i}]`);
+      else if (z.from < p.x + p.width + rules.spikeClear && p.x - rules.spikeClear < z.to) err(z.name, `está a menos de ${rules.spikeClear} baldosas de platforms[${i}]`);
+    });
+    level.blocks.forEach((b, i) => {
+      if (b.x > z.from - rules.spikeClear && b.x < z.to + rules.spikeClear) err(z.name, `está a menos de ${rules.spikeClear} baldosas de blocks[${i}]`);
+    });
+  }
+  const byX = [...spikes].sort((a, b) => a.from - b.from);
+  for (let k = 1; k < byX.length; k++) {
+    const gap = byX[k]!.from - byX[k - 1]!.to;
+    if (gap < rules.spikeGap) err(byX[k]!.name, `deja ${n(gap)} baldosas con ${byX[k - 1]!.name} (mínimo ${rules.spikeGap})`);
+  }
+
+  // Densidad: nunca más de `maxEmpty` baldosas sin ningún elemento (los pinchos cuentan).
   let cursor = start;
   let prev = 'la salida';
-  for (const s of [...spans].sort((a, b) => a.from - b.from)) {
+  for (const s of [...spans, ...spikes].sort((a, b) => a.from - b.from)) {
     if (s.from - cursor > rules.maxEmpty) err(s.name, `queda a ${n(s.from - cursor)} baldosas vacías de ${prev} (máximo ${n(rules.maxEmpty)})`);
     if (s.to > cursor) {
       cursor = s.to;

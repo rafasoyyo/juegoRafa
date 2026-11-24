@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { COLORS, GAME_H, MAX_W } from '../config';
-import { skyKey, type Ambient } from '../levels/ambients';
+import { skyKey, type Ambient, type GroundStyle } from '../levels/ambients';
 import { digits, fitImage } from './round-button';
 
 /** Fondo de cielo en degradado, fijo a la cámara y del ancho máximo (no hay que recolocarlo). */
@@ -8,19 +8,43 @@ export function addSky(scene: Phaser.Scene, key = 'sky'): Phaser.GameObjects.Ima
   return scene.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(MAX_W, GAME_H).setScrollFactor(0);
 }
 
-/** Colores del suelo: los de la paleta salvo en los ambientes de los niveles. */
+/** Colores del suelo: los de la paleta salvo en los ambientes de los niveles. `ground` es el borde (hierba si falta). */
 export interface GroundColors {
   grass: number;
   grassDark: number;
   earth: number;
+  ground?: GroundStyle;
 }
 
-/** Suelo de hierba sobre tierra. */
+/**
+ * Suelo sobre su base: la capa de arriba con el borde de su ambiente. Hierba (bandas rectas, como
+ * siempre), arena lisa con motas, nieve con el borde de abajo redondeado o nube festoneada.
+ */
 export function drawGround(scene: Phaser.Scene, x: number, width: number, top: number, grass = 36, colors: GroundColors = COLORS): Phaser.GameObjects.Graphics {
   const g = scene.add.graphics();
   g.fillStyle(colors.earth).fillRect(x, top, width, GAME_H - top + 40);
+  const style = colors.ground ?? 'grass';
+  if (style === 'snow' || style === 'cloud') {
+    // Borde inferior de bultos: pequeños y juntos en la nieve, grandes y mullidos en la nube.
+    const r = style === 'snow' ? 12 : 22;
+    const step = style === 'snow' ? 30 : 46;
+    g.fillStyle(colors.grassDark).fillRect(x, top, width, grass + 6);
+    for (let px = x; px < x + width + step; px += step) g.fillCircle(px, top + grass + 6, r);
+    g.fillStyle(colors.grass).fillRect(x, top, width, grass);
+    for (let px = x; px < x + width + step; px += step) g.fillCircle(px, top + grass - 2, r);
+    if (style === 'cloud') {
+      g.fillStyle(colors.grassDark, 0.5);
+      for (let px = x + step / 2; px < x + width; px += step * 2) g.fillCircle(px, top + 10, 6);
+    }
+    return g;
+  }
   g.fillStyle(colors.grassDark).fillRect(x, top, width, grass + 6);
   g.fillStyle(colors.grass).fillRect(x, top, width, grass);
+  if (style === 'sand') {
+    // Arena lisa con motas.
+    g.fillStyle(colors.grassDark, 0.6);
+    for (let i = 0, px = x + 20; px < x + width; i++, px += 34 + jitter(i, 5) * 40) g.fillCircle(px, top + 10 + jitter(i, 6) * 18, 2.5 + jitter(i, 7) * 2);
+  }
   return g;
 }
 
@@ -74,23 +98,73 @@ export function addScenery(scene: Phaser.Scene, ambient: Ambient, worldW: number
     addStars(scene, worldW * 0.1 + MAX_W);
   }
 
+  if (ambient.decor === 'rainbow') {
+    scene.add.image(MAX_W * 0.58, groundTop - 60, 'decor-rainbow').setOrigin(0.5, 1).setScrollFactor(0.03, 1).setAlpha(0.7);
+  }
+
   addClouds(scene, 120, worldW * 0.3 + MAX_W, 520, 0.3, ambient.cloud);
+  if (ambient.decor === 'mountains') {
+    // Picos nevados lejanos, detrás de las colinas.
+    for (let i = 0, x = 120; x < worldW * 0.25 + MAX_W; i++, x += 520 + jitter(i) * 360) {
+      scene.add
+        .image(x, groundTop - 40, 'decor-peak')
+        .setOrigin(0.5, 1)
+        .setScale(0.8 + jitter(i, 2) * 0.45)
+        .setScrollFactor(0.25, 1)
+        .setAlpha(0.85);
+    }
+  }
   drawHills(scene, groundTop, -200, worldW * 0.45 + MAX_W, 900, ambient.hillLight, 0.45);
+  if (ambient.decor === 'beach') drawSea(scene, groundTop, worldW * 0.45 + MAX_W);
+  if (ambient.decor === 'rainbow') {
+    // Nubes grandes y bajas, delante del arcoíris.
+    for (let i = 0, x = 200; x < worldW * 0.4 + MAX_W; i++, x += 700 + jitter(i) * 400) {
+      scene.add
+        .image(x, groundTop - 150 - jitter(i, 1) * 90, 'cloud')
+        .setScale(1.8 + jitter(i, 2) * 0.6)
+        .setScrollFactor(0.4, 1)
+        .setAlpha(0.9);
+    }
+  }
 
   const decorTo = worldW * DECOR_SCROLL + MAX_W;
-  if (ambient.decor === 'trees' || ambient.decor === 'autumn-trees') {
-    const key = ambient.decor === 'trees' ? 'decor-tree' : 'decor-tree-autumn';
-    for (let i = 0, x = 60; x < decorTo; i++, x += 260 + jitter(i) * 260) {
+  const groundDecor: Partial<Record<Ambient['decor'], { key: string; every: number; scale: number }>> = {
+    trees: { key: 'decor-tree', every: 260, scale: 0.75 },
+    'autumn-trees': { key: 'decor-tree-autumn', every: 260, scale: 0.75 },
+    beach: { key: 'decor-palm', every: 420, scale: 0.85 },
+    jungle: { key: 'decor-leaf', every: 240, scale: 0.7 },
+    snow: { key: 'decor-pine-snow', every: 300, scale: 0.8 },
+    desert: { key: 'decor-cactus', every: 460, scale: 0.6 },
+  };
+  const planted = groundDecor[ambient.decor];
+  if (planted) {
+    for (let i = 0, x = 60; x < decorTo; i++, x += planted.every + jitter(i) * planted.every) {
       scene.add
-        .image(x, groundTop - 10 + jitter(i, 1) * 30, key)
+        .image(x, groundTop - 10 + jitter(i, 1) * 30, planted.key)
         .setOrigin(0.5, 1)
-        .setScale(0.75 + jitter(i, 2) * 0.4)
+        .setScale(planted.scale + jitter(i, 2) * 0.4)
         .setScrollFactor(DECOR_SCROLL, 1)
         .setAlpha(DECOR_ALPHA);
     }
   }
+  if (ambient.decor === 'jungle') {
+    // Lianas que cuelgan desde arriba, entre la decoración y las colinas cercanas.
+    for (let i = 0, x = 180; x < decorTo; i++, x += 380 + jitter(i, 8) * 300) {
+      scene.add
+        .image(x, -20 - jitter(i, 9) * 60, 'decor-vine')
+        .setOrigin(0.5, 0)
+        .setScale(0.8 + jitter(i, 3) * 0.4)
+        .setScrollFactor(DECOR_SCROLL, 1)
+        .setAlpha(DECOR_ALPHA);
+    }
+  }
+  if (ambient.decor === 'snow') addSnowflakes(scene, groundTop, worldW * 0.3 + MAX_W);
+
   const near = { groundTop: groundTop + 30, from: -200, step: 800, phase: 420, scroll: 0.6 };
-  drawHills(scene, near.groundTop, near.from, worldW * near.scroll + MAX_W, near.step, ambient.hill, near.scroll, near.phase);
+  // En la playa el mar llega hasta la arena: sin colinas cercanas.
+  if (ambient.decor !== 'beach') {
+    drawHills(scene, near.groundTop, near.from, worldW * near.scroll + MAX_W, near.step, ambient.hill, near.scroll, near.phase);
+  }
   if (ambient.decor === 'flowers') {
     // Matas de flores plantadas en la cima de las colinas cercanas (se mueven con ellas).
     for (let i = 0, x = 40; x < worldW * near.scroll + MAX_W; i++, x += 150 + jitter(i) * 200) {
@@ -114,6 +188,38 @@ function hillTop(x: number, hills: { groundTop: number; from: number; step: numb
   const dx = x - (first + k * hills.step);
   const rx = (hills.step * 1.1) / 2;
   return hills.groundTop + 100 - 210 * Math.sqrt(Math.max(0, 1 - (dx / rx) ** 2));
+}
+
+/** Franja de mar en el horizonte de la playa, con ondas claras; se mueve con las colinas lejanas. */
+function drawSea(scene: Phaser.Scene, groundTop: number, to: number): void {
+  const g = scene.add.graphics().setScrollFactor(0.45, 1);
+  const top = groundTop - 96;
+  g.fillStyle(0x7fcfe8).fillRect(-200, top, to + 200, groundTop - top + 10);
+  g.fillStyle(0x9adbee).fillRect(-200, top, to + 200, 14);
+  g.fillStyle(0xd4f1f8, 0.9);
+  for (let i = 0, x = -160; x < to; i++, x += 120 + jitter(i, 10) * 120) {
+    g.fillRoundedRect(x, top + 28 + jitter(i, 11) * 50, 34 + jitter(i, 12) * 30, 6, 3);
+  }
+}
+
+/** Copos de nieve lentos que caen sin parar, con paralaje. */
+function addSnowflakes(scene: Phaser.Scene, groundTop: number, to: number): void {
+  for (let i = 0, x = 20; x < to; i++, x += 80 + jitter(i, 13) * 80) {
+    const y0 = jitter(i, 14) * groundTop;
+    const flake = scene.add
+      .image(x, y0, 'decor-flake')
+      .setScale(0.5 + jitter(i, 15) * 0.7)
+      .setScrollFactor(0.3, 1)
+      .setAlpha(0.85);
+    // Velocidad constante: el primer tramo sale de donde está y luego vuelve a caer desde arriba.
+    const speed = (groundTop + 20) / (7000 + jitter(i, 16) * 5000);
+    const loop = (): void => {
+      flake.setY(-20);
+      scene.tweens.add({ targets: flake, y: groundTop, duration: (groundTop + 20) / speed, ease: 'Linear', onComplete: loop });
+    };
+    scene.tweens.add({ targets: flake, y: groundTop, duration: (groundTop - y0) / speed, ease: 'Linear', onComplete: loop });
+    scene.tweens.add({ targets: flake, x: x + 24, duration: 1800 + jitter(i, 17) * 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
 }
 
 /** Estrellas de la noche: muy lentas, y una de cada tres titila despacio. */

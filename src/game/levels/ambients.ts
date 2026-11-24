@@ -9,7 +9,10 @@
 import type { AmbientId } from './types';
 
 /** Decoración de fondo de cada ambiente. */
-export type DecorKind = 'clouds' | 'flowers' | 'trees' | 'autumn-trees' | 'sunset' | 'night';
+export type DecorKind = 'clouds' | 'flowers' | 'trees' | 'autumn-trees' | 'sunset' | 'night' | 'beach' | 'jungle' | 'mountains' | 'snow' | 'desert' | 'rainbow';
+
+/** Borde superior del suelo: hierba, arena lisa, nieve redondeada o nube festoneada. */
+export type GroundStyle = 'grass' | 'sand' | 'snow' | 'cloud';
 
 /** Las plataformas se dibujan como un tronco o como una nube mullida. */
 export type PlatformStyle = 'log' | 'cloud';
@@ -21,6 +24,7 @@ export interface Ambient {
   /** Colinas lejanas (más claras) y cercanas. */
   hillLight: number;
   hill: number;
+  /** Colores del suelo: la capa de arriba (`grass`, aunque sea arena, nieve o nube), su sombra y la base. */
   grass: number;
   grassDark: number;
   earth: number;
@@ -28,6 +32,7 @@ export interface Ambient {
   cloud: { tint: number; alpha: number };
   decor: DecorKind;
   platform: PlatformStyle;
+  ground: GroundStyle;
 }
 
 export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
@@ -46,6 +51,7 @@ export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
     cloud: { tint: 0xffffff, alpha: 1 },
     decor: 'clouds',
     platform: 'log',
+    ground: 'grass',
   },
   flores: {
     id: 'flores',
@@ -62,6 +68,7 @@ export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
     cloud: { tint: 0xffffff, alpha: 0.95 },
     decor: 'flowers',
     platform: 'log',
+    ground: 'grass',
   },
   bosque: {
     id: 'bosque',
@@ -78,6 +85,7 @@ export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
     cloud: { tint: 0xffffff, alpha: 0.85 },
     decor: 'trees',
     platform: 'log',
+    ground: 'grass',
   },
   otono: {
     id: 'otono',
@@ -94,6 +102,7 @@ export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
     cloud: { tint: 0xfff6ea, alpha: 0.9 },
     decor: 'autumn-trees',
     platform: 'log',
+    ground: 'grass',
   },
   atardecer: {
     id: 'atardecer',
@@ -111,6 +120,7 @@ export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
     cloud: { tint: 0xffd0dc, alpha: 0.8 },
     decor: 'sunset',
     platform: 'cloud',
+    ground: 'grass',
   },
   noche: {
     id: 'noche',
@@ -126,6 +136,110 @@ export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
     cloud: { tint: 0xa9acdf, alpha: 0.35 },
     decor: 'night',
     platform: 'cloud',
+    ground: 'grass',
+  },
+  playa: {
+    id: 'playa',
+    sky: [
+      [0, '#7FD3F2'],
+      [0.65, '#D6F3FA'],
+      [1, '#FFF4DC'],
+    ],
+    hillLight: 0xa8e0d0,
+    hill: 0x86cfb4,
+    grass: 0xf7e0a6,
+    grassDark: 0xe5c784,
+    earth: 0xd9b77a,
+    cloud: { tint: 0xffffff, alpha: 1 },
+    decor: 'beach',
+    platform: 'log',
+    ground: 'sand',
+  },
+  selva: {
+    id: 'selva',
+    sky: [
+      [0, '#78CDB4'],
+      [0.7, '#DCF2D2'],
+      [1, '#E6F6D8'],
+    ],
+    hillLight: 0x6fc08a,
+    hill: 0x4fa872,
+    grass: 0x3fae5a,
+    grassDark: 0x2d8f47,
+    earth: 0x8f6440,
+    cloud: { tint: 0xffffff, alpha: 0.8 },
+    decor: 'jungle',
+    platform: 'log',
+    ground: 'grass',
+  },
+  montana: {
+    id: 'montana',
+    sky: [
+      [0, '#8EC2F0'],
+      [0.7, '#E2EEFA'],
+      [1, '#ECF3FA'],
+    ],
+    hillLight: 0xb9cbe2,
+    hill: 0x93b89c,
+    grass: 0x6cbf74,
+    grassDark: 0x4d9e5a,
+    earth: 0xa98466,
+    cloud: { tint: 0xffffff, alpha: 0.95 },
+    decor: 'mountains',
+    platform: 'log',
+    ground: 'grass',
+  },
+  nieve: {
+    id: 'nieve',
+    sky: [
+      [0, '#A6CCEE'],
+      [0.7, '#E8F1FA'],
+      [1, '#F0F5FB'],
+    ],
+    hillLight: 0xdde8f4,
+    hill: 0xc6d7ea,
+    grass: 0xf7fbff,
+    grassDark: 0xd3e1f0,
+    earth: 0x9fb3c8,
+    cloud: { tint: 0xf4f8ff, alpha: 0.9 },
+    decor: 'snow',
+    platform: 'log',
+    ground: 'snow',
+  },
+  desierto: {
+    id: 'desierto',
+    sky: [
+      [0, '#9CD2EF'],
+      [0.6, '#F1E9D6'],
+      [1, '#F6EDD8'],
+    ],
+    hillLight: 0xefd9a8,
+    hill: 0xe3c68c,
+    // Arena pálida y tierra marrón clara, nunca naranja: el zorro tiene que destacar.
+    grass: 0xf2dfb0,
+    grassDark: 0xdcc38a,
+    earth: 0xc9a774,
+    cloud: { tint: 0xfffaf0, alpha: 0.7 },
+    decor: 'desert',
+    platform: 'log',
+    ground: 'sand',
+  },
+  nubes: {
+    id: 'nubes',
+    sky: [
+      [0, '#B3A6EE'],
+      [0.5, '#F1CBE8'],
+      [1, '#FCE6EF'],
+    ],
+    hillLight: 0xf7eeff,
+    hill: 0xeadff8,
+    grass: 0xffffff,
+    grassDark: 0xdcd3ee,
+    earth: 0xc9bfe3,
+    cloud: { tint: 0xffffff, alpha: 1 },
+    decor: 'rainbow',
+    platform: 'cloud',
+    ground: 'cloud',
   },
 };
 
@@ -135,4 +249,19 @@ export function skyKey(id: AmbientId): string {
 }
 
 /** Texturas de decoración generadas por código en `BootScene`. */
-export const DECOR_TEXTURES = ['decor-tree', 'decor-tree-autumn', 'decor-flowers', 'decor-sun', 'decor-moon', 'decor-star'] as const;
+export const DECOR_TEXTURES = [
+  'decor-tree',
+  'decor-tree-autumn',
+  'decor-flowers',
+  'decor-sun',
+  'decor-moon',
+  'decor-star',
+  'decor-palm',
+  'decor-leaf',
+  'decor-vine',
+  'decor-peak',
+  'decor-pine-snow',
+  'decor-flake',
+  'decor-cactus',
+  'decor-rainbow',
+] as const;

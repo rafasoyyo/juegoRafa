@@ -23,7 +23,15 @@ function variant(): Record<string, unknown> & typeof VALID {
 describe('parseLevel', () => {
   it('lee un JSON válido', () => {
     const level = parseLevel('nivel-x', VALID);
-    expect(level).toEqual({ id: 'nivel-x', ...VALID });
+    expect(level).toEqual({ id: 'nivel-x', ...VALID, spikes: [] });
+  });
+
+  it('un nivel sin «spikes» no tiene pinchos; con zonas, las lee', () => {
+    expect(parseLevel('nivel-x', VALID).spikes).toEqual([]);
+    const withSpikes = { ...variant(), spikes: [{ x: 26, width: 2 }] };
+    expect(parseLevel('nivel-x', withSpikes).spikes).toEqual([{ x: 26, width: 2 }]);
+    expect(() => parseLevel('nivel-9', { ...variant(), spikes: [{ x: 26 }] })).toThrow(/nivel-9: spikes\[0\] no tiene «width»/);
+    expect(() => parseLevel('nivel-9', { ...variant(), spikes: {} })).toThrow(/nivel-9: spikes no es una lista/);
   });
 
   it('un campo que falta da un error con el nivel y el elemento', () => {
@@ -78,6 +86,15 @@ describe('toWorld', () => {
 
   it('un bloque sobre una plataforma se apoya en la plataforma', () => {
     expect(world.blocks[2]).toMatchObject({ x: 36 * TILE, surface: 'platform', surfaceHeight: 126, bottom: GROUND_TOP - 126 - ROW_BASE.low });
+  });
+
+  it('sin pinchos, la lista del mundo está vacía; con zonas, van en píxeles', () => {
+    expect(world.spikes).toEqual([]);
+    const level = parseLevel('nivel-z', { ...VALID, spikes: [{ x: 28, width: 1 }, { x: 44.5, width: 2 }] });
+    expect(toWorld(level).spikes).toEqual([
+      { index: 0, x: 28 * TILE, width: TILE },
+      { index: 1, x: 44.5 * TILE, width: 2 * TILE },
+    ]);
   });
 
   it('una plataforma sobre un escalón mide su altura desde el escalón', () => {

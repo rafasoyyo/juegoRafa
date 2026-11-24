@@ -26,11 +26,12 @@ function seeded(seed: number): () => number {
   };
 }
 
-/** Recorridos reales de los niveles 1 a 6 (`COURSES[0]` es el nivel 1). */
+/** Recorridos reales de los niveles 1 a 12 (`COURSES[0]` es el nivel 1). */
 const WORLDS = LEVELS.map(toWorld);
 const COURSES: Course[] = WORLDS.map(courseFor);
 const course = (level: number): Course => COURSES[level - 1]!;
-const SEEDS = Array.from({ length: 50 }, (_, i) => i + 1);
+const SEEDS = Array.from({ length: 200 }, (_, i) => i + 1);
+const LEVEL_NUMBERS = Array.from({ length: 12 }, (_, i) => i + 1);
 /** Medio cuerpo del dibujo más ancho (erizo ~100 px, abeja ~90 px). */
 const HALF_BODY = 50;
 
@@ -48,16 +49,16 @@ describe('layoutEnemies', () => {
     }
   });
 
-  it('niveles 1 a 6: 2, 3, 4, 5, 6 y 7 enemigos; los 6 recorridos reales tienen sitio para todos', () => {
-    expect(ENEMIES_PER_LEVEL).toEqual([2, 3, 4, 5, 6, 7]);
-    for (let level = 1; level <= 6; level++) {
+  it('niveles 1 a 12: 2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9 y 10 enemigos; los 12 recorridos reales tienen sitio para todos', () => {
+    expect(ENEMIES_PER_LEVEL).toEqual([2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10]);
+    for (const level of LEVEL_NUMBERS) {
       expect(freeStretches(course(level)).length, `nivel ${level}`).toBeGreaterThanOrEqual(ENEMIES_PER_LEVEL[level - 1]!);
       for (const seed of SEEDS) expect(layoutEnemies(level, course(level), seeded(seed))).toHaveLength(ENEMIES_PER_LEVEL[level - 1]!);
     }
   });
 
-  it('respeta las zonas seguras de la salida, la bandera, los bloques, los escalones y las plataformas', () => {
-    for (let level = 1; level <= 6; level++) {
+  it('respeta las zonas seguras de la salida, la bandera, los bloques, los escalones, las plataformas y los pinchos', () => {
+    for (const level of LEVEL_NUMBERS) {
       const c = course(level);
       for (const seed of SEEDS) {
         for (const e of layoutEnemies(level, c, seeded(seed))) {
@@ -76,7 +77,7 @@ describe('layoutEnemies', () => {
   });
 
   it('ningún enemigo cae sobre un escalón, junto a sus lados ni bajo una plataforma', () => {
-    for (let level = 1; level <= 6; level++) {
+    for (const level of LEVEL_NUMBERS) {
       const world = WORLDS[level - 1]!;
       const zones = [...world.steps, ...world.platforms].map((z) => ({ from: z.x - BLOCK_CLEAR, to: z.x + z.width + BLOCK_CLEAR }));
       for (const seed of SEEDS) {
@@ -91,7 +92,37 @@ describe('layoutEnemies', () => {
     }
   });
 
-  it('courseFor evita bloques, escalones y plataformas', () => {
+  it('ningún enemigo ni ninguna patrulla de erizo a menos de BLOCK_CLEAR de una zona de pinchos', () => {
+    for (const level of LEVEL_NUMBERS.slice(6)) {
+      const world = WORLDS[level - 1]!;
+      expect(world.spikes.length, `nivel ${level}`).toBeGreaterThan(0);
+      const zones = world.spikes.map((z) => ({ from: z.x - BLOCK_CLEAR, to: z.x + z.width + BLOCK_CLEAR }));
+      for (const seed of SEEDS) {
+        for (const e of layoutEnemies(level, course(level), seeded(seed))) {
+          const r = reach(e);
+          for (const z of zones) {
+            const clear = r.to + HALF_BODY <= z.from || r.from - HALF_BODY >= z.to;
+            expect(clear, `nivel ${level}: ${e.kind} en [${r.from}, ${r.to}] junto a los pinchos [${z.from}, ${z.to}]`).toBe(true);
+          }
+        }
+      }
+    }
+  });
+
+  it('los niveles 1 a 6 siguen igual: sin pinchos, mismas zonas a evitar y mismos enemigos', () => {
+    expect(ENEMIES_PER_LEVEL.slice(0, 6)).toEqual([2, 3, 4, 5, 6, 7]);
+    for (const level of LEVEL_NUMBERS.slice(0, 6)) {
+      const world = WORLDS[level - 1]!;
+      expect(world.spikes).toEqual([]);
+      expect(course(level).keepClear).toHaveLength(world.blocks.length + world.steps.length + world.platforms.length);
+    }
+  });
+
+  it('courseFor evita bloques, escalones, plataformas y pinchos', () => {
+    const spiky = WORLDS[11]!;
+    expect(course(12).keepClear).toHaveLength(spiky.blocks.length + spiky.steps.length + spiky.platforms.length + spiky.spikes.length);
+    const zone = spiky.spikes[0]!;
+    expect(course(12).keepClear).toContainEqual({ x: zone.x + zone.width / 2, width: zone.width });
     const world = WORLDS[5]!;
     expect(course(6).keepClear).toHaveLength(world.blocks.length + world.steps.length + world.platforms.length);
     const step = world.steps[0]!;
@@ -116,7 +147,7 @@ describe('layoutEnemies', () => {
   });
 
   it('desde el nivel 2 aparecen abejas con alguna semilla', () => {
-    for (let level = 2; level <= 6; level++) {
+    for (const level of LEVEL_NUMBERS.slice(1)) {
       const kinds = SEEDS.flatMap((seed) => layoutEnemies(level, course(level), seeded(seed)).map((e) => e.kind));
       expect(kinds).toContain('bee');
       expect(kinds).toContain('hedgehog');

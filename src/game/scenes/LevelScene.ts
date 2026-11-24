@@ -4,11 +4,12 @@ import { COLORS, GAME_H } from '../config';
 import { courseFor, layoutEnemies } from '../enemies/enemy-layout';
 import { overlaps } from '../enemies/enemy-motion';
 import { createEnemyView, type EnemyView } from '../enemies/enemy-views';
-import { BLOCK_SIZE, GROUND_TOP, SCALE } from '../level-course';
+import { BLOCK_SIZE, GROUND_TOP, JUMP_SPEED, KNOCK_VY, MAX_VELOCITY, SCALE } from '../level-course';
 import { AMBIENTS, type Ambient } from '../levels/ambients';
 import { levelData } from '../levels/catalog';
 import { toWorld } from '../levels/parse';
-import { RUN_SPEED, type WorldLevel } from '../levels/types';
+import { exitSide, footSpan, nudgeOffSpikes, onSpikes, reboundVelocity } from '../levels/spikes';
+import { RUN_SPEED, type WorldLevel, type WorldSpike } from '../levels/types';
 import { loseCookie, pickFruitBlock, powerPhase, type PowerPhase } from '../power/power';
 import { LEVEL_COUNT, session } from '../state';
 import type { QuizData } from './QuizScene';
@@ -33,9 +34,7 @@ import {
 import { enter, goTo, onResize } from '../ui/transition';
 import { addScenery, bump, cookieCounter, drawPlatform, drawStep, fixToCamera, type CookieCounter } from '../ui/widgets';
 
-const JUMP_SPEED = 330 * SCALE;
 const VARIABLE_JUMP_MIN = 140 * SCALE;
-const MAX_VELOCITY = { x: 300 * SCALE, y: 600 * SCALE };
 const COYOTE_MS = 100; // salto aunque ya haya dejado el borde
 const BUFFER_MS = 120; // salto aunque se toque un poco antes de aterrizar
 
@@ -52,14 +51,15 @@ const DUST_POOL = 6;
 const DUST_EVERY_MS = 90;
 const DUST_LIFE_MS = 350;
 
-/** Pinchazo al tocar un enemigo: sin control, protegido (parpadeando) y ritmo del parpadeo. */
+/** Pinchazo (enemigo o pinchos): sin control, protegido (parpadeando) y ritmo del parpadeo. */
 const KNOCK_MS = 300;
 const PROTECT_MS = 1000;
 const BLINK_MS = 80;
 const BLINK_ALPHA = 0.35;
-/** Brinco del pinchazo: alto y corto hacia atrás. */
+/** Brinco del pinchazo de un enemigo: alto y corto hacia atrás (la subida es `KNOCK_VY`). */
 const KNOCK_VX = 0.6 * RUN_SPEED;
-const KNOCK_VY = 0.8 * JUMP_SPEED;
+/** Los pinchos se dibujan con la base un poco hundida en el suelo. */
+const SPIKES_SINK = 6;
 /** Galleta que sale despedida de Rufo al pincharse. */
 const LOST_COOKIE_MS = 600;
 
@@ -126,6 +126,13 @@ export class LevelScene extends Phaser.Scene {
   private knockUntil = -Infinity;
   private protectedUntil = -Infinity;
   private hitAt = -Infinity;
+  /** Último punto de suelo fuera de los pinchos que pisó Rufo: el rebote va hacia ese lado. */
+  private lastSafeX: number | undefined;
+  /**
+   * Rebote de los pinchos en el aire: sin tocar ningún control, Rufo sigue el arco hasta aterrizar
+   * fuera de la zona aunque ya haya recuperado el control.
+   */
+  private spikeRebound = false;
 
   /** Superficies del recorrido (suelo, escalones y plataformas), donde se posa la fresa. */
   private surfaces: Phaser.GameObjects.GameObject[] = [];
@@ -171,6 +178,8 @@ export class LevelScene extends Phaser.Scene {
     this.knockUntil = -Infinity;
     this.protectedUntil = -Infinity;
     this.hitAt = -Infinity;
+    this.lastSafeX = undefined;
+    this.spikeRebound = false;
     this.surfaces = [];
     this.fruit = undefined;
     this.fruitLanded = false;
@@ -196,6 +205,7 @@ export class LevelScene extends Phaser.Scene {
     const steps = this.buildSteps();
     const platforms = this.buildPlatforms();
     const blocks = this.buildBlocks();
+    this.buildSpikes();
     this.surfaces = [ground, ...steps, ...platforms];
     this.buildFox();
     this.buildGoal();
@@ -238,7 +248,10 @@ export class LevelScene extends Phaser.Scene {
     // Durante el rebote se ignoran las flechas y el salto: si no, volvería a chocar.
     const knocked = time < this.knockUntil;
     const dir = knocked ? 0 : (input.right ? 1 : 0) - (input.left ? 1 : 0);
-    if (!knocked) this.fox.setVelocityX(dir * RUN_SPEED);
+    if (this.spikeRebound && grounded && !knocked) this.spikeRebound = false;
+    // Tras el rebote de los pinchos, si el niño no toca nada, Rufo acaba el arco fuera de la zona.
+    const coasting = this.spikeRebound && dir === 0;
+    if (!knocked && !coasting) this.fox.setVelocityX(dir * RUN_SPEED);
     if (dir !== 0) this.faceLeft = dir < 0;
 
     if (input.jump && !this.prevJump && !knocked) this.jumpBufferedAt = time;
@@ -257,6 +270,7 @@ export class LevelScene extends Phaser.Scene {
 
     this.tickPower(time);
     this.checkEnemies(time);
+    this.checkSpikes(time, grounded);
     this.animateFox(time, delta, grounded, dir);
     this.updateProgress();
   }
@@ -356,19 +370,56 @@ export class LevelScene extends Phaser.Scene {
     if (enemy) this.onEnemyHit(enemy, time);
   }
 
-  /** Pinchazo: brinco hacia arriba y hacia atrás y una galleta menos (nunca bajo 0). No toca bloques ni estrellas. */
+  /** Pinchazo de un enemigo: brinco corto hacia el lado contrario al enemigo. */
   private onEnemyHit(enemy: EnemyView, time: number): void {
     const box = enemy.box();
     let side = Math.sign(this.fox.x - (box.x + box.w / 2));
     if (side === 0) side = this.faceLeft ? 1 : -1;
-    this.fox.setVelocity(side * KNOCK_VX, -KNOCK_VY);
+    enemy.gesture();
+    this.knock(time, side, side * KNOCK_VX, 'bump');
+  }
+
+  /** Zonas de pinchos: una hilera de conos repetida a lo ancho de cada zona, sobre el suelo. */
+  private buildSpikes(): void {
+    for (const z of this.world.spikes) {
+      this.add.tileSprite(z.x, GROUND_TOP + SPIKES_SINK, z.width, this.textures.get('spikes').getSourceImage().height, 'spikes').setOrigin(0, 1).setDepth(4);
+    }
+  }
+
+  /** Zona de pinchos que pisa ahora Rufo apoyado en el suelo (con el margen de perdón), o `undefined`. */
+  private spikesUnderFeet(grounded: boolean): WorldSpike | undefined {
+    const body = this.fox.body;
+    if (!grounded || body.bottom < GROUND_TOP - 2) return undefined;
+    const feet = footSpan(body.x, body.width);
+    return onSpikes(feet.from, feet.to, this.world.spikes);
+  }
+
+  /**
+   * Pinchos: solo cuentan con Rufo apoyado en el suelo, sin protección ni modo invencible. Mientras
+   * pisa algo fuera de ellos (suelo, escalón o plataforma) se recuerda dónde, para rebotar hacia ese lado.
+   */
+  private checkSpikes(time: number, grounded: boolean): void {
+    const zone = this.spikesUnderFeet(grounded);
+    if (grounded && !zone) this.lastSafeX = this.fox.x;
+    if (!zone || powerPhase(time, this.powerStartedAt) !== 'off' || time < this.protectedUntil) return;
+    const side = exitSide(zone, this.lastSafeX, this.fox.x);
+    this.knock(time, side, reboundVelocity(zone, side, this.fox.x), 'spikes');
+    this.spikeRebound = true;
+  }
+
+  /**
+   * Pinchazo común: brinco hacia arriba con `vx`, sin control un momento, protegido (parpadeando) y una
+   * galleta menos (nunca bajo 0) que sale despedida hacia `side`. No toca bloques ni estrellas.
+   */
+  private knock(time: number, side: number, vx: number, sound: 'bump' | 'spikes'): void {
+    this.fox.setVelocity(vx, -KNOCK_VY);
     this.knockUntil = time + KNOCK_MS;
     this.protectedUntil = time + PROTECT_MS;
     this.hitAt = time;
     this.jumpBufferedAt = -Infinity;
     this.lastGrounded = -Infinity;
-    enemy.gesture();
-    audio.sfx('bump');
+    this.spikeRebound = false;
+    audio.sfx(sound);
 
     const { cookies, lost } = loseCookie(this.cookies);
     if (!lost) return;
@@ -423,6 +474,9 @@ export class LevelScene extends Phaser.Scene {
     body.setVelocity(0, 0);
     body.setAllowGravity(false);
     body.moves = false;
+    // Por seguridad: nunca se queda sobre los pinchos (las reglas de colocación ya lo evitan).
+    const x = nudgeOffSpikes(fruit.x, this.world.spikes, FRUIT_SIZE / 2);
+    if (x !== fruit.x) body.reset(x, fruit.y);
     this.tweens.add({ targets: fruit, y: fruit.y - FRUIT_HOP, duration: FRUIT_HOP_MS, ease: 'Quad.easeOut', yoyo: true, repeat: -1, repeatDelay: 120 });
   }
 
@@ -445,15 +499,17 @@ export class LevelScene extends Phaser.Scene {
   }
 
   /**
-   * Modo invencible: brillo mientras dura y, al acabar, su tintineo. Si acaba tocando un enemigo,
-   * da la misma protección (con parpadeo) que un pinchazo, para no pincharse en el fotograma siguiente.
+   * Modo invencible: brillo mientras dura y, al acabar, su tintineo. Si acaba tocando un enemigo o
+   * sobre unos pinchos, da la misma protección (con parpadeo) que un pinchazo, para no pincharse en el
+   * fotograma siguiente.
    */
   private tickPower(time: number): void {
     const phase = powerPhase(time, this.powerStartedAt);
     if (phase === 'off' && this.powerWas !== 'off') {
       audio.sfx('power-off');
       this.clearGlow();
-      if (this.touchingEnemies().length > 0) {
+      const body = this.fox.body;
+      if (this.touchingEnemies().length > 0 || this.spikesUnderFeet(body.blocked.down || body.touching.down)) {
         this.protectedUntil = time + PROTECT_MS;
         this.hitAt = time;
       }

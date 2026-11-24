@@ -6,7 +6,7 @@
 
 import Phaser from 'phaser';
 import { COLORS } from '../config';
-import { AMBIENTS } from '../levels/ambients';
+import { AMBIENTS, type DecorKind } from '../levels/ambients';
 import type { AmbientId } from '../levels/types';
 import type { Mark } from '../../learning/quiz/run';
 import type { ObjectId, QuizKind, ShapeId, TopicIcon } from '../../learning/quiz/types';
@@ -101,14 +101,23 @@ export function drawDots(scene: Phaser.Scene, value: number, size: number): Phas
   return scene.add.container(0, 0, [g]);
 }
 
-const DECOR_ICON: Record<string, string | null> = {
+const DECOR_ICON: Record<DecorKind, string | null> = {
   clouds: null,
   flowers: 'decor-flowers',
   trees: 'decor-tree',
   'autumn-trees': 'decor-tree-autumn',
   sunset: 'decor-sun',
   night: 'decor-moon',
+  beach: 'decor-palm',
+  jungle: 'decor-leaf',
+  mountains: 'decor-peak',
+  snow: 'decor-pine-snow',
+  desert: 'decor-cactus',
+  rainbow: 'decor-rainbow',
 };
+
+/** Decoraciones que van grandes y al fondo de la miniatura (sol, luna, picos y arcoíris). */
+const BIG_DECOR: readonly DecorKind[] = ['sunset', 'night', 'mountains', 'rainbow'];
 
 const cssColor = (css: string): number => Phaser.Display.Color.HexStringToColor(css).color;
 
@@ -129,7 +138,7 @@ export function drawAmbientThumb(scene: Phaser.Scene, id: string, w: number, h: 
   if (amb.decor === 'clouds') {
     parts.push(fitImage(scene.add.image(w * 0.12, -h * 0.22, 'cloud'), w * 0.42));
   } else if (decor) {
-    const big = amb.decor === 'sunset' || amb.decor === 'night';
+    const big = BIG_DECOR.includes(amb.decor);
     parts.push(fitImage(scene.add.image(big ? w * 0.22 : -w * 0.18, big ? -h * 0.2 : h * 0.02, decor), big ? h * 0.42 : h * 0.55));
   }
   parts.push(scene.add.graphics().lineStyle(6, COLORS.white).strokeRoundedRect(-w / 2, -h / 2, w, h, 8));

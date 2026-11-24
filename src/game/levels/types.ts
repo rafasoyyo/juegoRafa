@@ -24,7 +24,7 @@ export const RUN_SPEED = 110 * SCALE;
 
 export { GROUND_TOP };
 
-export const AMBIENT_IDS = ['prado', 'flores', 'bosque', 'otono', 'atardecer', 'noche'] as const;
+export const AMBIENT_IDS = ['prado', 'flores', 'bosque', 'otono', 'atardecer', 'noche', 'playa', 'selva', 'montana', 'nieve', 'desierto', 'nubes'] as const;
 export type AmbientId = (typeof AMBIENT_IDS)[number];
 
 export type BlockRow = keyof typeof ROW_BASE;
@@ -57,6 +57,12 @@ export interface BlockData {
   on?: SurfaceKind;
 }
 
+/** Zona de pinchos en el suelo: `x` es su borde izquierdo y `width` su ancho, en baldosas. */
+export interface SpikeData {
+  x: number;
+  width: number;
+}
+
 /** Un nivel tal como está en el JSON (en baldosas), con su nombre para los mensajes de error. */
 export interface LevelData {
   id: string;
@@ -66,6 +72,8 @@ export interface LevelData {
   steps: StepData[];
   platforms: PlatformData[];
   blocks: BlockData[];
+  /** Zonas de pinchos (opcional en el JSON: si falta, no hay ninguna). */
+  spikes: SpikeData[];
 }
 
 /** Escalón en el mundo: `x` es el borde izquierdo, `height` px sobre el suelo y `top` la `y` de su cara superior. */
@@ -98,6 +106,13 @@ export interface WorldBlock {
   surfaceHeight: number;
 }
 
+/** Zona de pinchos en el mundo: `x` es el borde izquierdo y `width` su ancho, en px. */
+export interface WorldSpike {
+  index: number;
+  x: number;
+  width: number;
+}
+
 /** Un nivel listo para construir la escena, en píxeles del mundo. */
 export interface WorldLevel {
   id: string;
@@ -108,6 +123,7 @@ export interface WorldLevel {
   steps: WorldStep[];
   platforms: WorldPlatform[];
   blocks: WorldBlock[];
+  spikes: WorldSpike[];
 }
 
 /** `y` del mundo de algo que está `height` px sobre el suelo. */

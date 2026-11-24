@@ -18,7 +18,7 @@ Al tocar la bandera, el juego SHALL abrir la prueba de la bandera en menos de 2 
 - **THEN** no hay ningún botón para volver al mapa ni para pasar al nivel siguiente sin acabarla
 
 ### Requirement: Un tipo de prueba por nivel
-Cada nivel del mundo de los números SHALL tener siempre el mismo tipo de prueba: nivel 1, «¿Cuántos hay?»; nivel 2, «¿Dónde hay más?»; nivel 3, «Sigue la serie»; nivel 4, «Caza de formas»; nivel 5, «Las letras de tu nombre»; nivel 6, «¿Te acuerdas?».
+Cada nivel del mundo de los números SHALL tener siempre el mismo tipo de prueba: nivel 1, «¿Cuántos hay?»; nivel 2, «¿Dónde hay más?»; nivel 3, «Sigue la serie»; nivel 4, «Caza de formas»; nivel 5, «Las letras de tu nombre»; nivel 6, «¿Te acuerdas?». Los niveles 7 a 12 SHALL repetir esos tipos en el mismo orden: el 7 como el 1, el 8 como el 2 y así hasta el 12 como el 6.
 
 #### Scenario: Nivel 3
 - **WHEN** el niño llega a la bandera del nivel 3
@@ -27,6 +27,10 @@ Cada nivel del mundo de los números SHALL tener siempre el mismo tipo de prueba
 #### Scenario: Repetir un nivel
 - **WHEN** el niño repite el nivel 5 y llega a la bandera
 - **THEN** la prueba vuelve a ser «Las letras de tu nombre»
+
+#### Scenario: Niveles nuevos
+- **WHEN** el niño llega a la bandera del nivel 7 y, más tarde, a la del nivel 12
+- **THEN** la prueba del 7 es «¿Cuántos hay?» y la del 12 es «¿Te acuerdas?», con lo que pasó en el nivel 12
 
 ### Requirement: Tres preguntas por prueba
 Cada prueba SHALL tener exactamente tres preguntas, una detrás de otra. Arriba SHALL verse tres marcas que indiquen en qué pregunta va el niño y cuáles ha acertado o fallado, sin depender solo del color: una pregunta acertada lleva una estrella pequeña, una fallada un círculo vacío y la actual es más grande. Las preguntas SHALL generarse al azar y dos preguntas seguidas de la misma prueba SHALL NOT ser idénticas.

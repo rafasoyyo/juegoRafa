@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buyHat, completeLevel, createGameState, markPending, session } from '../state';
+import { buyHat, completeLevel, createGameState, currentLevel, levelStatus, markPending, session } from '../state';
 import { activateProfile, activeAge, activeAlias, activeProfileId, DEFAULT_ALIAS, saveActive, savedProfiles, startProfile, useStore } from './active';
 import { cleanAlias, isValidProfile, profileId } from './profile-id';
 import { decodeProgress, encodeProgress } from './progress-codec';
@@ -85,8 +85,17 @@ describe('progress-codec: niveles pendientes', () => {
     expect(back.stars.get(2)).toBe(2);
   });
 
+  it('un registro guardado con el mundo de 6 niveles, los 6 hechos, sigue valiendo: el 7 es el actual', () => {
+    const saved = { stars: [[1, 3], [2, 2], [3, 3], [4, 1], [5, 2], [6, 3]], pending: [], cookies: 40, ownedHats: ['cap', 'none'], hat: 'cap' };
+    const back = decodeProgress(saved);
+    expect([...back.stars.entries()]).toEqual(saved.stars);
+    expect(currentLevel(back)).toBe(7);
+    expect(levelStatus(back, 7)).toBe('current');
+    for (let l = 8; l <= 12; l++) expect(levelStatus(back, l)).toBe('locked');
+  });
+
   it('ignora pendientes dañados, fuera de rango o ya hechos', () => {
-    const back = decodeProgress({ stars: [[1, 3]], pending: [1, 0, 7, 2.5, 'x', null, 3], cookies: 0 });
+    const back = decodeProgress({ stars: [[1, 3]], pending: [1, 0, 13, 2.5, 'x', null, 3], cookies: 0 });
     expect([...back.pending]).toEqual([3]);
     expect(decodeProgress({ stars: [], pending: 'basura' }).pending.size).toBe(0);
   });

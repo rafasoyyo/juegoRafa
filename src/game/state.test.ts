@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { buyHat, canPlay, completeLevel, createGameState, currentLevel, HAT_PRICES, isUnlocked, levelStatus, markPending, wearHat } from './state';
+import { buyHat, canPlay, completeLevel, createGameState, currentLevel, HAT_PRICES, isUnlocked, LEVEL_COUNT, levelStatus, markPending, wearHat } from './state';
 
 describe('mapa del mundo', () => {
-  it('en la primera partida el 1 es el actual y del 2 al 6 están bloqueados', () => {
+  it('en la primera partida el 1 es el actual y del 2 al 12 están bloqueados', () => {
     const s = createGameState();
     expect(levelStatus(s, 1)).toBe('current');
-    for (let l = 2; l <= 6; l++) expect(levelStatus(s, l)).toBe('locked');
+    for (let l = 2; l <= LEVEL_COUNT; l++) expect(levelStatus(s, l)).toBe('locked');
   });
 
   it('tras completar 1 (3★) y 2 (2★) el 3 es el actual', () => {
@@ -18,7 +18,7 @@ describe('mapa del mundo', () => {
     expect(s.stars.get(2)).toBe(2);
     expect(levelStatus(s, 3)).toBe('current');
     expect(currentLevel(s)).toBe(3);
-    for (let l = 4; l <= 6; l++) expect(levelStatus(s, l)).toBe('locked');
+    for (let l = 4; l <= LEVEL_COUNT; l++) expect(levelStatus(s, l)).toBe('locked');
   });
 
   it('solo se pueden jugar los hechos y el actual', () => {
@@ -29,9 +29,31 @@ describe('mapa del mundo', () => {
     expect(canPlay(s, 3)).toBe(false);
   });
 
+  it('el mundo tiene 12 niveles', () => {
+    expect(LEVEL_COUNT).toBe(12);
+    expect(isUnlocked(createGameState(), 13)).toBe(false);
+  });
+
+  it('Del seis al siete: con los niveles 1 a 6 hechos, el 7 es el actual y del 8 al 12 están bloqueados', () => {
+    const s = createGameState();
+    for (let l = 1; l <= 6; l++) completeLevel(s, l, 3, 0);
+    expect(currentLevel(s)).toBe(7);
+    expect(levelStatus(s, 7)).toBe('current');
+    for (let l = 8; l <= 12; l++) expect(levelStatus(s, l), `nivel ${l}`).toBe('locked');
+  });
+
+  it('Mundo terminado: con los 12 hechos no hay nivel actual (el mapa pone el zorro en el 12)', () => {
+    const s = createGameState();
+    for (let l = 1; l <= 11; l++) completeLevel(s, l, 2, 0);
+    expect(currentLevel(s)).toBe(12);
+    completeLevel(s, 12, 2, 0);
+    expect(currentLevel(s)).toBeNull();
+    for (let l = 1; l <= 12; l++) expect(levelStatus(s, l)).toBe('done');
+  });
+
   it('con todos los niveles hechos no hay nivel actual', () => {
     const s = createGameState();
-    for (let l = 1; l <= 6; l++) completeLevel(s, l, 1, 0);
+    for (let l = 1; l <= LEVEL_COUNT; l++) completeLevel(s, l, 1, 0);
     expect(currentLevel(s)).toBeNull();
   });
 
@@ -119,7 +141,7 @@ describe('mi personaje', () => {
 });
 
 describe('niveles pendientes (prueba no superada)', () => {
-  it('prueba no superada: 1 hecho, 2 pendiente, 3 actual, 4-6 bloqueados', () => {
+  it('prueba no superada: 1 hecho, 2 pendiente, 3 actual, 4-12 bloqueados', () => {
     const s = createGameState();
     completeLevel(s, 1, 2, 0);
     markPending(s, 2, 0);
@@ -127,7 +149,7 @@ describe('niveles pendientes (prueba no superada)', () => {
     expect(levelStatus(s, 2)).toBe('pending');
     expect(levelStatus(s, 3)).toBe('current');
     expect(currentLevel(s)).toBe(3);
-    for (let l = 4; l <= 6; l++) expect(levelStatus(s, l)).toBe('locked');
+    for (let l = 4; l <= LEVEL_COUNT; l++) expect(levelStatus(s, l)).toBe('locked');
     expect(s.stars.has(2)).toBe(false);
   });
 
@@ -140,9 +162,9 @@ describe('niveles pendientes (prueba no superada)', () => {
     expect(canPlay(s, 3)).toBe(false);
   });
 
-  it('solo quedan pendientes: el zorro va al primer pendiente', () => {
+  it('Solo quedan pendientes: con los 12 jugados y el 4 pendiente, el zorro va al 4', () => {
     const s = createGameState();
-    for (let l = 1; l <= 6; l++) {
+    for (let l = 1; l <= LEVEL_COUNT; l++) {
       if (l === 4) markPending(s, l, 0);
       else completeLevel(s, l, 1, 0);
     }

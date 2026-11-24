@@ -6,8 +6,35 @@ import { AMBIENT_IDS } from './types';
 
 const hex = (css: string): number => parseInt(css.slice(1), 16);
 
+/** Color en CIELAB (D65). */
+function lab(color: number): [number, number, number] {
+  const lin = [(color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff].map((v) => {
+    const c = v / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  const [r, g, b] = lin;
+  const f = (t: number): number => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+  const x = f((r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047);
+  const y = f(r * 0.2126 + g * 0.7152 + b * 0.0722);
+  const z = f((r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883);
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+}
+
+/** Diferencia de color perceptible (ΔE CIE76): a partir de ~25 se distinguen a simple vista sin esfuerzo. */
+function deltaE(a: number, b: number): number {
+  const [l1, a1, b1] = lab(a);
+  const [l2, a2, b2] = lab(b);
+  return Math.hypot(l1 - l2, a1 - a2, b1 - b2);
+}
+
+/** Umbral de la prueba de contraste (el mínimo de los ambientes de los niveles 1 a 6 es ≈ 31). */
+const MIN_DELTA_E = 30;
+/** Colores que nunca cambian con el ambiente: el zorro, el bloque «?» y el morado de los pinchos. */
+const FOX = 0xf28c28;
+
 describe('ambientes', () => {
-  it('existen los 6 ambientes y cada uno se llama como su clave', () => {
+  it('existen los 12 ambientes y cada uno se llama como su clave', () => {
+    expect(AMBIENT_IDS).toHaveLength(12);
     expect(Object.keys(AMBIENTS).sort()).toEqual([...AMBIENT_IDS].sort());
     for (const id of AMBIENT_IDS) expect(AMBIENTS[id].id).toBe(id);
   });
@@ -44,5 +71,41 @@ describe('ambientes', () => {
       expect(at[at.length - 1], a.id).toBe(1);
       expect([...at].sort((x, y) => x - y), a.id).toEqual(at);
     }
+  });
+
+  it('los 6 ambientes antiguos tienen suelo de hierba; nieve, arena y nube en los nuevos', () => {
+    for (const id of ['prado', 'flores', 'bosque', 'otono', 'atardecer', 'noche'] as const) expect(AMBIENTS[id].ground, id).toBe('grass');
+    expect(AMBIENTS.playa.ground).toBe('sand');
+    expect(AMBIENTS.desierto.ground).toBe('sand');
+    expect(AMBIENTS.nieve.ground).toBe('snow');
+    expect(AMBIENTS.nubes.ground).toBe('cloud');
+    expect(AMBIENTS.nubes.platform).toBe('cloud');
+    for (const id of ['playa', 'selva', 'montana', 'nieve', 'desierto'] as const) expect(AMBIENTS[id].platform, id).toBe('log');
+  });
+
+  it('el desierto es de arena pálida, no naranja', () => {
+    const [l, , b] = lab(AMBIENTS.desierto.grass);
+    expect(l).toBeGreaterThan(85);
+    expect(deltaE(AMBIENTS.desierto.grass, FOX)).toBeGreaterThan(40);
+    expect(deltaE(AMBIENTS.desierto.earth, FOX)).toBeGreaterThan(MIN_DELTA_E);
+    expect(b).toBeLessThan(30);
+  });
+
+  it.each(AMBIENT_IDS.map((id) => [id]))('%s: el zorro, el bloque y los pinchos destacan sobre el suelo y el cielo', (id) => {
+    const a = AMBIENTS[id];
+    const sky = a.sky.map(([, c]) => hex(c));
+    const ground = [a.grass, a.earth];
+    const check = (name: string, color: number, against: number[]): void => {
+      for (const bg of against) {
+        expect(deltaE(color, bg), `${id}: ${name} contra #${bg.toString(16)}`).toBeGreaterThanOrEqual(MIN_DELTA_E);
+      }
+    };
+    check('zorro', FOX, [...sky, ...ground]);
+    check('bloque', COLORS.yellow, [...sky, ...ground]);
+    // Los pinchos solo salen en los ambientes de los niveles 7 a 12 (la noche del 6 es morada) y
+    // están en el suelo: cuentan el suelo y la mitad baja del cielo.
+    if (AMBIENT_IDS.indexOf(id) < 6) return;
+    const lowSky = a.sky.filter(([t]) => t >= 0.5).map(([, c]) => hex(c));
+    check('pinchos', COLORS.purple, [...lowSky, ...ground]);
   });
 });

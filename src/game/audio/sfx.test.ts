@@ -29,7 +29,7 @@ describe('recetas de efectos', () => {
   });
 
   it('el choque, el «todavía no» y la fruta no usan ondas ásperas', () => {
-    for (const name of ['bump', 'nope', 'fruit', 'power', 'power-off'] as const) {
+    for (const name of ['bump', 'spikes', 'nope', 'fruit', 'power', 'power-off'] as const) {
       for (const l of recipe(name).layers) {
         if (l.kind === 'tone') expect(['sine', 'triangle']).toContain(l.wave);
       }
@@ -58,6 +58,21 @@ describe('recetas de efectos', () => {
   it('el poder dura más que el premio y la fruta es distinta de la galleta', () => {
     expect(recipeDuration(recipe('power'))).toBeGreaterThan(recipeDuration(recipe('prize')));
     expect(recipe('fruit')).not.toEqual(recipe('cookie'));
+  });
+
+  it('los pinchos tienen su propio «¡uy!»: corto, sube y baja, y distinto del «boing» del enemigo', () => {
+    expect(SFX_NAMES).toContain('spikes');
+    const uy = recipe('spikes');
+    expect(uy).not.toEqual(recipe('bump'));
+    expect(recipeDuration(uy)).toBeLessThan(recipeDuration(recipe('bump')));
+    expect(uy.layers.some((l) => l.kind === 'tone' && l.vibrato)).toBe(false);
+    const main = uy.layers[0] as ToneLayer;
+    const pts = (main.freq as readonly (readonly [number, number])[]).map(([, f]) => f);
+    const peak = Math.max(...pts);
+    expect(peak).toBeGreaterThan(pts[0]!);
+    expect(peak).toBeGreaterThan(pts[pts.length - 1]!);
+    // Mismo volumen moderado que el choque con un enemigo.
+    expect(Math.max(...uy.layers.map((l) => l.gain))).toBeLessThanOrEqual(Math.max(...recipe('bump').layers.map((l) => l.gain)));
   });
 
   it('cada estrella suena más aguda que la anterior', () => {

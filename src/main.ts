@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { audio } from './game/audio/audio-engine';
 import { fitWidth, GAME_H } from './game/config';
+import { GRAVITY } from './game/level-course';
 import { BootScene } from './game/scenes/BootScene';
 import { LevelCompleteScene } from './game/scenes/LevelCompleteScene';
 import { LevelScene } from './game/scenes/LevelScene';
@@ -18,7 +19,7 @@ const game = new Phaser.Game({
   height: GAME_H,
   backgroundColor: '#8FD3FF',
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 900 * 3.2 }, fixedStep: false, debug: false } },
+  physics: { default: 'arcade', arcade: { gravity: { x: 0, y: GRAVITY }, fixedStep: false, debug: false } },
   input: { activePointers: 4 },
   scene: [BootScene, TitleScene, ProfilesScene, NewProfileScene, MapScene, LevelScene, QuizScene, LevelCompleteScene, WardrobeScene],
 });

@@ -58,8 +58,27 @@ describe('franjas, catálogo y azar', () => {
   });
 
   it('una prueba fija por nivel', () => {
-    expect(QUIZ_BY_LEVEL).toEqual({ 1: 'count', 2: 'compare', 3: 'series', 4: 'shapes', 5: 'name-letters', 6: 'recall' });
+    expect(QUIZ_BY_LEVEL).toEqual({
+      1: 'count',
+      2: 'compare',
+      3: 'series',
+      4: 'shapes',
+      5: 'name-letters',
+      6: 'recall',
+      7: 'count',
+      8: 'compare',
+      9: 'series',
+      10: 'shapes',
+      11: 'name-letters',
+      12: 'recall',
+    });
     expect(quizForLevel(3)).toBe('series');
+  });
+
+  it('los niveles 7 a 12 repiten el ciclo: el 7 es «¿Cuántos hay?» y el 12 «¿Te acuerdas?»', () => {
+    expect(quizForLevel(7)).toBe('count');
+    expect(quizForLevel(12)).toBe('recall');
+    for (let level = 7; level <= 12; level++) expect(quizForLevel(level)).toBe(quizForLevel(level - 6));
   });
 
   it('misma semilla, misma secuencia', () => {
@@ -415,6 +434,24 @@ describe('«¿Te acuerdas?»', () => {
       expect(correctVisuals(h!)).toEqual([{ type: 'digit', value: 3 }]);
       expect(correctVisuals(b!)).toEqual([{ type: 'digit', value: 2 }]);
       expect(correctVisuals(c!)).toEqual([{ type: 'digit', value: 5 }]);
+    }
+  });
+
+  it('nivel 12 con un ambiente nuevo y 10 enemigos: paisaje de nubes y recuentos de memoria', () => {
+    const all = [...AMBIENTS, 'playa', 'selva', 'montana', 'nieve', 'desierto', 'nubes'];
+    const recap = { level: 12, ambient: 'nubes', hedgehogs: 6, bees: 4, cookies: 22, blocksHit: 25, blocksTotal: 25 };
+    for (const seed of SEEDS.slice(0, 50)) {
+      const c: QuizContext = { alias: 'LUCIA', ambients: all, recap };
+      const small = recallQuiz('small', createRng(seed), c);
+      checkQuiz(small);
+      expect(correctVisuals(small[0]!)).toEqual([{ type: 'ambient', id: 'nubes' }]);
+      expect(small[0]!.options.every((o) => o.visual.type === 'ambient' && all.includes(o.visual.id))).toBe(true);
+      const big = recallQuiz('big', createRng(seed), c);
+      checkQuiz(big);
+      expect(correctVisuals(big[0]!)).toEqual([{ type: 'digit', value: 6 }]);
+      expect(correctVisuals(big[1]!)).toEqual([{ type: 'digit', value: 4 }]);
+      expect(correctVisuals(big[2]!)).toEqual([{ type: 'digit', value: 22 }]);
+      checkQuiz(recallQuiz('medium', createRng(seed), c));
     }
   });
 

@@ -18,10 +18,12 @@ import {
   type BlockRow,
   type LevelData,
   type PlatformData,
+  type SpikeData,
   type StepData,
   type SurfaceKind,
   type WorldLevel,
   type WorldPlatform,
+  type WorldSpike,
   type WorldStep,
 } from './types';
 
@@ -54,9 +56,9 @@ export function parseLevel(id: string, json: unknown): LevelData {
     if (positive && v <= 0) return fail(`${where}.${key}`, 'debe ser mayor que 0');
     return v;
   };
-  const list = (key: string): Record<string, unknown>[] => {
+  const list = (key: string, optional = false): Record<string, unknown>[] => {
     const v = json[key];
-    if (v === undefined) return fail('el nivel', `no tiene «${key}»`);
+    if (v === undefined) return optional ? [] : fail('el nivel', `no tiene «${key}»`);
     if (!Array.isArray(v)) return fail(key, 'no es una lista');
     return v.map((item, i) => (isObject(item) ? item : fail(`${key}[${i}]`, 'no es un objeto')));
   };
@@ -91,7 +93,12 @@ export function parseLevel(id: string, json: unknown): LevelData {
     return block;
   });
 
-  return { id, ambient: ambient as AmbientId, length, steps, platforms, blocks };
+  const spikes: SpikeData[] = list('spikes', true).map((z, i) => {
+    const where = `spikes[${i}]`;
+    return { x: num(z, 'x', where, false), width: num(z, 'width', where) };
+  });
+
+  return { id, ambient: ambient as AmbientId, length, steps, platforms, blocks, spikes };
 }
 
 /** Superficie sobre la que se puede estar: tramo horizontal en baldosas y altura en px sobre el suelo. */
@@ -170,5 +177,6 @@ export function toWorld(level: LevelData): WorldLevel {
     steps,
     platforms,
     blocks,
+    spikes: level.spikes.map((z, index): WorldSpike => ({ index, x: z.x * TILE, width: z.width * TILE })),
   };
 }

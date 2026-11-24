@@ -85,6 +85,8 @@ export class BootScene extends Phaser.Scene {
     this.makeDust();
     this.makeSparkle();
     this.makeDecor();
+    this.makeTravelDecor();
+    this.makeSpikes();
 
     // Espera a Baloo 2 para que los dígitos no se dibujen con la fuente de reserva.
     const fontReady = document.fonts?.load('800 48px "Baloo 2"') ?? Promise.resolve();
@@ -197,6 +199,157 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xfff4d6).fillPoints(pts, true);
     g.fillCircle(14, 14, 5);
     g.generateTexture('decor-star', 28, 28);
+    g.destroy();
+  }
+
+  /**
+   * Decoración de los ambientes de los niveles 7 a 12, propia y dibujada por código (ver LICENSES.md):
+   * palmera, hoja grande, liana, pico nevado, pino nevado, copo, cactus redondeado y arcoíris. Estilo
+   * plano y sin contornos; `addScenery` la pone detrás del recorrido y más apagada.
+   */
+  private makeTravelDecor(): void {
+    const g = this.make.graphics({}, false);
+    const v = (x: number, y: number): Phaser.Math.Vector2 => new Phaser.Math.Vector2(x, y);
+
+    // Palmera: tronco curvo de anillos, copa de hojas alargadas y dos cocos.
+    g.clear();
+    for (let k = 0; k < 9; k++) {
+      const t = k / 8;
+      const x = 62 + 26 * t * t;
+      const y = 236 - t * 150;
+      g.fillStyle(k % 2 === 0 ? 0xb8875a : 0xa57549).fillEllipse(x, y, 30 - t * 6, 24);
+    }
+    const crown = { x: 88, y: 84 };
+    const fronds: [number, number, number][] = [
+      [-2.7, 82, 0x3f9f5a],
+      [-2.1, 78, 0x4fb468],
+      [-1.4, 70, 0x5cc46b],
+      [-0.7, 80, 0x4fb468],
+      [-0.1, 84, 0x3f9f5a],
+      [0.6, 62, 0x4fb468],
+      [2.5, 62, 0x5cc46b],
+    ];
+    for (const [a, len, color] of fronds) {
+      const tip = v(crown.x + Math.cos(a) * len, crown.y + Math.sin(a) * len + len * 0.25);
+      const mid = v(crown.x + Math.cos(a) * len * 0.55, crown.y + Math.sin(a) * len * 0.55 - 10);
+      const nx = -Math.sin(a) * 13;
+      const ny = Math.cos(a) * 13;
+      g.fillStyle(color).fillPoints([v(crown.x, crown.y), v(mid.x + nx, mid.y + ny), tip, v(mid.x - nx, mid.y - ny)], true);
+    }
+    g.fillStyle(0x8a5a32).fillCircle(80, 92, 9).fillCircle(96, 94, 9);
+    g.generateTexture('decor-palm', 180, 250);
+
+    // Hoja grande de la selva: óvalo con nervio central y nervios laterales claros.
+    g.clear();
+    g.fillStyle(0x2f8f4e).fillRoundedRect(76, 150, 10, 70, 5);
+    g.fillStyle(0x3a9f58).fillEllipse(80, 96, 120, 176);
+    g.fillStyle(0x56b86c).fillEllipse(70, 90, 70, 130);
+    g.lineStyle(5, 0x8fd49a, 0.9).lineBetween(80, 22, 80, 176);
+    for (let k = 0; k < 5; k++) {
+      const y = 50 + k * 26;
+      g.lineStyle(3, 0x8fd49a, 0.7).lineBetween(80, y + 10, 40 + k * 2, y - 8).lineBetween(80, y + 10, 120 - k * 2, y - 8);
+    }
+    g.generateTexture('decor-leaf', 160, 220);
+
+    // Liana: cuerda ondulada que cuelga con hojitas.
+    g.clear();
+    g.lineStyle(7, 0x5d8a3a);
+    g.beginPath();
+    for (let y = 0; y <= 300; y += 10) {
+      const x = 30 + Math.sin(y / 38) * 10;
+      if (y === 0) g.moveTo(x, y);
+      else g.lineTo(x, y);
+    }
+    g.strokePath();
+    for (let k = 0; k < 6; k++) {
+      const y = 40 + k * 46;
+      const x = 30 + Math.sin(y / 38) * 10;
+      const side = k % 2 === 0 ? 1 : -1;
+      g.fillStyle(k % 2 === 0 ? 0x4fb468 : 0x3f9f5a).fillEllipse(x + side * 14, y + 4, 26, 14);
+    }
+    g.fillStyle(0x5cc46b).fillCircle(30 + Math.sin(300 / 38) * 10, 300, 10);
+    g.generateTexture('decor-vine', 60, 312);
+
+    // Pico nevado: montaña redondeada azul grisácea con la cima blanca festoneada.
+    g.clear();
+    g.fillStyle(0x9fb4cf).fillPoints([v(0, 300), v(170, 40), v(200, 30), v(230, 40), v(400, 300)], true);
+    g.fillStyle(0x8aa2c0).fillPoints([v(200, 30), v(230, 40), v(400, 300), v(250, 300)], true);
+    g.fillStyle(0xf7fbff).fillPoints([v(140, 86), v(170, 40), v(200, 30), v(230, 40), v(262, 88)], true);
+    for (const [x, r] of [
+      [150, 16],
+      [178, 18],
+      [208, 17],
+      [238, 18],
+      [256, 12],
+    ] as const) {
+      g.fillCircle(x, 86, r);
+    }
+    g.generateTexture('decor-peak', 400, 300);
+
+    // Pino nevado: tres pisos redondeados con nieve encima.
+    g.clear();
+    g.fillStyle(0x8a6040).fillRoundedRect(52, 170, 18, 36, 6);
+    const tiers: [number, number, number][] = [
+      [120, 170, 56],
+      [82, 132, 46],
+      [44, 92, 34],
+    ];
+    for (const [top, bottom, half] of tiers) {
+      g.fillStyle(0x3c8f66).fillPoints([v(61 - half, bottom), v(61, top - 18), v(61 + half, bottom)], true);
+      g.fillStyle(0x3c8f66).fillEllipse(61, bottom - 2, half * 2, 16);
+      g.fillStyle(0xf7fbff).fillEllipse(61, top - 4, half * 0.9, 18);
+      g.fillStyle(0xf7fbff).fillEllipse(61 - half * 0.5, bottom - 8, half * 0.7, 12);
+      g.fillStyle(0xf7fbff).fillEllipse(61 + half * 0.5, bottom - 8, half * 0.7, 12);
+    }
+    g.fillStyle(0xf7fbff).fillCircle(61, 22, 10);
+    g.generateTexture('decor-pine-snow', 122, 206);
+
+    // Copo de nieve: un punto blanco suave (se escala al usarlo).
+    g.clear();
+    g.fillStyle(0xffffff, 0.5).fillCircle(10, 10, 10);
+    g.fillStyle(0xffffff).fillCircle(10, 10, 6);
+    g.generateTexture('decor-flake', 20, 20);
+
+    // Cactus redondeado sin pinchos: tronco y dos brazos con las puntas redondas, verde apagado.
+    g.clear();
+    const cactus = 0x7fae76;
+    const cactusLight = 0x95c08a;
+    g.fillStyle(cactus).fillRoundedRect(46, 20, 40, 190, 20);
+    g.fillStyle(cactus).fillRoundedRect(10, 76, 28, 74, 14).fillRoundedRect(10, 128, 50, 24, 12);
+    g.fillStyle(cactus).fillRoundedRect(96, 50, 28, 70, 14).fillRoundedRect(72, 98, 52, 24, 12);
+    g.fillStyle(cactusLight).fillRoundedRect(56, 32, 10, 160, 5);
+    g.generateTexture('decor-cactus', 134, 212);
+
+    // Arcoíris: cinco bandas pastel en semicírculo.
+    g.clear();
+    const bands = [0xff9b93, 0xffc27a, 0xffe58a, 0x9fdc8f, 0x8fc7f2, 0xb9a6ee];
+    bands.forEach((color, k) => {
+      g.lineStyle(22, color).beginPath();
+      g.arc(300, 300, 280 - k * 22, Math.PI, 0, false);
+      g.strokePath();
+    });
+    g.generateTexture('decor-rainbow', 600, 312);
+    g.destroy();
+  }
+
+  /**
+   * Pinchos: una baldosa (84 px) con 3 conos de punta redondeada en morado, con brillo, sobre una base
+   * de piedra clara con sombra. Se repite a lo ancho de cada zona.
+   */
+  private makeSpikes(): void {
+    const g = this.make.graphics({}, false);
+    const v = (x: number, y: number): Phaser.Math.Vector2 => new Phaser.Math.Vector2(x, y);
+    const base = 46;
+    for (const cx of [14, 42, 70]) {
+      g.fillStyle(0x7b5ea7).fillPoints([v(cx - 13, base + 2), v(cx - 3, 12), v(cx + 3, 12), v(cx + 13, base + 2)], true);
+      g.fillCircle(cx, 13, 4.5);
+      g.fillStyle(0x6a4f94).fillPoints([v(cx + 2, 14), v(cx + 13, base + 2), v(cx + 3, base + 2)], true);
+      g.fillStyle(0xb7a3dc).fillPoints([v(cx - 4, 18), v(cx - 1, 18), v(cx - 6, base - 4), v(cx - 10, base - 4)], true);
+    }
+    g.fillStyle(0xa7b3c2).fillRoundedRect(0, base + 4, 84, 16, 6);
+    g.fillStyle(0xd5dee8).fillRoundedRect(0, base, 84, 14, 6);
+    g.fillStyle(0xe8eef4).fillRoundedRect(6, base + 3, 30, 4, 2);
+    g.generateTexture('spikes', 84, base + 20);
     g.destroy();
   }
 

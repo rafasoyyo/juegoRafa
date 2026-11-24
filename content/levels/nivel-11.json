@@ -1,0 +1,59 @@
+{
+  "ambient": "desierto",
+  "length": 200,
+  "steps": [
+    { "x": 21.2, "width": 3, "height": 1 },
+    { "x": 24.2, "width": 3, "height": 2 },
+    { "x": 27.2, "width": 3, "height": 1 },
+    { "x": 66, "width": 3, "height": 1 },
+    { "x": 100.2, "width": 3, "height": 1 },
+    { "x": 126.9, "width": 3, "height": 1 },
+    { "x": 129.9, "width": 3, "height": 2 },
+    { "x": 132.9, "width": 3, "height": 1 },
+    { "x": 149.2, "width": 3, "height": 1 }
+  ],
+  "platforms": [
+    { "x": 36.4, "width": 5, "height": 1.25 },
+    { "x": 47.4, "width": 4, "height": 1.5 },
+    { "x": 75.2, "width": 4, "height": 1.5 },
+    { "x": 81.7, "width": 4, "height": 1.5 },
+    { "x": 109.2, "width": 5, "height": 1.25 },
+    { "x": 116.7, "width": 4, "height": 1.5 },
+    { "x": 158.4, "width": 4, "height": 1.5 },
+    { "x": 164.9, "width": 4, "height": 1.5 },
+    { "x": 174.9, "width": 4, "height": 1.5 }
+  ],
+  "blocks": [
+    { "x": 14.5, "row": "low" },
+    { "x": 25.7, "row": "high", "on": "step" },
+    { "x": 37.9, "row": "low", "on": "platform" },
+    { "x": 39.9, "row": "low", "on": "platform" },
+    { "x": 49.4, "row": "low", "on": "platform" },
+    { "x": 58.1, "row": "high" },
+    { "x": 59.3, "row": "high" },
+    { "x": 67.5, "row": "low", "on": "step" },
+    { "x": 77.2, "row": "high", "on": "platform" },
+    { "x": 83.7, "row": "low", "on": "platform" },
+    { "x": 92.3, "row": "low" },
+    { "x": 93.5, "row": "low" },
+    { "x": 101.7, "row": "low", "on": "step" },
+    { "x": 110.7, "row": "low", "on": "platform" },
+    { "x": 112.7, "row": "low", "on": "platform" },
+    { "x": 118.7, "row": "low", "on": "platform" },
+    { "x": 131.4, "row": "high", "on": "step" },
+    { "x": 142.5, "row": "high" },
+    { "x": 150.7, "row": "low", "on": "step" },
+    { "x": 160.4, "row": "low", "on": "platform" },
+    { "x": 166.9, "row": "high", "on": "platform" },
+    { "x": 176.9, "row": "low", "on": "platform" },
+    { "x": 185.6, "row": "low" },
+    { "x": 186.8, "row": "low" }
+  ],
+  "spikes": [
+    { "x": 43.9, "width": 1 },
+    { "x": 88.2, "width": 2 },
+    { "x": 105.7, "width": 1 },
+    { "x": 138.4, "width": 2 },
+    { "x": 171.4, "width": 1 }
+  ]
+}

@@ -3,7 +3,7 @@
  * TypeScript puro (sin Phaser) para poder probarlo en Vitest.
  *
  * El recorrido se divide en «tramos libres»: lo que queda entre la salida y la bandera (con margen)
- * tras quitar cada zona a evitar (bloques «?», escalones y plataformas) ampliada por los dos lados.
+ * tras quitar cada zona a evitar (bloques «?», escalones, plataformas y pinchos) ampliada por los dos lados.
  * Va como mucho un enemigo por tramo, así que entre dos enemigos hay siempre al menos una zona ampliada
  * y nunca hay uno bajo un bloque, sobre un escalón o bajo una plataforma: todos van por el suelo llano.
  */
@@ -23,11 +23,11 @@ export interface ClearZone {
 export interface Course {
   startX: number;
   flagX: number;
-  /** Bloques «?», escalones y plataformas. */
+  /** Bloques «?», escalones, plataformas y zonas de pinchos. */
   keepClear: readonly ClearZone[];
 }
 
-/** Recorrido de un nivel para colocar enemigos: bloques, escalones y plataformas como zonas a evitar. */
+/** Recorrido de un nivel para colocar enemigos: bloques, escalones, plataformas y pinchos como zonas a evitar. */
 export function courseFor(world: WorldLevel): Course {
   return {
     startX: world.startX,
@@ -36,6 +36,7 @@ export function courseFor(world: WorldLevel): Course {
       ...world.blocks.map((b) => ({ x: b.x, width: BLOCK_SIZE })),
       ...world.steps.map((s) => ({ x: s.x + s.width / 2, width: s.width })),
       ...world.platforms.map((p) => ({ x: p.x + p.width / 2, width: p.width })),
+      ...world.spikes.map((z) => ({ x: z.x + z.width / 2, width: z.width })),
     ],
   };
 }
@@ -64,13 +65,13 @@ export interface BeeSpawn {
 
 export type EnemySpawn = HedgehogSpawn | BeeSpawn;
 
-/** Enemigos en los niveles 1 a 6. */
-export const ENEMIES_PER_LEVEL: readonly number[] = [2, 3, 4, 5, 6, 7];
+/** Enemigos en los niveles 1 a 12. */
+export const ENEMIES_PER_LEVEL: readonly number[] = [2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10];
 /** Margen sin enemigos tras la salida. */
 export const START_CLEAR = 600;
 /** Margen sin enemigos antes de la bandera. */
 export const FLAG_CLEAR = 400;
-/** Margen sin enemigos a cada lado de una zona a evitar (bloque, escalón o plataforma). */
+/** Margen sin enemigos a cada lado de una zona a evitar (bloque, escalón, plataforma o pinchos). */
 export const BLOCK_CLEAR = 150;
 /** Tramo libre más corto en el que cabe un enemigo. */
 export const MIN_STRETCH = 200;

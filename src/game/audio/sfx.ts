@@ -45,6 +45,7 @@ export type SfxName =
   | 'block'
   | 'cookie'
   | 'bump'
+  | 'spikes'
   | 'fruit'
   | 'power'
   | 'power-off'
@@ -113,6 +114,15 @@ export function recipe(name: SfxName, opts: SfxOptions = {}): Recipe {
       return {
         layers: [{ ...tone(0, 0.36, 'sine', [[0, 330], [0.12, 200], [0.32, 440]], 0.45, 0.008), vibrato: { rate: 14, depth: 22 } }],
       };
+    case 'spikes':
+      // «¡Uy!» corto: el tono sube y baja deprisa, triangular y suave. Más corto y más agudo que el
+      // «boing» del enemigo, sin vibrato, para que se distingan.
+      return {
+        layers: [
+          tone(0, 0.22, 'triangle', [[0, 520], [0.07, 780], [0.2, 440]], 0.36, 0.008),
+          tone(0.02, 0.18, 'sine', [[0, 260], [0.07, 390], [0.16, 220]], 0.18, 0.008),
+        ],
+      };
     case 'fruit':
       // «Plop» de aparición: tres notas rápidas que suben, después del tintineo de la galleta.
       return {
@@ -179,6 +189,7 @@ export const SFX_NAMES: readonly SfxName[] = [
   'block',
   'cookie',
   'bump',
+  'spikes',
   'fruit',
   'power',
   'power-off',

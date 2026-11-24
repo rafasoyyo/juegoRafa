@@ -40,22 +40,25 @@ La respuesta se da **jugando**, no parando para un examen:
 - **Bloques «?»**: contienen cantidades. Golpear el correcto suelta galletas y abre el camino.
 - **Puertas/tubos**: piden una cantidad (puntos en el cartel). Se atraviesan al llevar esa cantidad.
 - **Enemigo** (erizo, abeja): no mata. Tocarlo, también cayéndole encima, es un **pinchazo**: Rufo brinca hacia arriba y hacia atrás, parpadea 1 s protegido y **pierde una galleta del contador del nivel** (nunca baja de 0). No hay vidas, ni derrota, ni se pierde nada del total guardado, y las estrellas no cambian. Idea futura: «derrotar» saltando sobre el que lleva el patrón o la cantidad correcta.
-- **Fresa del modo invencible**: en cada nivel, un bloque «?» elegido al azar al entrar esconde una **fresa**. Al golpearlo da su galleta y suelta la fresa, que se posa junto al bloque. Al comerla, Rufo brilla con destellos de colores durante **8 s** (el brillo acelera en los 2 últimos): atraviesa erizos y abejas sin pincharse ni perder galletas.
+- **Zonas de pinchos** (niveles 7 a 12): tramos de suelo de 1 baldosa (niveles 7–8) o de 1–2 (desde el 9), con conos morados redondeados de aspecto amable, que se saltan con un salto normal. Son fijas, están en el JSON del nivel y las pruebas comprueban que quedan lejos de la salida, la bandera, los bloques, los escalones, las plataformas y las otras zonas. Pisarlas es un **pinchazo** como el de un enemigo (−1 galleta del nivel, nunca bajo 0, sin tocar las estrellas), con su propio «¡uy!» suave: Rufo rebota hacia el lado por el que entró, aterriza fuera de la zona y parpadea 1 s protegido. El suelo sigue siendo continuo debajo: no hay hoyos ni caídas.
+- **Fresa del modo invencible**: en cada nivel, un bloque «?» elegido al azar al entrar esconde una **fresa**. Al golpearlo da su galleta y suelta la fresa, que se posa junto al bloque (nunca sobre pinchos). Al comerla, Rufo brilla con destellos de colores durante **8 s** (el brillo acelera en los 2 últimos): atraviesa erizos y abejas y corre sobre los pinchos sin pincharse ni perder galletas.
 - **Meta**: bandera al final, con celebración.
 
 ### 1.4 Pruebas y puntuación (sin presión)
 - **Estrellas 1 a 3 por nivel**, según aciertos al primer intento. Nunca 0: terminar siempre da al menos 1.
 - **Galletas** (con pepitas de chocolate): son el premio del juego; se ganan por acertar y se gastan en cosméticos del personaje (sombreros, colores).
-- **Sin vidas ni «game over»**. Un fallo en una prueba = rebote suave + pista, y se reintenta. El único coste en el nivel es el pinchazo de un enemigo, que resta una galleta del nivel (nunca baja de 0, no toca el total guardado ni las estrellas).
+- **Sin vidas ni «game over»**. Un fallo en una prueba = rebote suave + pista, y se reintenta. El único coste en el nivel es el pinchazo de un enemigo o de unos pinchos, que resta una galleta del nivel (nunca baja de 0, no toca el total guardado ni las estrellas).
 - **Pistas progresivas**: 1.er fallo, la voz repite la consigna; 2.º, la respuesta correcta brilla; 3.º, la mascota la señala.
-- **Prueba de la bandera** (hecha): al llegar a la bandera de cada nivel, una prueba corta de **3 preguntas**, con un tipo por nivel en el mundo 1: ¿Cuántos hay?, ¿Dónde hay más?, Sigue la serie, Caza de formas, Las letras de tu nombre y ¿Te acuerdas? (sobre lo que ha pasado en el nivel). Se adapta a la edad del perfil en tres franjas (3-4, 5-6 y 7-8) y se explica sin texto ni voz: con dibujos y con Lalo señalando. Cada pregunta tiene 3 intentos: tras el 1.er fallo, Lalo repite la demostración; tras el 2.º, da una pista propia de cada prueba; tras el 3.º, enseña la respuesta. Se supera con 2 aciertos de 3. **No da estrellas** (siguen saliendo de los bloques «?»). Si no se supera, el nivel queda **pendiente** (amarillo en el mapa, sin estrellas) pero el siguiente se desbloquea; las galletas recogidas sí se suman. Detalle en `openspec/specs/flag-quiz/`.
+- **Prueba de la bandera** (hecha): al llegar a la bandera de cada nivel, una prueba corta de **3 preguntas**, con un tipo por nivel en el mundo 1: ¿Cuántos hay?, ¿Dónde hay más?, Sigue la serie, Caza de formas, Las letras de tu nombre y ¿Te acuerdas? (sobre lo que ha pasado en el nivel); los niveles 7 a 12 repiten esos tipos en el mismo orden hasta que tengan pruebas propias. Se adapta a la edad del perfil en tres franjas (3-4, 5-6 y 7-8) y se explica sin texto ni voz: con dibujos y con Lalo señalando. Cada pregunta tiene 3 intentos: tras el 1.er fallo, Lalo repite la demostración; tras el 2.º, da una pista propia de cada prueba; tras el 3.º, enseña la respuesta. Se supera con 2 aciertos de 3. **No da estrellas** (siguen saliendo de los bloques «?»). Si no se supera, el nivel queda **pendiente** (amarillo en el mapa, sin estrellas) pero el siguiente se desbloquea; las galletas recogidas sí se suman. Detalle en `openspec/specs/flag-quiz/`.
 - **Mini-prueba al final de cada mundo** (el «castillo»): 5 retos cortos mezclados. Da una **medalla**, no una nota.
 - **Dificultad adaptativa** invisible: sube de rango tras 4-5 aciertos seguidos; baja tras 3 fallos.
 - **Repaso espaciado**: lo fallado reaparece en niveles posteriores con otro disfraz.
 
 ### 1.5 Estructura
-- **4 mundos × 6 niveles** (v1: 1 mundo completo).
+- **4 mundos** (v1: 1 mundo completo de **12 niveles**).
 - Cada nivel = un recorrido corto con 3 a 5 retos y una meta, donde espera la prueba de la bandera.
+- Mundo 1: los niveles 1 a 6 duran de 1 a 2 min con calma; los niveles 7 a 12 son más largos (de 1,5 a 2,5 min), con más bloques, escalones, plataformas y enemigos, y añaden las zonas de pinchos. Cada nivel tiene su ambiente: prado, flores, bosque, otoño, atardecer, noche, playa, selva, montaña, nieve, desierto y nubes con arcoíris.
+- **Mapa del mundo**: un camino de 12 niveles más ancho que la pantalla, que se desplaza en horizontal arrastrando o con flechas grandes a los lados y se abre centrado en el nivel actual. El contador de galletas, Lalo, mi personaje y el selector de mundos quedan fijos. La bandera de final de mundo está en el nivel 12.
 - Mundo 1: *Colina de los números* (1-5). Mundo 2: 1-10. Mundo 3: patrones y formas. Mundo 4: letras.
 
 ## 2. Propuesta de interfaz y control (móvil táctil)
@@ -165,7 +168,7 @@ Reglas de seguridad: solo el `uid` dueño lee/escribe `families/{uid}/**`. Sin l
 | **1. Prototipo jugable** | Personaje, un nivel con bloques «?» y bandera, salto con tolerancia | Tu hijo juega 2 min sin ayuda |
 | **2. Primer reto** | Bloques con cantidades, voz, pistas, estrellas | ¿Entiende la consigna sin leer? |
 | **3. Núcleo** | Auth anónima, progreso en Firestore, adaptación | Retomar donde lo dejó |
-| **4. Mundo 1 completo** | 6 niveles, mapa, galletas, cosméticos, prueba final | Sesiones de 10 min |
+| **4. Mundo 1 completo** | 12 niveles (los 7–12 con pinchos), mapa que se desplaza, galletas, cosméticos, prueba final | Sesiones de 10 min |
 | **5. Padres** | Candado, panel, límite de tiempo, idioma | Lo configuras tú |
 | **6. Ampliar** | Mundos 2 a 4, letras, formas | — |
 
