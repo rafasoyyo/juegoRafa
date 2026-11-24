@@ -35,6 +35,8 @@ export interface Ambient {
   ground: GroundStyle;
   /** Cuánta tinta lleva la pared del foso de los pinchos (0 a 1); si falta, `PIT_WALL_MIX`. */
   pitMix?: number;
+  /** Opacidad del arcoíris del horizonte (0 a 1); si falta, `RAINBOW_ALPHA` (`horizon-rainbow.ts`). */
+  rainbowAlpha?: number;
 }
 
 export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
@@ -139,6 +141,8 @@ export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
     decor: 'night',
     platform: 'cloud',
     ground: 'grass',
+    // Arcoíris de luna: a la mitad de la opacidad normal, para que la luna y las estrellas se reconozcan.
+    rainbowAlpha: 0.38,
   },
   playa: {
     id: 'playa',

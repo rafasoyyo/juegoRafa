@@ -322,15 +322,16 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(cactusLight).fillRoundedRect(56, 32, 10, 160, 5);
     g.generateTexture('decor-cactus', 134, 212);
 
-    // Arcoíris: cinco bandas pastel en semicírculo.
+    // Arcoíris: seis bandas pastel en semicírculo, de fuera adentro. Al doble de resolución para que el
+    // arco grande del nivel 12 (`horizon-rainbow.ts`) se vea nítido; las miniaturas lo reducen.
     g.clear();
     const bands = [0xff9b93, 0xffc27a, 0xffe58a, 0x9fdc8f, 0x8fc7f2, 0xb9a6ee];
     bands.forEach((color, k) => {
-      g.lineStyle(22, color).beginPath();
-      g.arc(300, 300, 280 - k * 22, Math.PI, 0, false);
+      g.lineStyle(44, color).beginPath();
+      g.arc(600, 600, 560 - k * 44, Math.PI, 0, false);
       g.strokePath();
     });
-    g.generateTexture('decor-rainbow', 600, 312);
+    g.generateTexture('decor-rainbow', 1200, 624);
     g.destroy();
   }
 

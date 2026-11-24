@@ -214,7 +214,7 @@ export class LevelScene extends Phaser.Scene {
 
     const spans = groundSpans(worldW, this.world.spikes);
     const pits = this.world.spikes.map((z) => ({ from: z.x, to: z.x + z.width }));
-    addScenery(this, this.ambient, worldW, GROUND_TOP, { spans, pits });
+    addScenery(this, this.ambient, worldW, GROUND_TOP, this.level, this.scale.width, { spans, pits });
     // Suelo por tramos entre los fosos y, en cada foso, un fondo a la altura de las puntas.
     const ground = spans.map((span) => this.staticZone(span.from, GROUND_TOP, span.to - span.from, 100));
     const pitFloors = pits.map((pit) => this.staticZone(pit.from, GROUND_TOP + PIT_TIP, pit.to - pit.from, 100 - PIT_TIP));

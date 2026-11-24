@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { COLORS } from '../config';
 import { AMBIENTS, INK, pitWall, PIT_WALL_MIX } from './ambients';
+import { RAINBOW_ALPHA } from './horizon-rainbow';
 import { STEEL } from './spikes';
 import { LEVELS } from './catalog';
 import { AMBIENT_IDS } from './types';
@@ -103,6 +104,17 @@ describe('ambientes', () => {
     };
     check('zorro', FOX, [...sky, ...ground]);
     check('bloque', COLORS.yellow, [...sky, ...ground]);
+  });
+
+  it('la noche es el único ambiente con el arcoíris más tenue, y toda opacidad está entre 0 y 1', () => {
+    const fainter = AMBIENT_IDS.filter((id) => (AMBIENTS[id].rainbowAlpha ?? RAINBOW_ALPHA) < RAINBOW_ALPHA);
+    expect(fainter).toEqual(['noche']);
+    expect(AMBIENTS.noche.rainbowAlpha).toBeCloseTo(RAINBOW_ALPHA / 2, 1);
+    for (const id of AMBIENT_IDS) {
+      const alpha = AMBIENTS[id].rainbowAlpha ?? RAINBOW_ALPHA;
+      expect(alpha, id).toBeGreaterThan(0);
+      expect(alpha, id).toBeLessThanOrEqual(1);
+    }
   });
 
   it('la pared del foso es la tierra mezclada al 42 % con la tinta', () => {

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { COLORS, GAME_H, MAX_W } from '../config';
 import { INK, mixColor, pitWall, skyKey, type Ambient, type GroundStyle } from '../levels/ambients';
+import { horizonRainbow } from '../levels/horizon-rainbow';
 import { PIT_DEPTH, PIT_LIP_RADIUS, type Span } from '../levels/spikes';
 import { digits, fitImage } from './round-button';
 
@@ -145,8 +146,8 @@ const DECOR_SCROLL = 0.52;
 const DECOR_ALPHA = 0.72;
 
 /**
- * Escenario completo de un nivel con su ambiente, de atrás adelante: cielo, sol o luna y estrellas,
- * nubes, colinas lejanas, decoración, colinas cercanas y suelo. Con el prado queda igual que el
+ * Escenario completo del nivel `level` con su ambiente, de atrás adelante: cielo, arcoíris del horizonte
+ * (según `horizonRainbow`, con la vista de `viewW`), sol o luna y estrellas, nubes, colinas lejanas, decoración, colinas cercanas y suelo. Con el prado queda igual que el
  * escenario de siempre (nubes, dos capas de colinas y suelo con los colores de la paleta). El suelo va
  * por tramos (`spans`) y entre ellos, los fosos de los pinchos (`pits`): primero los fosos y después
  * los tramos, con la esquina redondeada del lado del foso. Sin tramos, un solo suelo de todo el ancho.
@@ -156,9 +157,16 @@ export function addScenery(
   ambient: Ambient,
   worldW: number,
   groundTop: number,
+  level: number,
+  viewW: number,
   ground: { spans: readonly Span[]; pits: readonly Span[] } = { spans: [{ from: 0, to: worldW }], pits: [] },
 ): void {
   addSky(scene, skyKey(ambient.id));
+
+  // Arcoíris del horizonte: la capa más lejana, detrás del sol, la luna, las nubes y las colinas.
+  const rainbow = horizonRainbow(level, ambient, viewW, worldW);
+  const arc = scene.add.image(rainbow.x, rainbow.bottom, 'decor-rainbow').setOrigin(0.5, 1);
+  arc.setDisplaySize(rainbow.width, (rainbow.width * arc.height) / arc.width).setScrollFactor(rainbow.scrollFactor, 1).setAlpha(rainbow.alpha);
 
   if (ambient.decor === 'sunset') {
     scene.add.image(MAX_W * 0.62, groundTop - 90, 'decor-sun').setScrollFactor(0.03, 1);
@@ -166,10 +174,6 @@ export function addScenery(
   if (ambient.decor === 'night') {
     scene.add.image(MAX_W * 0.72, 220, 'decor-moon').setScrollFactor(0.03, 1);
     addStars(scene, worldW * 0.1 + MAX_W);
-  }
-
-  if (ambient.decor === 'rainbow') {
-    scene.add.image(MAX_W * 0.58, groundTop - 60, 'decor-rainbow').setOrigin(0.5, 1).setScrollFactor(0.03, 1).setAlpha(0.7);
   }
 
   addClouds(scene, 120, worldW * 0.3 + MAX_W, 520, 0.3, ambient.cloud);
