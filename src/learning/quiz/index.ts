@@ -28,6 +28,7 @@ export function generateQuiz(kind: QuizKind, band: AgeBand, rng: Rng, ctx: QuizC
 
 export { ageBand } from './age';
 export { quizForLevel, QUIZ_BY_LEVEL } from './catalog';
+export { GUIDE_MAX_WORDS, GUIDE_TEXT, guideWordCount, type GuideText } from './guide-text';
 export { createRng, type Rng } from './rng';
 export * from './run';
 export * from './types';

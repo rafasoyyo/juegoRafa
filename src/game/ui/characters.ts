@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
-import { COLORS } from '../config';
+import { COLORS, FONT, INK_CSS } from '../config';
 import type { HatId } from '../state';
 import { fitImage, RoundButton } from './round-button';
 
@@ -94,7 +94,12 @@ export function drawFox(scene: Phaser.Scene, x: number, y: number, pose: FoxPose
  * El altavoz es el único control de silencio total del juego: normal o tachado según `audio.muted`.
  * (x, y) es la esquina superior izquierda.
  */
-export function drawLalo(scene: Phaser.Scene, x: number, y: number): Phaser.GameObjects.Container {
+export function drawLalo(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  opts: { question?: boolean } = {},
+): Phaser.GameObjects.Container {
   const lalo = scene.add.image(0, 0, 'lalo').setOrigin(0, 0);
   const container = scene.add.container(x, y);
 
@@ -134,6 +139,15 @@ export function drawLalo(scene: Phaser.Scene, x: number, y: number): Phaser.Game
   }).addContent(speakerIcon);
   lalo.setInteractive({ useHandCursor: true }).on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, react);
   container.add([lalo, speaker]);
+  if (opts.question) {
+    // «?» amarilla bajo Lalo: avisa de que se le puede tocar. Es un dibujo, no una palabra.
+    const badge = scene.add.graphics();
+    badge.fillStyle(COLORS.yellowDark).fillCircle(0, 3, 19).fillStyle(COLORS.yellow).fillCircle(0, 0, 19);
+    const mark = scene.add
+      .text(0, 1, '?', { fontFamily: FONT, fontStyle: '800', fontSize: '26px', color: INK_CSS, padding: { top: 4, bottom: 4 } })
+      .setOrigin(0.5);
+    container.add(scene.add.container(lalo.width / 2, lalo.height + 16, [badge, mark]));
+  }
 
   // Parpadeo espontáneo de vez en cuando.
   scene.time.addEvent({ delay: 3800, loop: true, callback: blink });

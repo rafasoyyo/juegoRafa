@@ -3,6 +3,7 @@ import { ageBand } from './age';
 import { QUIZ_BY_LEVEL, quizForLevel } from './catalog';
 import { compareQuiz } from './compare';
 import { countQuiz } from './count';
+import { GUIDE_MAX_WORDS, GUIDE_TEXT, guideWordCount } from './guide-text';
 import { generateQuiz } from './index';
 import { nameLettersQuiz } from './name-letters';
 import { recallQuiz } from './recall';
@@ -10,7 +11,7 @@ import { createRng } from './rng';
 import { createRun, dimmedOptions, isFinished, marks, result, tap } from './run';
 import { rowPattern, seriesQuiz } from './series';
 import { PIECES_BY_BAND, SHAPES_BY_BAND, shapesQuiz, TARGETS_BY_BAND } from './shapes';
-import { questionKey, toOptions, type AgeBand, type Question, type QuizContext, type Visual } from './types';
+import { QUIZ_KINDS, questionKey, toOptions, type AgeBand, type Question, type QuizContext, type Visual } from './types';
 
 const BANDS: AgeBand[] = ['small', 'medium', 'big'];
 const SEEDS = Array.from({ length: 200 }, (_, i) => i + 1);
@@ -461,5 +462,22 @@ describe('«¿Te acuerdas?»', () => {
     expect(qs[1]!.prompt.items[0]).toEqual({ type: 'object', object: 'hedgehog' });
     const big = recallQuiz('big', createRng(9), ctx({ bees: 0 }));
     expect(correctVisuals(big[1]!)).toEqual([{ type: 'digit', value: 0 }]);
+  });
+});
+
+describe('texto del bocadillo de Lalo', () => {
+  it('cada tipo de prueba tiene título, objetivo y frase, y caben en el bocadillo', () => {
+    for (const kind of QUIZ_KINDS) {
+      const t = GUIDE_TEXT[kind];
+      expect(t.title.trim(), kind).not.toBe('');
+      expect(t.goal.trim(), kind).not.toBe('');
+      expect(t.how.trim(), kind).not.toBe('');
+      expect(guideWordCount(t), kind).toBeLessThanOrEqual(GUIDE_MAX_WORDS);
+    }
+  });
+
+  it('los títulos son distintos entre sí', () => {
+    const titles = QUIZ_KINDS.map((k) => GUIDE_TEXT[k].title);
+    expect(new Set(titles).size).toBe(titles.length);
   });
 });

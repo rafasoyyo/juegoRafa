@@ -6,6 +6,7 @@ import { skyKey } from '../levels/ambients';
 import { activeAge, activeAlias } from '../profile/active';
 import { LEVEL_COUNT } from '../state';
 import { drawLalo } from '../ui/characters';
+import { LaloBubble } from '../ui/lalo-bubble';
 import {
   drawAmbientThumb,
   drawBasket,
@@ -27,6 +28,7 @@ import {
   currentQuestion,
   dimmedOptions,
   generateQuiz,
+  GUIDE_TEXT,
   isFinished,
   marks,
   quizForLevel,
@@ -95,6 +97,9 @@ export class QuizScene extends Phaser.Scene {
   private busy = false;
   private shownIndex = -1;
   private demoDone = new Set<number>();
+  /** Bocadillo de Lalo abierto: la pregunta queda en pausa (sin respuestas, demostración ni pistas). */
+  private guideOpen = false;
+  private bubble: LaloBubble | null = null;
 
   private layer!: Phaser.GameObjects.Container;
   private lalo!: Phaser.GameObjects.Container;
@@ -133,6 +138,8 @@ export class QuizScene extends Phaser.Scene {
     });
     this.run = createRun(questions);
     this.busy = false;
+    this.guideOpen = false;
+    this.bubble = null;
     this.shownIndex = -1;
     this.demoDone = new Set();
   }
@@ -141,6 +148,10 @@ export class QuizScene extends Phaser.Scene {
     enter(this);
     audio.stopMusic(200);
     this.build(this.scale.width);
+    // Esc cierra el bocadillo; el listener se quita al apagar la escena.
+    const onEsc = (): void => this.bubble?.close();
+    this.input.keyboard?.on('keydown-ESC', onEsc);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.input.keyboard?.off('keydown-ESC', onEsc));
     onResize(this, (w) => {
       this.tweens.killAll();
       this.time.removeAllEvents();
@@ -163,11 +174,11 @@ export class QuizScene extends Phaser.Scene {
     // El cielo del nivel, salvo en «¿Te acuerdas?»: ahí delataría el paisaje que se pregunta.
     const sky = skyKey(this.recap.ambient as AmbientId);
     addSky(this, this.kind !== 'recall' && this.textures.exists(sky) ? sky : 'sky');
-    this.lalo = drawLalo(this, 32, 24);
-    // Tocar a Lalo repite la demostración de la consigna.
+    this.lalo = drawLalo(this, 32, 24, { question: true });
+    // Tocar a Lalo abre el bocadillo del adulto (la demostración se repite desde ahí).
     const laloImg = this.lalo.list[0] as Phaser.GameObjects.Image;
     laloImg.on(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
-      if (!this.busy && !isFinished(this.run)) this.demo();
+      if (!this.busy && !this.guideOpen && !isFinished(this.run)) this.openGuide();
     });
 
     const picto = drawQuizPictogram(this, this.kind, 96);
@@ -176,6 +187,21 @@ export class QuizScene extends Phaser.Scene {
     this.layer = this.add.container(0, 0);
     this.drawMarks();
     this.showQuestion();
+
+    // El bocadillo va el último para quedar por encima de todo; si estaba abierto al girar, se vuelve a abrir.
+    this.bubble = new LaloBubble(this, width, this.scale.height, { x: 76, y: 122 }, {
+      onClose: () => {
+        this.guideOpen = false;
+      },
+      onReplay: () => this.demo(),
+    });
+    if (this.guideOpen) this.bubble.open(GUIDE_TEXT[this.kind]);
+  }
+
+  private openGuide(): void {
+    this.guideOpen = true;
+    this.stopDemo();
+    this.bubble?.open(GUIDE_TEXT[this.kind]);
   }
 
   private drawMarks(): void {
@@ -475,7 +501,7 @@ export class QuizScene extends Phaser.Scene {
   // --- Toques -------------------------------------------------------------------------------------
 
   private onTap(id: number): void {
-    if (this.busy || isFinished(this.run)) return;
+    if (this.busy || this.guideOpen || isFinished(this.run)) return;
     const q = currentQuestion(this.run)!;
     const ev = tap(this.run, id);
     this.react(q, ev);
@@ -619,7 +645,7 @@ export class QuizScene extends Phaser.Scene {
 
   /** Demostración: la flecha recorre el modelo y luego las respuestas. Bloquea los toques mientras dura. */
   private demo(): void {
-    if (isFinished(this.run)) return;
+    if (isFinished(this.run) || this.guideOpen) return;
     this.stopDemo();
     this.busy = true;
     const stops: Point[] = [{ x: this.promptAnchor.x, y: this.promptAnchor.y - 40 }];
@@ -648,6 +674,10 @@ export class QuizScene extends Phaser.Scene {
 
   /** La pista propia de la prueba (2.º fallo). */
   private hint(q: Question, kind: string, tapped: number, dimmed?: number): void {
+    if (this.guideOpen) {
+      this.busy = false;
+      return;
+    }
     const done = (ms: number): void => {
       this.time.delayedCall(ms, () => (this.busy = false));
     };
