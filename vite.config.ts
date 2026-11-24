@@ -2,7 +2,18 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  build: { chunkSizeWarningLimit: 1500 },
+  build: {
+    chunkSizeWarningLimit: 1500,
+    rolldownOptions: {
+      output: {
+        // Phaser va en su propio chunk: casi nunca cambia, así el service worker
+        // no lo vuelve a descargar en cada despliegue del juego.
+        codeSplitting: {
+          groups: [{ name: 'phaser', test: /node_modules[\\/]phaser[\\/]/ }],
+        },
+      },
+    },
+  },
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
