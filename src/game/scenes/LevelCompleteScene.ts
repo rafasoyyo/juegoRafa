@@ -4,7 +4,7 @@ import { COLORS, GAME_H, MAX_W } from '../config';
 import type { ChallengeTally } from '../../learning/challenges/ladder';
 import { starsFor, starsForChallenges, type Stars } from '../../learning/scoring';
 import { saveActive } from '../profile/active';
-import { completeLevel, markPending, session } from '../state';
+import { completeLevel, markPending, session, winMedal } from '../state';
 import { drawFox } from '../ui/characters';
 import { digits, fitImage, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
@@ -23,10 +23,14 @@ export interface LevelCompleteData {
   challenges?: ChallengeTally;
   /** Si se superó la prueba de la bandera. Sin dato (p. ej. abriendo la escena en desarrollo), sí. */
   passed?: boolean;
+  /** Fin del castillo del mundo: siempre da la medalla, sin estrellas (pase lo que pase en la prueba). */
+  castle?: boolean;
 }
 
 const GROUND_TOP = 615;
 const MUSIC_AFTER_STARS_MS = 900;
+/** Retardo con el que aparece (y suena) la medalla del castillo. */
+const MEDAL_DELAY_MS = 300;
 
 /** Retardo con el que aparece (y suena) la estrella `i`. */
 function starDelay(i: number): number {
@@ -57,6 +61,7 @@ export class LevelCompleteScene extends Phaser.Scene {
       cookies: data?.cookies ?? 0,
       challenges: data?.challenges,
       passed: data?.passed ?? true,
+      castle: data?.castle === true && this.def.castle !== undefined,
     };
   }
 
@@ -64,13 +69,17 @@ export class LevelCompleteScene extends Phaser.Scene {
     // Se guarda una sola vez al llegar, no en cada recolocación.
     const tally = this.result.challenges ?? { firstTry: 0, total: 0 };
     this.stars = this.def.stars === 'challenges' ? starsForChallenges(tally.firstTry, tally.total) : starsFor(this.result.blocksHit, this.result.blocksTotal);
-    if (this.result.passed) completeLevel(session, this.def.id, this.result.level, this.stars, this.result.cookies);
+    if (this.result.castle) winMedal(session, this.def.id, this.result.cookies);
+    else if (this.result.passed) completeLevel(session, this.def.id, this.result.level, this.stars, this.result.cookies);
     else markPending(session, this.def.id, this.result.level, this.result.cookies);
     saveActive();
 
     enter(this);
     this.build(this.scale.width, true);
-    if (this.result.passed) {
+    if (this.result.castle) {
+      this.time.delayedCall(MEDAL_DELAY_MS, () => audio.sfx('prize'));
+      this.time.delayedCall(MEDAL_DELAY_MS + MUSIC_AFTER_STARS_MS, () => audio.playMusic('map'));
+    } else if (this.result.passed) {
       // La melodía del mapa vuelve cuando han sonado los tintineos de las estrellas.
       this.time.delayedCall(starDelay(this.stars - 1) + MUSIC_AFTER_STARS_MS, () => audio.playMusic('map'));
     } else {
@@ -89,7 +98,12 @@ export class LevelCompleteScene extends Phaser.Scene {
   private build(width: number, animate: boolean): void {
     addSky(this);
     drawGround(this, 0, MAX_W, GROUND_TOP, 30);
-    if (this.result.passed) {
+    if (this.result.castle) {
+      this.confetti(width);
+      this.medalCard(width, animate);
+      const fox = drawFox(this, Math.max(150, width * 0.14), GROUND_TOP + 20, 'celebrate', session.hat, 210);
+      this.tweens.add({ targets: fox, y: fox.y - 26, duration: 260, yoyo: true, repeat: -1, repeatDelay: 140, ease: 'Quad.easeOut' });
+    } else if (this.result.passed) {
       this.confetti(width);
       this.card(width, animate);
       const fox = drawFox(this, Math.max(150, width * 0.14), GROUND_TOP + 20, 'celebrate', session.hat, 210);
@@ -99,8 +113,15 @@ export class LevelCompleteScene extends Phaser.Scene {
     }
 
     const y = GAME_H - 32 - 75;
-    const { level } = this.result;
+    const { level, castle } = this.result;
     const world = this.def.id;
+    // Tras el último nivel, el siguiente paso es el castillo (si el mundo tiene); tras el castillo, el mapa.
+    const next = (): void => {
+      if (castle) goTo(this, 'Map', { world });
+      else if (level < this.def.levelCount) goTo(this, 'Level', { world, level: level + 1 });
+      else if (this.def.castle) goTo(this, 'Level', { world, castle: true });
+      else goTo(this, 'Map', { world });
+    };
     new RoundButton(this, width / 2 - 180, y, {
       width: 110,
       color: COLORS.white,
@@ -118,7 +139,7 @@ export class LevelCompleteScene extends Phaser.Scene {
       shadowDepth: 10,
       icon: 'icon-next-white',
       iconSize: 88,
-      onTap: () => (level < this.def.levelCount ? goTo(this, 'Level', { world, level: level + 1 }) : goTo(this, 'Map', { world })),
+      onTap: next,
     });
     new RoundButton(this, width / 2 + 180, y, {
       width: 110,
@@ -126,7 +147,7 @@ export class LevelCompleteScene extends Phaser.Scene {
       shadowColor: COLORS.shadow,
       icon: 'icon-replay',
       iconSize: 54,
-      onTap: () => goTo(this, 'Level', { world, level }),
+      onTap: () => goTo(this, 'Level', castle ? { world, castle: true } : { world, level }),
     });
   }
 
@@ -158,6 +179,33 @@ export class LevelCompleteScene extends Phaser.Scene {
     // El zorro saluda balanceándose (sin saltar de alegría).
     const fox = drawFox(this, Math.max(150, width * 0.14), GROUND_TOP + 20, 'idle', session.hat, 210);
     this.tweens.add({ targets: fox, angle: { from: -5, to: 5 }, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+
+  /** Fin del castillo: la medalla del mundo, grande, y las galletas. Sin estrellas. */
+  private medalCard(width: number, animate: boolean): void {
+    const cw = 600;
+    const ch = 330;
+    const top = 36;
+    const g = this.add.graphics();
+    g.fillStyle(COLORS.shadow).fillRoundedRect(width / 2 - cw / 2, top + 10, cw, ch, 40);
+    g.fillStyle(COLORS.white).fillRoundedRect(width / 2 - cw / 2, top, cw, ch, 40);
+
+    const glow = this.add.circle(width / 2, top + 130, 110, COLORS.yellow, 0.35);
+    this.tweens.add({ targets: glow, scale: 1.12, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    const medal = fitImage(this.add.image(width / 2, top + 135, 'medal-l'), 200);
+    const target = medal.scale;
+    if (animate) {
+      medal.setScale(0);
+      this.tweens.add({ targets: medal, scale: target, delay: MEDAL_DELAY_MS, duration: 420, ease: 'Back.easeOut' });
+    }
+    this.tweens.add({ targets: medal, angle: { from: -6, to: 6 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+
+    const pw = 200;
+    const ph = 76;
+    const py = top + ch - 30 - ph / 2;
+    g.fillStyle(0xfff4d6).fillRoundedRect(width / 2 - pw / 2, py - ph / 2, pw, ph, ph / 2);
+    fitImage(this.add.image(width / 2 - 36, py, 'cookie'), 54);
+    digits(this, width / 2 + 30, py + 2, String(this.result.cookies), 48);
   }
 
   private card(width: number, animate: boolean): void {

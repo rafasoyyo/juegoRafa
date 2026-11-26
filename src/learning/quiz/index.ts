@@ -9,6 +9,7 @@ import { socksQuiz } from './socks';
 import { tenFriendsQuiz } from './ten-friends';
 import { trainQuiz } from './train';
 import { cableCarQuiz } from './cable-car';
+import { castleQuiz } from './castle-quiz';
 import { compareQuiz } from './compare';
 import { countQuiz } from './count';
 import { fingersQuiz } from './fingers';
@@ -86,3 +87,9 @@ export { GUIDE_MAX_WORDS, GUIDE_TEXT, guideWordCount, type GuideText } from './g
 export { createRng, type Rng } from './rng';
 export * from './run';
 export * from './types';
+export { castleQuizKinds } from './castle-quiz';
+
+/** Preguntas de la bandera del castillo: una de cada paso (`castle-quiz.ts`). */
+export function generateCastleQuiz(pools: readonly (readonly QuizKind[])[], band: AgeBand, rng: Rng, ctx: QuizContext): Question[] {
+  return castleQuiz(pools, band, rng, ctx, generateQuiz);
+}

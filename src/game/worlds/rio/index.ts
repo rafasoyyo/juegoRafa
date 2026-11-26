@@ -6,6 +6,7 @@
  */
 
 import type { QuizKind } from '../../../learning/quiz';
+import type { CastleDef } from '../../castle/castle';
 import type { EnemyRules } from '../../enemies/enemy-layout';
 import type { DurationLimits } from '../../levels/duration';
 import { levelsFrom } from '../load-levels';
@@ -53,6 +54,17 @@ export const QUIZ_BY_LEVEL: Readonly<Record<number, QuizKind>> = {
   10: 'frog-jumps',
   11: 'boats',
   12: 'river-review',
+};
+
+/**
+ * Castillo junto a la desembocadura: uno de cada reto del recorrido y dos preguntas de las pruebas del
+ * río (las del repaso, sin cartas que memorizar), distintas entre sí.
+ */
+const CASTLE_QUIZZES: readonly QuizKind[] = ['fingers', 'ten-frame', 'neighbor', 'number-line', 'biggest', 'ten-friends', 'train', 'frog-jumps'];
+
+export const CASTLE: CastleDef = {
+  ambient: 'playa',
+  steps: [{ challenge: 'count' }, { challenge: 'bridge' }, { challenge: 'boat' }, { quiz: CASTLE_QUIZZES }, { quiz: CASTLE_QUIZZES }],
 };
 
 function quizFor(level: number): QuizKind {
@@ -105,6 +117,7 @@ export const RIO: WorldDef = {
   map: MAP,
   selector: { color: 0xe3f2fd, shadow: 0xb9d9ef, icon: 'icon-ten-frame', iconSize: 104 },
   // Abierto con 6 años o más; con menos, al llegar al nivel 12 del mundo 1.
+  castle: CASTLE,
   gate: { flag: 'mundo-2-rio', openAge: 6, after: { world: 'arcoiris', level: 12 } },
   // Las estrellas cuentan los retos del recorrido acertados a la primera.
   stars: 'challenges',

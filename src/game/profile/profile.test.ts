@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buyHat, completeLevel, createGameState, currentLevel, levelStatus, markPending, session, worldProgress, type GameState } from '../state';
+import { buyHat, completeLevel, createGameState, currentLevel, levelStatus, markPending, session, winMedal, worldProgress, type GameState } from '../state';
 import { ARCOIRIS } from '../worlds/arcoiris';
 import { activateProfile, activeAge, activeAlias, activeProfileId, DEFAULT_ALIAS, saveActive, savedProfiles, startProfile, useStore } from './active';
 import { cleanAlias, isValidProfile, profileId } from './profile-id';
@@ -273,5 +273,24 @@ describe('paso pendiente', () => {
     expect(guideStep('', 5)).toBe('alias');
     expect(guideStep('A', 0)).toBe('age');
     expect(guideStep('ANA', 5)).toBe('accept');
+  });
+});
+
+describe('progress-codec: medalla del castillo', () => {
+  it('ida y vuelta con la medalla; sin medalla no se guarda el campo', () => {
+    const s = createGameState();
+    completeLevel(s, 'arcoiris', 1, 2, 0);
+    winMedal(s, 'rio', 0);
+    const saved = encodeProgress(s);
+    expect(saved.worlds?.rio).toEqual({ stars: [], pending: [], medal: true });
+    expect(saved.worlds?.arcoiris).toEqual({ stars: [[1, 2]], pending: [] });
+    const back = decodeProgress(JSON.parse(JSON.stringify(saved)));
+    expect(back.worlds.get('rio')?.medal).toBe(true);
+    expect(back.worlds.get('arcoiris')?.medal).toBe(false);
+  });
+
+  it('una medalla dañada no cuenta', () => {
+    const back = decodeProgress({ worlds: { rio: { stars: [[1, 2]], pending: [], medal: 'si' } } });
+    expect(back.worlds.get('rio')?.medal).toBe(false);
   });
 });
