@@ -50,6 +50,18 @@ describe('registro de mundos', () => {
     expect(WORLDS.length + UPCOMING.length).toBe(4);
   });
 
+  it('selector: 123, el río, formas y Aa', () => {
+    expect(WORLDS.map((w) => w.id)).toEqual(['arcoiris', 'rio']);
+    expect(WORLDS[0]!.selector.label).toBe('123');
+    expect(WORLDS[1]!.selector.icon).toBe('icon-ten-frame');
+    expect(UPCOMING.map((b) => b.icon ?? b.label)).toEqual(['icon-shapes', 'Aa']);
+  });
+
+  it('el río va detrás del interruptor mundo-2-rio y se abre con 6 años o al llegar al nivel 12 del mundo 1', () => {
+    expect(worldDef('rio').gate).toEqual({ flag: 'mundo-2-rio', openAge: 6, after: { world: 'arcoiris', level: 12 } });
+    expect(WORLDS[0]!.gate).toBeUndefined();
+  });
+
   it('un mundo desconocido o sin dato da el primero', () => {
     expect(worldDef(undefined)).toBe(WORLDS[0]);
     expect(worldDef('no-existe')).toBe(WORLDS[0]);

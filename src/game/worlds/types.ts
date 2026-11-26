@@ -6,6 +6,7 @@
  */
 
 import type { QuizKind } from '../../learning/quiz';
+import type { FlagId } from '../flags';
 import type { EnemyRules } from '../enemies/enemy-layout';
 import type { DurationLimits } from '../levels/duration';
 import type { LevelData } from '../levels/types';
@@ -54,6 +55,17 @@ export interface SelectorButton {
   iconSize?: number;
 }
 
+/**
+ * Cuándo se abre un mundo desde el selector. Sin puerta, siempre. Con interruptor apagado, nunca
+ * (se ve como un mundo que aún no existe). Si no, con la edad `openAge` o más, o al llegar (hecho o
+ * pendiente) al nivel `after.level` del mundo `after.world`.
+ */
+export interface WorldGate {
+  flag?: FlagId;
+  openAge?: number;
+  after?: { world: WorldId; level: number };
+}
+
 export interface WorldDef extends WorldShape {
   /** Recorridos en orden (`levels[0]` es el nivel 1). */
   levels: readonly LevelData[];
@@ -65,4 +77,5 @@ export interface WorldDef extends WorldShape {
   horizonRainbow: boolean;
   map: WorldMap;
   selector: SelectorButton;
+  gate?: WorldGate;
 }
