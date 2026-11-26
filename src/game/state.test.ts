@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buyHat, canPlay, completeLevel, createGameState, currentLevel, HAT_PRICES, isUnlocked, levelStatus, markPending, wearHat, worldProgress, type GameState } from './state';
+import { buyHat, canPlay, castleStatus, winMedal, completeLevel, createGameState, currentLevel, HAT_PRICES, isUnlocked, levelStatus, markPending, wearHat, worldProgress, type GameState } from './state';
 
 /** Mundo de prueba de 12 niveles, como el mundo 1. */
 const W = { id: 'prueba', levelCount: 12 };
@@ -234,5 +234,35 @@ describe('progreso por mundo', () => {
     levelStatus(s, W, 1);
     currentLevel(s, W);
     expect(s.worlds.size).toBe(0);
+  });
+});
+
+describe('castillo y medalla', () => {
+  const W = { id: 'rio', levelCount: 12 };
+
+  it('cerrado hasta jugar el último nivel, hecho o pendiente', () => {
+    const s = createGameState();
+    expect(castleStatus(s, W)).toBe('locked');
+    for (let l = 1; l <= 11; l++) completeLevel(s, 'rio', l, 2, 0);
+    expect(castleStatus(s, W)).toBe('locked');
+    markPending(s, 'rio', 12, 0);
+    expect(castleStatus(s, W)).toBe('open');
+  });
+
+  it('terminarlo siempre da la medalla y las galletas, y no se pierde al repetirlo', () => {
+    const s = createGameState();
+    for (let l = 1; l <= 12; l++) completeLevel(s, 'rio', l, 1, 0);
+    winMedal(s, 'rio', 4);
+    expect(castleStatus(s, W)).toBe('done');
+    expect(worldProgress(s, 'rio').medal).toBe(true);
+    expect(s.cookies).toBe(4);
+    winMedal(s, 'rio', 0);
+    expect(castleStatus(s, W)).toBe('done');
+  });
+
+  it('la medalla es de cada mundo', () => {
+    const s = createGameState();
+    winMedal(s, 'rio', 0);
+    expect(worldProgress(s, 'arcoiris').medal).toBe(false);
   });
 });

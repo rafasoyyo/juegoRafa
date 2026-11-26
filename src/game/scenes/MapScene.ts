@@ -3,7 +3,7 @@ import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
 import { FLAGS } from '../flags';
 import { activeAge } from '../profile/active';
-import { currentLevel, levelStatus, session } from '../state';
+import { castleStatus, currentLevel, levelStatus, session, type CastleStatus } from '../state';
 import { drawFox, drawLalo } from '../ui/characters';
 import { digits, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
@@ -122,13 +122,20 @@ export class MapScene extends Phaser.Scene {
     for (const c of map.clouds) this.add.image(width * c.x, c.y, 'cloud').setScale(c.scale);
 
     const nodes = map.nodes.slice(0, this.def.levelCount);
-    this.drawPath(nodes.map(at));
+    // El castillo, si el mundo tiene, es la parada siguiente al último nivel.
+    const castleNode = this.def.castle ? map.nodes[this.def.levelCount] : undefined;
+    this.drawPath([...nodes, ...(castleNode ? [castleNode] : [])].map(at));
 
-    const current = currentLevel(session, this.def) ?? this.def.levelCount;
+    const level = currentLevel(session, this.def);
+    const current = level ?? this.def.levelCount;
     nodes.forEach((node, i) => this.buildNode(i + 1, at(node)));
+    const castle = castleNode ? castleStatus(session, this.def) : 'locked';
+    if (castleNode) this.buildCastle(at(castleNode), castle);
 
-    const foxAt = at(nodes[current - 1]!);
-    const nodeR = levelStatus(session, this.def, current) === 'current' ? 56 : 48;
+    // Con todos los niveles hechos, el zorro espera en el castillo.
+    const onCastle = castleNode !== undefined && level === null && castle !== 'locked';
+    const foxAt = at(onCastle ? castleNode : nodes[current - 1]!);
+    const nodeR = onCastle ? 60 : levelStatus(session, this.def, current) === 'current' ? 56 : 48;
     const fox = drawFox(this, foxAt.x, foxAt.y - nodeR + 6, 'idle', session.hat, 104);
     this.tweens.add({
       targets: fox,
@@ -286,6 +293,36 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Castillo tras el último nivel: cerrado (con candado) hasta jugar ese nivel; abierto, con un halo; y,
+   * ganada la medalla, verde y con ella al lado. Se vuelve a jugar desde aquí como un nivel, sin estrellas.
+   */
+  private buildCastle(p: Phaser.Math.Vector2, status: CastleStatus): void {
+    const locked = status === 'locked';
+    if (status === 'open') {
+      const halo = this.add.circle(p.x, p.y + 4, 74, COLORS.white, 0.55);
+      this.tweens.add({ targets: halo, scale: 1.08, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
+    const btn: RoundButton = new RoundButton(this, p.x, p.y, {
+      width: 124,
+      color: locked ? COLORS.locked : status === 'done' ? COLORS.grass : COLORS.white,
+      shadowColor: locked ? COLORS.lockedDark : status === 'done' ? COLORS.grassDark : COLORS.shadow,
+      shadowDepth: 8,
+      icon: 'castle',
+      iconSize: 100,
+      onTap: () => (locked ? btn.shake() : goTo(this, 'Level', { world: this.def.id, castle: true })),
+    });
+    this.nodeButtons.push(btn);
+    if (locked) {
+      btn.face.setAlpha(0.75);
+      btn.add([this.add.circle(40, -40, 24, COLORS.white), this.add.image(40, -41, 'icon-lock').setDisplaySize(30, 30)]);
+    }
+    if (status === 'done') {
+      const medal = this.add.image(p.x + 64, p.y + 40, 'medal').setDisplaySize(64, 64);
+      this.tweens.add({ targets: medal, angle: { from: -8, to: 8 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
+  }
+
   private buildWorldSelector(width: number): Phaser.GameObjects.GameObject[] {
     const bw = 150;
     const bh = 96;
@@ -326,6 +363,10 @@ export class MapScene extends Phaser.Scene {
         },
       });
       if (w.access !== 'open') btn.face.setAlpha(0.7);
+      if (w.id && session.worlds.get(w.id)?.medal) {
+        // La medalla del castillo del mundo, en la esquina de su botón.
+        btn.add(this.add.image(-bw / 2 + 14, -bh / 2 + 12, 'medal').setDisplaySize(42, 42));
+      }
       if (w.access === 'locked') {
         // Candado pequeño en la esquina: se abrirá más adelante.
         const lock = this.add.circle(bw / 2 - 18, -bh / 2 + 18, 22, COLORS.white);

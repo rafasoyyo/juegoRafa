@@ -12,6 +12,7 @@ import type { ChallengeView } from '../challenges/challenge-view';
 import { CountChallengeView } from '../challenges/count-challenge-view';
 import { LaloFlyer } from '../challenges/lalo-flyer';
 import { COLORS, GAME_H } from '../config';
+import { castleCourse } from '../castle/castle';
 import { courseFor, layoutEnemies, type EnemyKind } from '../enemies/enemy-layout';
 import { overlaps } from '../enemies/enemy-motion';
 import { createEnemyView, type EnemyView } from '../enemies/enemy-views';
@@ -117,6 +118,8 @@ interface LevelData {
   /** Mundo del nivel; sin dato, el primero. */
   world?: WorldId;
   level?: number;
+  /** Se juega el castillo del mundo (tras su último nivel) en lugar de un nivel. */
+  castle?: boolean;
 }
 
 /**
@@ -128,6 +131,8 @@ export class LevelScene extends Phaser.Scene {
   /** Mundo al que pertenece el nivel: sus enemigos, su escenario y su número de niveles. */
   private def!: WorldDef;
   private level = 1;
+  /** Recorrido del castillo: sin enemigos, con el castillo tras la bandera y su prueba de varias preguntas. */
+  private castle = false;
   private world!: WorldLevel;
   private ambient!: Ambient;
   private fox!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
@@ -202,8 +207,11 @@ export class LevelScene extends Phaser.Scene {
   init(data: LevelData): void {
     this.def = worldDef(data?.world);
     showWorld(this.def.id);
-    this.level = clampLevel(this.def, data?.level);
-    this.world = toWorld(levelData(this.def, this.level));
+    const castle = data?.castle ? this.def.castle : undefined;
+    this.castle = castle !== undefined;
+    // El castillo va tras el último nivel: su paisaje (y el arcoíris del horizonte) son los del final.
+    this.level = castle ? this.def.levelCount : clampLevel(this.def, data?.level);
+    this.world = toWorld(castle ? castleCourse(castle) : levelData(this.def, this.level));
     this.ambient = AMBIENTS[this.world.ambient];
     this.cookies = 0;
     this.blocksHit = 0;
@@ -404,7 +412,7 @@ export class LevelScene extends Phaser.Scene {
 
   /** Enemigos al azar en zonas seguras (suelo llano); cambian cada vez que se entra en el nivel. */
   private buildEnemies(): void {
-    const spawns = layoutEnemies(this.def.enemies, this.level, courseFor(this.world));
+    const spawns = this.castle ? [] : layoutEnemies(this.def.enemies, this.level, courseFor(this.world));
     this.enemyCounts = { hedgehog: 0, bee: 0, frog: 0, crab: 0 };
     for (const spawn of spawns) this.enemyCounts[spawn.kind] += 1;
     this.enemies = spawns.map((spawn) => createEnemyView(this, spawn, GROUND_TOP));
@@ -889,6 +897,8 @@ export class LevelScene extends Phaser.Scene {
 
   private buildGoal(): void {
     const flagX = this.world.flagX;
+    // En el castillo, la bandera está a sus puertas.
+    if (this.castle) this.add.image(flagX + 150, GROUND_TOP + 6, 'castle').setOrigin(0.5, 1).setDepth(4);
     this.add.image(flagX, GROUND_TOP + 4, 'flag').setOrigin(0.1, 1).setDepth(5);
     const zone = this.add.zone(flagX, GROUND_TOP - 20 * SCALE, 24 * SCALE, 40 * SCALE);
     this.physics.add.existing(zone, true);
@@ -931,6 +941,7 @@ export class LevelScene extends Phaser.Scene {
       goTo(this, 'Quiz', {
         world: this.def.id,
         level: this.level,
+        castle: this.castle,
         ambient: this.world.ambient,
         hedgehogs: this.enemyCounts.hedgehog,
         bees: this.enemyCounts.bee,

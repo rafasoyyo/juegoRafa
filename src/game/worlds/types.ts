@@ -6,6 +6,7 @@
  */
 
 import type { QuizKind } from '../../learning/quiz';
+import type { CastleDef } from '../castle/castle';
 import type { FlagId } from '../flags';
 import type { EnemyRules } from '../enemies/enemy-layout';
 import type { DurationLimits } from '../levels/duration';
@@ -39,7 +40,7 @@ export interface WorldMap {
   sky: string;
   /** Pantallas de ancho que mide el camino. */
   screens: number;
-  /** Posición de cada nivel (`nodes[0]` es el nivel 1). */
+  /** Posición de cada nivel (`nodes[0]` es el nivel 1) y, tras el último, la del castillo si lo hay. */
   nodes: readonly (readonly [number, number])[];
   decor: readonly MapDecor[];
   /** Nubes del fondo: `x` en pantallas, `y` en px lógicos y escala. */
@@ -78,6 +79,8 @@ export interface WorldDef extends WorldShape {
   map: WorldMap;
   selector: SelectorButton;
   gate?: WorldGate;
+  /** Castillo tras el último nivel: sus retos y su paisaje. Sin él, el mapa acaba en el último nivel. */
+  castle?: CastleDef;
   /**
    * Cómo se ganan las estrellas: por bloques «?» golpeados (mundo 1) o por retos del recorrido
    * acertados a la primera (mundo 2, `docs/MUNDO-2.md`).
