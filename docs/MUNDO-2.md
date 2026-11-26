@@ -24,7 +24,7 @@ Respuestas del usuario:
 
 - **Retos en el recorrido**, además de la prueba de la bandera.
 - **Tema del río**, del manantial al mar.
-- **Estrellas** según los retos acertados a la primera.
+- **Estrellas** como en todos los mundos: por galletas y prueba de la bandera (`estrellas-por-objetivos`). Antes contaban los retos acertados a la primera.
 - **12 niveles**, como el mundo 1.
 - **Desbloqueo por edad**: abierto desde el principio con 6 años o más; para los menores, al acabar el mundo 1.
 - **Castillo con medalla** al final, como parada propia después del nivel 12, diseñado para poder usarlo después en el mundo 1.
@@ -96,7 +96,7 @@ La barca solo zarpa llena, y sus asientos forman un marco de diez. En el muelle 
 
 ## Los 12 tramos del río
 
-Cada mecánica se presenta sola y luego se mezcla con las anteriores. Las pruebas de la bandera son nuevas en los niveles 1 a 11 y el 12 cierra con un repaso; una por nivel y siempre la misma en cada nivel, como en el mundo 1. Todas siguen la regla actual: 3 preguntas y se supera con 2. Las notas de la columna de retos describen la franja de 5-6 años; las otras franjas siguen la tabla de «Qué se aprende». El castillo no es un nivel: es la parada siguiente del mapa.
+Cada mecánica se presenta sola y luego se mezcla con las anteriores. Las pruebas de la bandera son nuevas en los niveles 1 a 11 y el 12 cierra con un repaso; una por nivel y siempre la misma en cada nivel, como en el mundo 1. Todas tienen 3 preguntas, y sus aciertos cuentan para las estrellas. Las notas de la columna de retos describen la franja de 5-6 años; las otras franjas siguen la tabla de «Qué se aprende». El castillo no es un nivel: es la parada siguiente del mapa.
 
 | Nivel | Ambiente | Retos del recorrido | Prueba de la bandera | Novedad |
 |---|---|---|---|---|
@@ -116,15 +116,9 @@ Cada mecánica se presenta sola y luego se mezcla con las anteriores. Las prueba
 
 ## Estrellas
 
-Las estrellas cuentan lo aprendido. Lo que cuenta es la proporción de retos del recorrido acertados a la primera:
+**Sustituido por `estrellas-por-objetivos`** (26 de noviembre de 2026): las estrellas se ganan igual en todos los mundos, por las galletas de la fase y los aciertos de la prueba de la bandera (detalle en `docs/PROPUESTA.md`). En el río, las galletas de la fase son las de los bloques «?» y las 3 de cada compuerta. Los retos del recorrido siguen cortando el paso y dando galletas, pero acertarlos a la primera ya no da estrellas.
 
-- **3 estrellas** con el 75 % o más.
-- **2 estrellas** con el 40 % o más.
-- **1 estrella** en el resto de casos. Terminar siempre da al menos una.
-
-La prueba de la bandera no da estrellas y, en este mundo, los bloques «?» tampoco.
-
-Ejemplos: 3 de 4 a la primera (75 %) dan 3 estrellas; 2 de 5 a la primera (40 %) dan 2; ninguno a la primera sigue dando 1.
+Regla anterior, como referencia: 3 estrellas con el 75 % o más de retos acertados a la primera, 2 con el 40 % o más y 1 en el resto.
 
 ## Castillo, enemigos y desbloqueo
 
@@ -137,7 +131,7 @@ Después del nivel 12, como parada propia del mapa junto a la desembocadura (igu
 
 ### La rana y el cangrejo
 
-Se suman al erizo y a la abeja y siguen sus reglas: tocarlos es un pinchazo que resta una galleta del nivel, nunca baja de 0 y no cambia las estrellas.
+Se suman al erizo y a la abeja y siguen sus reglas: tocarlos es un pinchazo que resta una galleta del nivel y nunca baja de 0.
 
 - **Rana** (desde el nivel 3): salta en el sitio con un ritmo fijo y se nota cuándo va a saltar, porque antes se agacha. Se pasa por debajo mientras está en el aire o se salta por encima mientras está quieta.
 - **Cangrejo** (desde el nivel 7): camina de lado por un tramo corto de la orilla, más despacio que el erizo.

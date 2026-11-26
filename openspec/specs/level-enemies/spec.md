@@ -92,11 +92,12 @@ galletas el pinchazo ocurre igual pero no se resta nada. Las galletas perdidas S
 - **THEN** la tarjeta de nivel completado muestra 3 galletas y al total del niño se le suman 3
 
 ### Requirement: El pinchazo no penaliza más
-Un pinchazo SHALL NOT cambiar las estrellas, reiniciar el nivel, mover al zorro a otro punto, quitar
-galletas del total ya guardado ni mostrar ninguna pantalla o mensaje.
+Un pinchazo SHALL NOT reiniciar el nivel, mover al zorro a otro punto, quitar galletas del total ya
+guardado ni mostrar ninguna pantalla o mensaje. Las estrellas solo SHALL notar el pinchazo a través de
+la galleta que resta del contador del nivel, que cuenta para el porcentaje de galletas de la fase.
 
-#### Scenario: Muchos pinchazos
-- **WHEN** el niño se pincha diez veces y luego golpea todos los bloques y llega a la bandera
+#### Scenario: Muchos pinchazos con el contador a cero
+- **WHEN** el niño se pincha diez veces con el contador a 0 y luego golpea todos los bloques y llega a la bandera
 - **THEN** las estrellas son las mismas que sin haberse pinchado
 
 #### Scenario: Total guardado intacto

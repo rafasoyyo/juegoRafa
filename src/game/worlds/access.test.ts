@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Flags } from '../flags';
-import { completeLevel, createGameState, markPending } from '../state';
+import { completeLevel, createGameState, worldProgress, type GameState } from '../state';
 import { worldAccess } from './access';
 import { ARCOIRIS } from './arcoiris';
 import { RIO } from './rio';
+
+/** Pendiente de un perfil antiguo (antes de las estrellas por objetivos ya no se crean). */
+function legacyPending(s: GameState, world: string, level: number): void {
+  worldProgress(s, world).pending.add(level);
+}
 
 const ON: Flags = { 'mundo-2-rio': true };
 const OFF: Flags = { 'mundo-2-rio': false };
@@ -43,7 +48,7 @@ describe('puerta de los mundos', () => {
 
   it('el nivel 12 pendiente también abre el río', () => {
     const state = createGameState();
-    markPending(state, 'arcoiris', 12, 0);
+    legacyPending(state, 'arcoiris', 12);
     expect(worldAccess(RIO, state, 4, ON)).toBe('open');
   });
 

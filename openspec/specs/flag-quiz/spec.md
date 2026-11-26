@@ -98,28 +98,6 @@ Cada pregunta SHALL permitir 3 intentos. Un fallo SHALL dar un rebote suave y un
 - **WHEN** el niño acierta en el segundo o el tercer intento
 - **THEN** la pregunta cuenta como acertada
 
-### Requirement: Prueba superada con dos de tres
-La prueba SHALL superarse con al menos 2 preguntas acertadas de 3, con cualquier número de intentos. Superarla completa el nivel. Si no se supera, el nivel no queda completado, aunque el siguiente nivel sí se desbloquea.
-
-#### Scenario: Dos aciertos
-- **WHEN** el niño acierta la primera y la tercera pregunta y falla la segunda
-- **THEN** la prueba está superada y se abre la celebración de nivel completado
-
-#### Scenario: Un acierto
-- **WHEN** el niño acierta solo una pregunta
-- **THEN** la prueba no está superada y se abre la pantalla de prueba no superada
-
-#### Scenario: Repetir un nivel ya hecho y fallar
-- **WHEN** el niño repite el nivel 1, que ya estaba hecho con 2 estrellas, y no supera la prueba
-- **THEN** el nivel 1 sigue hecho con 2 estrellas
-
-### Requirement: La prueba no da estrellas
-La prueba SHALL NOT sumar ni quitar estrellas ni galletas. Las estrellas del nivel SHALL seguir dependiendo solo de los bloques «?» golpeados.
-
-#### Scenario: Prueba perfecta sin bloques
-- **WHEN** el niño llega a la meta sin golpear ningún bloque y acierta las tres preguntas a la primera
-- **THEN** la celebración muestra 1 estrella
-
 ### Requirement: Prueba «¿Cuántos hay?»
 Se ven unos objetos del juego (galletas, erizos, abejas o estrellas) y se toca cuántos hay. Pequeños: de 1 a 3 objetos, con 3 respuestas en puntos de dado. Medianos: de 1 a 10, con 3 respuestas en cifras. Mayores: de 8 a 20, ordenados en marcos de 10, con 4 respuestas en cifras. La pista de Lalo SHALL iluminar los objetos uno a uno, de izquierda a derecha.
 
@@ -523,3 +501,14 @@ La prueba del nivel 12 del río SHALL hacer una pregunta de cada una de tres pru
 #### Scenario: Tres pruebas distintas
 - **WHEN** el niño llega a la bandera del nivel 12 del río
 - **THEN** las tres preguntas son de tres pruebas distintas del río
+
+### Requirement: Los aciertos de la prueba dan estrellas
+La prueba SHALL contar sus preguntas acertadas, con cualquier número de intentos, y pasarlas a la pantalla final: acertar al menos 1 SHALL dar una estrella y acertar las 3 SHALL ser condición para las 3 estrellas (ver `level-complete`). La prueba SHALL NOT sumar ni quitar galletas.
+
+#### Scenario: Una pregunta acertada
+- **WHEN** el niño acierta solo la segunda pregunta y llega con menos de la mitad de las galletas
+- **THEN** la pantalla final muestra 1 estrella
+
+#### Scenario: Ninguna acertada
+- **WHEN** el niño no acierta ninguna pregunta y llega con menos de la mitad de las galletas
+- **THEN** se abre la pantalla de ánimo sin estrellas

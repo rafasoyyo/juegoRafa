@@ -124,6 +124,4 @@ export const RIO: WorldDef = {
   // Abierto con 6 años o más; con menos, al llegar al nivel 12 del mundo 1 (hecho o pendiente).
   castle: CASTLE,
   gate: { openAge: 6, after: { world: 'arcoiris', level: 12 } },
-  // Las estrellas cuentan los retos del recorrido acertados a la primera.
-  stars: 'challenges',
 };

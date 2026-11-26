@@ -145,6 +145,10 @@ export class CountChallengeView extends ChallengeView {
     return this.helpDots;
   }
 
+  override cookieReward(): number {
+    return GATE_COOKIES;
+  }
+
   /** Resuelto: la compuerta se levanta y caen galletas. */
   protected solve(): void {
     audio.sfx('gate');

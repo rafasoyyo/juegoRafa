@@ -54,6 +54,7 @@ Licencia: la del repositorio.
 | `svg/icon-no-hat.svg` | lienzo de diseño |
 | `svg/icon-play-white.svg` | derivado: triángulo de jugar |
 | `svg/icon-replay.svg` | lienzo de diseño |
+| `svg/icon-replay-white.svg` | derivado: `icon-replay` en blanco y más grueso |
 | `svg/icon-shapes.svg` | lienzo de diseño |
 | `svg/icon-speaker.svg` | lienzo de diseño |
 | `svg/frog.svg` | propio: rana saltarina (enemigo del río), en la paleta y el estilo del lienzo |

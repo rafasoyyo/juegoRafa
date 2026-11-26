@@ -12,7 +12,7 @@ Desde su madriguera en la colina, junto al prado, Rufo ve un arcoíris muy lejos
 
 - Los 12 ambientes y su orden. Algunas pruebas de la bandera van ligadas a su ambiente (el teleférico en la montaña, las huellas en la nieve).
 - Las pruebas de la bandera, una por nivel.
-- Las estrellas de los bloques «?» y las galletas.
+- Las estrellas y las galletas (desde `estrellas-por-objetivos`, las estrellas salen de las galletas y de la prueba de la bandera, como en todos los mundos: ver `docs/PROPUESTA.md`).
 - Los pinchos desde el nivel 7, el erizo y la abeja.
 - El selector de mundos, con el botón 123 para este mundo.
 
@@ -101,7 +101,7 @@ Mientras el río no esté abierto en el juego publicado (paso 9 del plan del mun
 
 - Cambiar los ambientes, su orden, los recorridos o las pruebas de la bandera.
 - Mecánicas nuevas o retos dentro del recorrido (son del mundo 2).
-- Cambiar cómo se ganan las estrellas en el mundo 1.
+- Cambiar cómo se ganan las estrellas en el mundo 1 (lo hizo después, para todos los mundos, `estrellas-por-objetivos`).
 - La voz grabada.
 - Textos para el niño. Si hiciera falta explicar algo al adulto, va en el bocadillo de Lalo.
 

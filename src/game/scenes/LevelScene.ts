@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import { boatChallenge, type BoatChallenge } from '../../learning/challenges/boat';
 import { bridgeChallenge, type BridgeChallenge } from '../../learning/challenges/bridge';
 import { countChallenge, countRange, type CountChallenge } from '../../learning/challenges/count-blocks';
-import { tally } from '../../learning/challenges/ladder';
 import { ageBand } from '../../learning/quiz/age';
 import { createRng } from '../../learning/quiz/rng';
 import { audio } from '../audio/audio-engine';
@@ -948,7 +947,7 @@ export class LevelScene extends Phaser.Scene {
         cookies: this.cookies,
         blocksHit: this.blocksHit,
         blocksTotal: this.world.blocks.length,
-        challenges: tally(this.challenges),
+        cookiesTotal: this.world.blocks.length + this.challenges.reduce((sum, c) => sum + c.cookieReward(), 0),
       } satisfies QuizData),
     );
   }

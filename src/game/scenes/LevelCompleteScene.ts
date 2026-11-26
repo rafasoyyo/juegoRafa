@@ -1,10 +1,9 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
-import type { ChallengeTally } from '../../learning/challenges/ladder';
-import { starsFor, starsForChallenges, type Stars } from '../../learning/scoring';
+import { starsForGoals, type Stars } from '../../learning/scoring';
 import { saveActive } from '../profile/active';
-import { completeLevel, markPending, session, winMedal } from '../state';
+import { completeLevel, finishWithoutStars, session, winMedal } from '../state';
 import { drawFox } from '../ui/characters';
 import { digits, fitImage, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
@@ -19,10 +18,12 @@ export interface LevelCompleteData {
   blocksHit: number;
   blocksTotal: number;
   cookies: number;
-  /** Retos del recorrido acertados a la primera (mundos que cuentan estrellas por retos). */
-  challenges?: ChallengeTally;
-  /** Si se superó la prueba de la bandera. Sin dato (p. ej. abriendo la escena en desarrollo), sí. */
-  passed?: boolean;
+  /** Galletas que se podían ganar en la fase. Sin dato (p. ej. abriendo la escena en desarrollo), las que lleva. */
+  cookiesTotal?: number;
+  /** Preguntas acertadas de la prueba de la bandera. Sin dato, todas. */
+  quizCorrect?: number;
+  /** Preguntas de la prueba de la bandera. Sin dato, 3. */
+  quizTotal?: number;
   /** Fin del castillo del mundo: siempre da la medalla, sin estrellas (pase lo que pase en la prueba). */
   castle?: boolean;
 }
@@ -39,13 +40,13 @@ function starDelay(i: number): number {
 const CONFETTI_COLORS = [COLORS.coral, COLORS.yellow, COLORS.purple, COLORS.grass, 0x4da3ff];
 
 /**
- * Celebración sin texto: confeti, estrellas, galletas ganadas y tres caminos. Si no se superó la prueba
- * de la bandera, pantalla de ánimo: sin confeti ni estrellas, el nivel queda pendiente y se puede seguir.
+ * Celebración sin texto: confeti, estrellas, galletas ganadas y tres caminos. Con 0 estrellas, pantalla
+ * de ánimo: sin confeti ni estrellas, la fase no queda superada y el botón grande es volver a empezar.
  */
 export class LevelCompleteScene extends Phaser.Scene {
   private def!: WorldDef;
   private result!: LevelCompleteData;
-  private stars: Stars = 1;
+  private stars: Stars = 0;
 
   constructor() {
     super('LevelComplete');
@@ -59,19 +60,20 @@ export class LevelCompleteScene extends Phaser.Scene {
       blocksHit: data?.blocksHit ?? 0,
       blocksTotal: data?.blocksTotal ?? 0,
       cookies: data?.cookies ?? 0,
-      challenges: data?.challenges,
-      passed: data?.passed ?? true,
+      cookiesTotal: data?.cookiesTotal ?? data?.cookies ?? 0,
+      quizCorrect: data?.quizCorrect ?? data?.quizTotal ?? 3,
+      quizTotal: data?.quizTotal ?? 3,
       castle: data?.castle === true && this.def.castle !== undefined,
     };
   }
 
   create(): void {
     // Se guarda una sola vez al llegar, no en cada recolocación.
-    const tally = this.result.challenges ?? { firstTry: 0, total: 0 };
-    this.stars = this.def.stars === 'challenges' ? starsForChallenges(tally.firstTry, tally.total) : starsFor(this.result.blocksHit, this.result.blocksTotal);
-    if (this.result.castle) winMedal(session, this.def.id, this.result.cookies);
-    else if (this.result.passed) completeLevel(session, this.def.id, this.result.level, this.stars, this.result.cookies);
-    else markPending(session, this.def.id, this.result.level, this.result.cookies);
+    const { cookies, cookiesTotal = 0, quizCorrect = 0, quizTotal = 0 } = this.result;
+    this.stars = starsForGoals({ cookies, cookiesTotal, quizCorrect, quizTotal });
+    if (this.result.castle) winMedal(session, this.def.id, cookies);
+    else if (this.stars > 0) completeLevel(session, this.def.id, this.result.level, this.stars, cookies);
+    else finishWithoutStars(session, cookies);
     saveActive();
 
     enter(this);
@@ -79,7 +81,7 @@ export class LevelCompleteScene extends Phaser.Scene {
     if (this.result.castle) {
       this.time.delayedCall(MEDAL_DELAY_MS, () => audio.sfx('prize'));
       this.time.delayedCall(MEDAL_DELAY_MS + MUSIC_AFTER_STARS_MS, () => audio.playMusic('map'));
-    } else if (this.result.passed) {
+    } else if (this.stars > 0) {
       // La melodía del mapa vuelve cuando han sonado los tintineos de las estrellas.
       this.time.delayedCall(starDelay(this.stars - 1) + MUSIC_AFTER_STARS_MS, () => audio.playMusic('map'));
     } else {
@@ -103,7 +105,7 @@ export class LevelCompleteScene extends Phaser.Scene {
       this.medalCard(width, animate);
       const fox = drawFox(this, Math.max(150, width * 0.14), GROUND_TOP + 20, 'celebrate', session.hat, 210);
       this.tweens.add({ targets: fox, y: fox.y - 26, duration: 260, yoyo: true, repeat: -1, repeatDelay: 140, ease: 'Quad.easeOut' });
-    } else if (this.result.passed) {
+    } else if (this.stars > 0) {
       this.confetti(width);
       this.card(width, animate);
       const fox = drawFox(this, Math.max(150, width * 0.14), GROUND_TOP + 20, 'celebrate', session.hat, 210);
@@ -122,36 +124,22 @@ export class LevelCompleteScene extends Phaser.Scene {
       else if (this.def.castle) goTo(this, 'Level', { world, castle: true });
       else goTo(this, 'Map', { world });
     };
-    new RoundButton(this, width / 2 - 180, y, {
-      width: 110,
-      color: COLORS.white,
-      shadowColor: COLORS.shadow,
-      icon: 'icon-map',
-      iconSize: 54,
-      onTap: () => goTo(this, 'Map', { world }),
-    });
-    new RoundButton(this, width / 2, y, {
-      width: 190,
-      height: 150,
-      radius: 75,
-      color: COLORS.coral,
-      shadowColor: COLORS.coralDark,
-      shadowDepth: 10,
-      icon: 'icon-next-white',
-      iconSize: 88,
-      onTap: next,
-    });
-    new RoundButton(this, width / 2 + 180, y, {
-      width: 110,
-      color: COLORS.white,
-      shadowColor: COLORS.shadow,
-      icon: 'icon-replay',
-      iconSize: 54,
-      onTap: () => goTo(this, 'Level', castle ? { world, castle: true } : { world, level }),
-    });
+    const replay = (): void => goTo(this, 'Level', castle ? { world, castle: true } : { world, level });
+    const toMap = (): void => goTo(this, 'Map', { world });
+    const small = { width: 110, color: COLORS.white, shadowColor: COLORS.shadow, iconSize: 54 };
+    const big = { width: 190, height: 150, radius: 75, color: COLORS.coral, shadowColor: COLORS.coralDark, shadowDepth: 10, iconSize: 88 };
+    if (!castle && this.stars === 0) {
+      // Sin estrellas hay que empezar de nuevo: repetir es el botón grande y no hay «siguiente».
+      new RoundButton(this, width / 2 - 110, y, { ...small, icon: 'icon-map', onTap: toMap });
+      new RoundButton(this, width / 2 + 70, y, { ...big, icon: 'icon-replay-white', onTap: replay });
+      return;
+    }
+    new RoundButton(this, width / 2 - 180, y, { ...small, icon: 'icon-map', onTap: toMap });
+    new RoundButton(this, width / 2, y, { ...big, icon: 'icon-next-white', onTap: next });
+    new RoundButton(this, width / 2 + 180, y, { ...small, icon: 'icon-replay', onTap: replay });
   }
 
-  /** Prueba no superada: el zorro y Lalo saludan, y se ven las galletas recogidas. Sin estrellas. */
+  /** Fase sin estrellas: el zorro y Lalo saludan, y se ven las galletas recogidas. */
   private encouragement(width: number): void {
     const cw = 600;
     const ch = 330;

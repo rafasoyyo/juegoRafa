@@ -53,6 +53,11 @@ export abstract class ChallengeView {
     this.run = startChallenge(correct);
   }
 
+  /** Galletas que da el reto al resolverse: cuentan en el total de la fase para las estrellas. */
+  cookieReward(): number {
+    return 0;
+  }
+
   /** Huecos que el reto corta en el suelo mientras no esté resuelto. */
   holes(): WorldSpike[] {
     return [];

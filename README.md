@@ -8,7 +8,7 @@ Juego web de plataformas 2D, de estilo vectorial plano y redondeado, para niños
 
 - **Móvil y táctil primero**, en horizontal (el teclado sirve para desarrollar en escritorio).
 - **Sin texto que el niño deba leer**: las consignas son dibujo, y Lalo señala y guía.
-- **Sin derrota**: un fallo es un rebote suave y una pista. Las estrellas van de 1 a 3, nunca 0.
+- **Sin derrota**: un fallo es un rebote suave y una pista. Las estrellas van de 0 a 3 y salen de las galletas y de la prueba de la bandera; con 0, una pantalla de ánimo invita a repetir la fase.
 - **Mundo 1 de 12 niveles**, cada uno con su ambiente (prado, bosque, playa, nieve, desierto…), enemigos (erizo y abeja), zonas de pinchos desde el nivel 7 y una fresa que da invencibilidad.
 - **Prueba de la bandera** al final de cada nivel, de 3 preguntas y adaptada a la edad del perfil: contar, comparar, series, formas, letras del nombre, memoria, repartir, ordenar, sumar y restar como algo que pasa, orientarse, equilibrar pesos y simetría.
 - **Galletas y vestidor**: las galletas se gastan en gorros para Rufo.
