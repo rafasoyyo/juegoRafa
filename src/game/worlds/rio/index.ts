@@ -1,7 +1,7 @@
 /**
  * Mundo 2, «El río de los números» (`docs/MUNDO-2.md`). BORRADOR: niveles 1 a 3 con ambientes y prueba
  * provisionales del mundo 1; el 1 con tres retos A, el 2 con retos A y B (puente) y el 3 con retos C (barca),
- * para probarlos en desarrollo. Las pruebas (paso 7), los enemigos (paso 6) y los 12 recorridos con su mapa
+ * para probarlos en desarrollo. Las pruebas (paso 7) y los 12 recorridos con su mapa
  * (paso 9) llegan con sus cambios. Está detrás del interruptor `mundo-2-rio`. TypeScript puro (sin Phaser).
  */
 
@@ -13,10 +13,15 @@ import type { CourseRules, WorldDef, WorldMap } from '../types';
 
 const LEVELS = levelsFrom('rio', import.meta.glob('../../../../content/levels/rio/nivel-*.json', { eager: true, import: 'default' }));
 
-/** Provisional: el erizo y la abeja del mundo 1 hasta que lleguen la rana y el cangrejo (paso 6). */
+/** El erizo y la abeja del mundo 1, la rana desde el nivel 3 y el cangrejo desde el 7 (`docs/MUNDO-2.md`). */
 export const ENEMIES: EnemyRules = {
   perLevel: [2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10].slice(0, LEVELS.length),
-  beeFromLevel: 2,
+  kinds: [
+    { kind: 'bee', fromLevel: 2 },
+    { kind: 'hedgehog', fromLevel: 1 },
+    { kind: 'frog', fromLevel: 3 },
+    { kind: 'crab', fromLevel: 7 },
+  ],
 };
 
 /** Niveles de 90 a 150 s con calma (`docs/MUNDO-2.md`, «Decisiones»). */

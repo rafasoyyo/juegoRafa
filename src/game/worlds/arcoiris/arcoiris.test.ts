@@ -44,7 +44,10 @@ describe('mundo 1, el camino del arcoíris', () => {
 
   it('enemigos: 2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9 y 10; la abeja desde el nivel 2', () => {
     expect(ENEMIES.perLevel).toEqual([2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10]);
-    expect(ENEMIES.beeFromLevel).toBe(2);
+    expect(ENEMIES.kinds).toEqual([
+      { kind: 'bee', fromLevel: 2 },
+      { kind: 'hedgehog', fromLevel: 1 },
+    ]);
   });
 
   it('pruebas de la bandera: una distinta en cada nivel', () => {

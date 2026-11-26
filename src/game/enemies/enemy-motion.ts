@@ -17,6 +17,21 @@ export const HEDGEHOG_SPEED = 60;
 /** Caja de choque del erizo, más pequeña que su dibujo (~100×70) para ser tolerante. */
 export const HEDGEHOG_BOX = { w: 48, h: 30 } as const;
 
+/** Rana: ciclo de saltar en el sitio. Quieta, se agacha (aviso) y salta. */
+export const FROG_PERIOD_MS = 2600;
+export const FROG_SIT_MS = 1400;
+export const FROG_CROUCH_MS = 450;
+/** Lo que queda del ciclo, en el aire. */
+export const FROG_AIR_MS = FROG_PERIOD_MS - FROG_SIT_MS - FROG_CROUCH_MS;
+/** Altura del salto: en lo alto deja pasar al zorro por debajo (su cuerpo mide 87 px). */
+export const FROG_JUMP_H = 210;
+export const FROG_BOX = { w: 46, h: 34 } as const;
+
+/** Cangrejo: anda de lado, más despacio que el erizo, por un tramo corto. */
+export const CRAB_SPEED = 40;
+export const CRAB_PATROL_MAX = 200;
+export const CRAB_BOX = { w: 54, h: 30 } as const;
+
 /** Ciclo de subir y bajar de la abeja. */
 export const BEE_PERIOD_MS = 3200;
 /** Centro de la abeja en su punto más alto y más bajo. */
@@ -39,12 +54,45 @@ function frac(v: number): number {
  * `phase` (0-1) es el punto de partida del ciclo. `facing` es 1 hacia la derecha y −1 hacia la izquierda.
  */
 export function hedgehogX(timeMs: number, patrol: { minX: number; maxX: number; phase: number }): { x: number; facing: 1 | -1 } {
+  return patrolX(timeMs, patrol, HEDGEHOG_SPEED);
+}
+
+/** Cangrejo: la misma ida y vuelta que el erizo, más despacio. */
+export function crabX(timeMs: number, patrol: { minX: number; maxX: number; phase: number }): { x: number; facing: 1 | -1 } {
+  return patrolX(timeMs, patrol, CRAB_SPEED);
+}
+
+function patrolX(timeMs: number, patrol: { minX: number; maxX: number; phase: number }, speed: number): { x: number; facing: 1 | -1 } {
   const span = patrol.maxX - patrol.minX;
   if (span <= 0) return { x: patrol.minX, facing: 1 };
-  const periodMs = ((2 * span) / HEDGEHOG_SPEED) * 1000;
+  const periodMs = ((2 * span) / speed) * 1000;
   const u = frac(timeMs / periodMs + patrol.phase);
   if (u < 0.5) return { x: patrol.minX + span * u * 2, facing: 1 };
   return { x: patrol.maxX - span * (u - 0.5) * 2, facing: -1 };
+}
+
+/** Caja de choque del cangrejo con su centro en `x`, apoyado en el suelo `groundY`. */
+export function crabBox(x: number, groundY: number): Rect {
+  return { x: x - CRAB_BOX.w / 2, y: groundY - CRAB_BOX.h, w: CRAB_BOX.w, h: CRAB_BOX.h };
+}
+
+export type FrogPose = 'sit' | 'crouch' | 'air';
+
+/**
+ * Rana: quieta, agachada (el aviso) o en el aire, y a qué altura sobre el suelo (parábola de
+ * `FROG_JUMP_H` en lo alto). `phase` (0-1) es el punto de partida del ciclo.
+ */
+export function frogState(timeMs: number, frog: { phase: number }): { pose: FrogPose; height: number; crouch: number } {
+  const t = frac(timeMs / FROG_PERIOD_MS + frog.phase) * FROG_PERIOD_MS;
+  if (t < FROG_SIT_MS) return { pose: 'sit', height: 0, crouch: 0 };
+  if (t < FROG_SIT_MS + FROG_CROUCH_MS) return { pose: 'crouch', height: 0, crouch: (t - FROG_SIT_MS) / FROG_CROUCH_MS };
+  const u = (t - FROG_SIT_MS - FROG_CROUCH_MS) / FROG_AIR_MS;
+  return { pose: 'air', height: 4 * FROG_JUMP_H * u * (1 - u), crouch: 0 };
+}
+
+/** Caja de choque de la rana con su centro en `x`, a `height` px sobre el suelo `groundY`. */
+export function frogBox(x: number, height: number, groundY: number): Rect {
+  return { x: x - FROG_BOX.w / 2, y: groundY - height - FROG_BOX.h, w: FROG_BOX.w, h: FROG_BOX.h };
 }
 
 /** Caja de choque del erizo con su centro en `x`, apoyado en el suelo `groundY`. */

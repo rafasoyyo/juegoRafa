@@ -56,6 +56,8 @@ Licencia: la del repositorio.
 | `svg/icon-replay.svg` | lienzo de diseño |
 | `svg/icon-shapes.svg` | lienzo de diseño |
 | `svg/icon-speaker.svg` | lienzo de diseño |
+| `svg/frog.svg` | propio: rana saltarina (enemigo del río), en la paleta y el estilo del lienzo |
+| `svg/crab.svg` | propio: cangrejo que anda de lado (enemigo del río), en la paleta y el estilo del lienzo |
 | `svg/icon-ten-frame.svg` | propio: marco de diez (2×5 casillas con 7 fichas), icono del mundo del río, en la paleta del lienzo |
 | `svg/icon-speaker-off.svg` | derivado de `icon-speaker.svg`: mismo altavoz con un aspa en lugar de las ondas (silencio) |
 | `svg/lalo-blink.svg` | derivado de Lalo del lienzo (ojos cerrados) |

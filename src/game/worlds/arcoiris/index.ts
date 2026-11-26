@@ -14,7 +14,12 @@ const LEVELS = levelsFrom('arcoiris', import.meta.glob('../../../../content/leve
 /** Enemigos de los niveles 1 a 12; la abeja sale desde el nivel 2. */
 export const ENEMIES: EnemyRules = {
   perLevel: [2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10],
-  beeFromLevel: 2,
+  // Erizo desde el nivel 1 y abeja desde el 2, mitad y mitad. (El orden, abeja primero, conserva los
+  // repartos con semilla de antes de que hubiera más tipos.)
+  kinds: [
+    { kind: 'bee', fromLevel: 2 },
+    { kind: 'hedgehog', fromLevel: 1 },
+  ],
 };
 
 /** Bloques «?»: 12–20 en los niveles 1 a 6 y 20–25 en los 7 a 12. */
