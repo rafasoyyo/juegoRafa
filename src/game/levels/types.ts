@@ -63,8 +63,11 @@ export interface SpikeData {
   width: number;
 }
 
-/** Mecánicas de reto del recorrido (`docs/MUNDO-2.md`): A, «Bloques que cuentan», y B, «El puente de los números». */
-export const CHALLENGE_KINDS = ['count', 'bridge'] as const;
+/**
+ * Mecánicas de reto del recorrido (`docs/MUNDO-2.md`): A, «Bloques que cuentan»; B, «El puente de los
+ * números», y C, «La barca de diez».
+ */
+export const CHALLENGE_KINDS = ['count', 'bridge', 'boat'] as const;
 export type ChallengeKind = (typeof CHALLENGE_KINDS)[number];
 export const QUANTITY_SHOWS = ['dots', 'tenframe'] as const;
 export type QuantityShowId = (typeof QUANTITY_SHOWS)[number];
@@ -72,7 +75,7 @@ export type QuantityShowId = (typeof QUANTITY_SHOWS)[number];
 /**
  * Reto del recorrido, siempre sobre el suelo. En `count`, `x` es el centro del bloque central y ocupa de
  * `x + CHALLENGE_ZONE.from` (cartel) a `x + CHALLENGE_ZONE.to` (compuerta). En `bridge`, `x` es el borde
- * izquierdo del puente. Su zona la da `challengeZone`.
+ * izquierdo del puente y en `boat`, el borde izquierdo del lago. Su zona la da `challengeZone`.
  */
 export interface ChallengeData {
   kind: ChallengeKind;
@@ -99,8 +102,21 @@ export const BRIDGE_MARGIN = 1;
 /** Centros de los bloques del puente respecto al borde izquierdo del hueco, en baldosas. */
 export const BRIDGE_BLOCK_XS = [-4.5, -3, -1.5] as const;
 
+/**
+ * Barca: un lago de `BOAT_LAKE` baldosas con la barca (`BOAT_LENGTH`) en la orilla izquierda. El agua libre
+ * que queda es más que un salto, también desde la barca o desde un bloque.
+ */
+export const BOAT_LAKE = 10;
+export const BOAT_LENGTH = 3.5;
+/** Centros de los bloques de la barca (en el muelle) respecto al borde izquierdo del lago, en baldosas. */
+export const BOAT_BLOCK_XS = [-4.5, -3, -1.5] as const;
+/** Muelle libre antes del lago y margen tras él, en baldosas. */
+export const BOAT_DOCK = 6;
+export const BOAT_MARGIN = 1;
+
 /** Tramo que ocupa un reto, en baldosas. */
 export function challengeZone(c: { kind: ChallengeKind; x: number }): { from: number; to: number } {
+  if (c.kind === 'boat') return { from: c.x - BOAT_DOCK, to: c.x + BOAT_LAKE + BOAT_MARGIN };
   if (c.kind === 'bridge') return { from: c.x - BRIDGE_MARGIN, to: c.x + BRIDGE_SECTIONS * BRIDGE_SECTION + BRIDGE_MARGIN };
   return { from: c.x + CHALLENGE_ZONE.from, to: c.x + CHALLENGE_ZONE.to };
 }

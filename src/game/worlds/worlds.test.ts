@@ -83,6 +83,15 @@ describe('registro de mundos', () => {
     expect(challenges.map((c) => c.kind)).toEqual(['count', 'bridge', 'count', 'bridge']);
   });
 
+  it('el nivel 3 del río (borrador) prueba la barca: la primera con demostración', () => {
+    const challenges = worldDef('rio').levels[2]!.challenges;
+    expect(challenges.map((c) => [c.kind, c.demo])).toEqual([
+      ['boat', true],
+      ['count', false],
+      ['boat', false],
+    ]);
+  });
+
   it('un mundo desconocido o sin dato da el primero', () => {
     expect(worldDef(undefined)).toBe(WORLDS[0]);
     expect(worldDef('no-existe')).toBe(WORLDS[0]);
