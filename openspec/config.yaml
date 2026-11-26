@@ -50,7 +50,8 @@ context: |
   (`localStorage`), audio sintetizado. Pendiente: Auth y Firestore (fase 3), panel de padres (fase 5),
   voz grabada y mundos 2 a 4 (fase 6). Detalle en la hoja de ruta de `docs/PROPUESTA.md`.
   En marcha, con boceto aprobado y plan por pasos: el tema del mundo 1, «El camino del arcoíris»
-  (`docs/MUNDO-1.md`), y el mundo 2, «El río de los números» (`docs/MUNDO-2.md`). Esos documentos mandan
+  (`docs/MUNDO-1.md`), el mundo 2, «El río de los números» (`docs/MUNDO-2.md`), y el mundo 3, «La isla de
+  los dinosaurios» (`docs/MUNDO-3.md`). Esos documentos mandan
   sobre las specs en lo suyo; cada `openspec-propose` de esos planes parte de ellos.
 
 rules:
