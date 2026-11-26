@@ -1,10 +1,9 @@
 # Despliegue a producción en Firebase Hosting (proyecto juegorafa-edu).
-# Se lanza con cada push a main o a mano desde la pestaña Actions.
+# Solo se lanza a mano desde la pestaña Actions (Run workflow) y únicamente
+# desde la rama main: mergear en main NO despliega.
 name: Despliegue a producción (Firebase)
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -16,6 +15,7 @@ permissions:
 
 jobs:
   desplegar:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: produccion

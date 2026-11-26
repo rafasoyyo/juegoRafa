@@ -1,25 +1,25 @@
-# Despliegue de una preview en un canal temporal de Firebase Hosting.
-# Se lanza en cada PR contra main y comenta en la PR la URL de la preview.
-# Las PR desde forks no tienen acceso a los secretos, así que se saltan.
+# Despliegue de una preview en el canal «dev» de Firebase Hosting.
+# Se lanza automáticamente con cada push o merge a la rama dev (y a mano).
+# La URL del canal es fija y aparece en el resumen del job.
 name: Despliegue de preview (Firebase)
 
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches: [dev]
+  workflow_dispatch:
 
 concurrency:
-  group: firebase-preview-${{ github.event.pull_request.number }}
+  group: firebase-preview-dev
   cancel-in-progress: true
 
 permissions:
   contents: read
-  checks: write
-  pull-requests: write
 
 jobs:
   preview:
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    environment:
+      name: preview
     steps:
       - uses: actions/checkout@v5
 
@@ -38,10 +38,15 @@ jobs:
         run: npm run build
 
       - name: Publicar preview en Firebase Hosting
+        id: firebase
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: juegorafa-edu
-          channelId: pr-${{ github.event.pull_request.number }}
-          expires: 7d
+          channelId: dev
+          # Cada despliegue renueva la caducidad; 30 días es el máximo.
+          expires: 30d
+
+      - name: URL de la preview
+        run: echo "Preview publicada en ${{ steps.firebase.outputs.details_url }}" >> "$GITHUB_STEP_SUMMARY"
