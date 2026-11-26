@@ -11,6 +11,7 @@ import type { FlagId } from '../flags';
 import type { EnemyRules } from '../enemies/enemy-layout';
 import type { DurationLimits } from '../levels/duration';
 import type { LevelData } from '../levels/types';
+import type { SkyStop } from '../map/map-sky';
 import type { WorldId, WorldShape } from '../state';
 
 export type { WorldId };
@@ -36,8 +37,19 @@ export interface MapDecor {
 
 /** Aspecto del mapa del mundo, en el artboard de diseño de `MapScene` (pantallas de 1180×820). */
 export interface WorldMap {
-  /** Textura del cielo (la crea `BootScene`). */
+  /** Textura del cielo (la crea `BootScene`); si hay `skyline`, solo se usa de reserva. */
   sky: string;
+  /**
+   * Paisaje que cambia a lo ancho del camino: paradas en x del artboard (de 0 a 1180 × `screens`), cada
+   * una con el cielo y la tierra de un ambiente (`map/map-sky.ts`). Sin él, el cielo `sky` fijo.
+   */
+  skyline?: readonly SkyStop[];
+  /**
+   * Arcoíris de gajos, uno por nivel, que se pintan al hacer los niveles (`map/rainbow-arc.ts`): centro de
+   * su base en el artboard, radio exterior y grosor de cada una de sus 6 bandas (estos dos, en px del
+   * artboard escalados con el alto, para que sea un semicírculo en cualquier pantalla).
+   */
+  rainbow?: { center: readonly [number, number]; radius: number; band: number };
   /** Pantallas de ancho que mide el camino. */
   screens: number;
   /** Posición de cada nivel (`nodes[0]` es el nivel 1) y, tras el último, la del castillo si lo hay. */

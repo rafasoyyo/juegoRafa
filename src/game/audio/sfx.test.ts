@@ -122,3 +122,12 @@ describe('bocina de la barca', () => {
     expect(recipe('horn')).not.toEqual(recipe('scale'));
   });
 });
+
+describe('bandas del arcoíris del mapa', () => {
+  it('las 6 bandas suben de fuera adentro y no son la escala del puente', () => {
+    const f = (index: number): number => (recipe('band', { index }).layers[0] as ToneLayer).freq as number;
+    for (let i = 1; i < 6; i++) expect(f(i)).toBeGreaterThan(f(i - 1));
+    expect(recipe('band')).not.toEqual(recipe('scale'));
+    expect(recipeDuration(recipe('band'))).toBeLessThan(0.5);
+  });
+});

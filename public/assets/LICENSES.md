@@ -85,6 +85,7 @@ Licencia: la del repositorio.
 | `decor-sun` | `src/game/scenes/BootScene.ts` | propio: sol bajo del atardecer |
 | `decor-moon` | `src/game/scenes/BootScene.ts` | propio: luna de la noche |
 | `decor-star` | `src/game/scenes/BootScene.ts` | propio: estrella redondeada de la noche |
+| `decor-burrow` | `src/game/scenes/BootScene.ts` | propio: madriguera de Rufo en la colina, al principio del mapa del arcoíris |
 | `decor-palm` | `src/game/scenes/BootScene.ts` | propio: palmera de la playa |
 | `decor-leaf`, `decor-vine` | `src/game/scenes/BootScene.ts` | propio: hoja grande y liana de la selva |
 | `decor-peak` | `src/game/scenes/BootScene.ts` | propio: pico nevado de la montaña |
