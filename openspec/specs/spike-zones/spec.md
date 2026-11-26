@@ -74,7 +74,7 @@ Los pinchos SHALL ser un gráfico propio en el estilo plano del juego: una hiler
 - **THEN** las esquinas del suelo son redondeadas, como el resto del juego, y hay una sombra bajo el borde
 
 ### Requirement: Tocar los pinchos es un pinchazo
-Cuando Rufo cae al foso y sus pies tocan las puntas, SHALL producirse un pinchazo como el de un enemigo: el contador del nivel baja en una galleta (nunca por debajo de 0), sale una galleta despedida y Rufo parpadea 1 s, sin pincharse otra vez. Las estrellas, el total guardado y la posición de los bloques SHALL NOT cambiar. Pasar por encima del foso de un salto SHALL NOT pinchar.
+Cuando Rufo cae al foso y sus pies tocan las puntas, SHALL producirse un pinchazo como el de un enemigo: el contador del nivel baja en una galleta (nunca por debajo de 0), sale una galleta despedida y Rufo parpadea 1 s, sin pincharse otra vez. El total guardado y la posición de los bloques SHALL NOT cambiar. Las estrellas solo SHALL notar el pinchazo a través de esa galleta menos en el contador, que cuenta para el porcentaje de galletas de la fase. Pasar por encima del foso de un salto SHALL NOT pinchar.
 
 #### Scenario: Caer en los pinchos
 - **WHEN** el contador del nivel marca 4 y Rufo cae al foso
@@ -114,8 +114,8 @@ El pinchazo de los pinchos SHALL lanzar a Rufo desde el fondo del foso hacia arr
 ### Requirement: Los pinchos no penalizan más
 Los pinchos SHALL NOT reiniciar el nivel, devolver a Rufo a la salida, mostrar ninguna pantalla o mensaje ni impedir llegar a la bandera. Siempre SHALL haber manera de seguir hacia la bandera saltando.
 
-#### Scenario: Muchos pinchazos
-- **WHEN** el niño cae diez veces en los pinchos y luego golpea todos los bloques y llega a la bandera
+#### Scenario: Muchos pinchazos con el contador a cero
+- **WHEN** el niño cae diez veces en los pinchos con el contador a 0 y luego golpea todos los bloques y llega a la bandera
 - **THEN** las estrellas son las mismas que sin haber caído y la prueba de la bandera aparece como siempre
 
 ### Requirement: Foso bajo el suelo

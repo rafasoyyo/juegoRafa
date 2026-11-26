@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buyHat, canPlay, castleStatus, winMedal, completeLevel, createGameState, currentLevel, HAT_PRICES, isUnlocked, levelStatus, markPending, wearHat, worldProgress, type GameState } from './state';
+import { buyHat, canPlay, castleStatus, winMedal, completeLevel, createGameState, currentLevel, finishWithoutStars, HAT_PRICES, isUnlocked, levelStatus, wearHat, worldProgress, type GameState } from './state';
+
+/** Pendiente de un perfil antiguo (antes de las estrellas por objetivos ya no se crean). */
+function legacyPending(s: GameState, world: string, level: number): void {
+  worldProgress(s, world).pending.add(level);
+}
 
 /** Mundo de prueba de 12 niveles, como el mundo 1. */
 const W = { id: 'prueba', levelCount: 12 };
@@ -145,11 +150,11 @@ describe('mi personaje', () => {
   });
 });
 
-describe('niveles pendientes (prueba no superada)', () => {
+describe('niveles pendientes de perfiles antiguos', () => {
   it('prueba no superada: 1 hecho, 2 pendiente, 3 actual, 4-12 bloqueados', () => {
     const s = createGameState();
     completeLevel(s, W.id, 1, 2, 0);
-    markPending(s, W.id, 2, 0);
+    legacyPending(s, W.id, 2);
     expect(levelStatus(s, W, 1)).toBe('done');
     expect(levelStatus(s, W, 2)).toBe('pending');
     expect(levelStatus(s, W, 3)).toBe('current');
@@ -160,7 +165,7 @@ describe('niveles pendientes (prueba no superada)', () => {
 
   it('un pendiente desbloquea el siguiente y se puede jugar', () => {
     const s = createGameState();
-    markPending(s, W.id, 1, 0);
+    legacyPending(s, W.id, 1);
     expect(isUnlocked(s, W, 2)).toBe(true);
     expect(canPlay(s, W, 1)).toBe(true);
     expect(canPlay(s, W, 2)).toBe(true);
@@ -170,7 +175,7 @@ describe('niveles pendientes (prueba no superada)', () => {
   it('Solo quedan pendientes: con los 12 jugados y el 4 pendiente, el zorro va al 4', () => {
     const s = createGameState();
     for (let l = 1; l <= LEVEL_COUNT; l++) {
-      if (l === 4) markPending(s, W.id, l, 0);
+      if (l === 4) legacyPending(s, W.id, l);
       else completeLevel(s, W.id, l, 1, 0);
     }
     expect(currentLevel(s, W)).toBe(4);
@@ -179,27 +184,31 @@ describe('niveles pendientes (prueba no superada)', () => {
 
   it('pendiente superado más tarde pasa a hecho con sus estrellas', () => {
     const s = createGameState();
-    markPending(s, W.id, 1, 0);
+    legacyPending(s, W.id, 1);
     completeLevel(s, W.id, 1, 2, 0);
     expect(levelStatus(s, W, 1)).toBe('done');
     expect(progress(s).stars.get(1)).toBe(2);
     expect(progress(s).pending.has(1)).toBe(false);
   });
 
-  it('repetir un nivel hecho y fallar no lo deshace', () => {
+  it('repetir un nivel hecho y sacar 0 estrellas no lo deshace', () => {
     const s = createGameState();
     completeLevel(s, W.id, 1, 2, 0);
-    markPending(s, W.id, 1, 0);
+    finishWithoutStars(s, 0);
     expect(levelStatus(s, W, 1)).toBe('done');
     expect(progress(s).stars.get(1)).toBe(2);
-    expect(progress(s).pending.has(1)).toBe(false);
   });
+});
 
-  it('las galletas se suman aunque la prueba no se supere', () => {
+describe('fase con 0 estrellas', () => {
+  it('suma las galletas y no deja el nivel hecho ni pendiente', () => {
     const s = createGameState();
     s.cookies = 5;
-    markPending(s, W.id, 2, 3);
+    finishWithoutStars(s, 3);
     expect(s.cookies).toBe(8);
+    expect(levelStatus(s, W, 1)).toBe('current');
+    expect(isUnlocked(s, W, 2)).toBe(false);
+    expect(s.worlds.size).toBe(0);
   });
 });
 
@@ -209,7 +218,8 @@ describe('progreso por mundo', () => {
   it('cada mundo lleva su progreso y comparten galletas y gorros', () => {
     const s = createGameState();
     completeLevel(s, W.id, 1, 3, 4);
-    markPending(s, W.id, 2, 1);
+    legacyPending(s, W.id, 2);
+    s.cookies += 1;
     expect(currentLevel(s, W)).toBe(3);
     expect(currentLevel(s, OTRO)).toBe(1);
     expect(levelStatus(s, OTRO, 2)).toBe('locked');
@@ -245,7 +255,7 @@ describe('castillo y medalla', () => {
     expect(castleStatus(s, W)).toBe('locked');
     for (let l = 1; l <= 11; l++) completeLevel(s, 'rio', l, 2, 0);
     expect(castleStatus(s, W)).toBe('locked');
-    markPending(s, 'rio', 12, 0);
+    legacyPending(s, 'rio', 12);
     expect(castleStatus(s, W)).toBe('open');
   });
 

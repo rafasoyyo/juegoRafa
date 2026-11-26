@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import type { ChallengeTally } from '../../learning/challenges/ladder';
 import { audio } from '../audio/audio-engine';
 import { COLORS } from '../config';
 import type { AmbientId } from '../levels/types';
@@ -56,7 +55,8 @@ import type { LevelCompleteData } from './LevelCompleteScene';
 /** Datos con los que se abre la prueba: el mundo del nivel y lo que pasó en él. */
 export type QuizData = Partial<LevelRecap> & {
   world?: WorldId;
-  challenges?: ChallengeTally;
+  /** Galletas que se podían ganar en la fase (bloques «?» y premios de los retos). */
+  cookiesTotal?: number;
   /** Prueba del castillo del mundo: una pregunta de cada paso de su lista y, al acabar, la medalla. */
   castle?: boolean;
 };
@@ -122,7 +122,7 @@ export class QuizScene extends Phaser.Scene {
   private def!: WorldDef;
   private recap!: LevelRecap;
   /** Retos del recorrido acertados a la primera, para las estrellas (se pasa tal cual). */
-  private challenges?: ChallengeTally;
+  private cookiesTotal = 0;
   private kind: QuizKind = 'count';
   private castle = false;
   /** Tipo de la pregunta en pantalla: el de la prueba salvo en el repaso, que mezcla varios. */
@@ -175,7 +175,7 @@ export class QuizScene extends Phaser.Scene {
       blocksHit: data?.blocksHit ?? 0,
       blocksTotal: data?.blocksTotal ?? 0,
     };
-    this.challenges = data?.challenges;
+    this.cookiesTotal = data?.cookiesTotal ?? this.recap.blocksTotal;
     const castle = data?.castle ? this.def.castle : undefined;
     this.castle = castle !== undefined;
     this.seed = (Date.now() ^ (level * 7919)) >>> 0;
@@ -702,7 +702,7 @@ export class QuizScene extends Phaser.Scene {
   private finish(): void {
     if (!isFinished(this.run)) return;
     this.busy = true;
-    const { passed } = result(this.run);
+    const { correct, total } = result(this.run);
     this.time.delayedCall(END_MS, () => {
       const data: LevelCompleteData = {
         world: this.def.id,
@@ -710,8 +710,9 @@ export class QuizScene extends Phaser.Scene {
         blocksHit: this.recap.blocksHit,
         blocksTotal: this.recap.blocksTotal,
         cookies: this.recap.cookies,
-        challenges: this.challenges,
-        passed,
+        cookiesTotal: this.cookiesTotal,
+        quizCorrect: correct,
+        quizTotal: total,
         castle: this.castle,
       };
       goTo(this, 'LevelComplete', data);

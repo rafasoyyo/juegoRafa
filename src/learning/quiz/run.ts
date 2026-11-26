@@ -1,5 +1,5 @@
 /**
- * Una prueba en marcha: tres preguntas, 3 intentos por pregunta, pistas y resultado.
+ * Una prueba en marcha: tres preguntas, 3 intentos por pregunta, pistas y aciertos (que cuentan para las estrellas).
  * TypeScript puro: la escena solo llama a `tap` y anima el evento que recibe.
  */
 
@@ -7,9 +7,6 @@ import type { HintKind, Question } from './types';
 
 /** Intentos por pregunta: al tercer fallo la pregunta cuenta como fallada. */
 export const MAX_TRIES = 3;
-/** Preguntas acertadas para superar la prueba. */
-export const PASS_MARK = 2;
-
 export type Mark = 'pending' | 'correct' | 'failed';
 
 interface QuestionState {
@@ -178,10 +175,9 @@ export function tap(run: QuizRun, option: number): TapEvent {
 export interface QuizResult {
   correct: number;
   total: number;
-  passed: boolean;
 }
 
 export function result(run: QuizRun): QuizResult {
   const correct = run.states.filter((s) => s.mark === 'correct').length;
-  return { correct, total: run.questions.length, passed: correct >= PASS_MARK };
+  return { correct, total: run.questions.length };
 }

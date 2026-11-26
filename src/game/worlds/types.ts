@@ -86,9 +86,4 @@ export interface WorldDef extends WorldShape {
   gate?: WorldGate;
   /** Castillo tras el último nivel: sus retos y su paisaje. Sin él, el mapa acaba en el último nivel. */
   castle?: CastleDef;
-  /**
-   * Cómo se ganan las estrellas: por bloques «?» golpeados (mundo 1) o por retos del recorrido
-   * acertados a la primera (mundo 2, `docs/MUNDO-2.md`).
-   */
-  stars: 'blocks' | 'challenges';
 }

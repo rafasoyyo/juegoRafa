@@ -62,11 +62,9 @@ describe('registro de mundos', () => {
     expect(WORLDS[0]!.gate).toBeUndefined();
   });
 
-  it('el mundo 1 cuenta estrellas por bloques y no tiene retos; el río, por retos', () => {
-    const [arcoiris, rio] = WORLDS;
-    expect(arcoiris!.stars).toBe('blocks');
+  it('el mundo 1 no tiene retos del recorrido', () => {
+    const [arcoiris] = WORLDS;
     for (const level of arcoiris!.levels) expect(level.challenges).toEqual([]);
-    expect(rio!.stars).toBe('challenges');
   });
 
   it('el nivel 1 del río lleva 3 retos A (puntos → cifra) y el primero es la demostración', () => {

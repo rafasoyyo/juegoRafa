@@ -137,12 +137,10 @@ export function completeLevel(state: GameState, world: WorldId, level: number, s
 }
 
 /**
- * Prueba de la bandera no superada: suma las galletas y deja el nivel pendiente, salvo que ya estuviera
- * hecho (repetir un nivel hecho y fallar no lo deshace). El siguiente nivel queda desbloqueado.
+ * Fase terminada sin ninguna estrella: solo se suman las galletas. El nivel no queda hecho ni pendiente
+ * y no desbloquea el siguiente; si ya estaba hecho, conserva su mejor resultado.
  */
-export function markPending(state: GameState, world: WorldId, level: number, cookies: number): void {
-  const progress = worldProgress(state, world);
-  if (!progress.stars.has(level)) progress.pending.add(level);
+export function finishWithoutStars(state: GameState, cookies: number): void {
   state.cookies += Math.max(0, Math.floor(cookies));
 }
 

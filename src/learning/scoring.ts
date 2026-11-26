@@ -1,26 +1,28 @@
-export type Stars = 1 | 2 | 3;
+/** Estrellas de una fase: de 0 a 3. Con 0 la fase no queda superada y hay que empezar de nuevo. */
+export type Stars = 0 | 1 | 2 | 3;
 
-/**
- * Regla PROVISIONAL de estrellas hasta que existan retos (fase 2):
- * 1 por llegar a la meta, +1 con al menos la mitad de los bloques «?» y +1 con todos.
- * Nunca da 0 estrellas. Un nivel sin bloques da 3.
- */
-export function starsFor(blocksHit: number, blocksTotal: number): Stars {
-  if (blocksTotal <= 0) return 3;
-  const hit = Math.max(0, Math.min(blocksHit, blocksTotal));
-  if (hit >= blocksTotal) return 3;
-  if (hit * 2 >= blocksTotal) return 2;
-  return 1;
+export interface StarGoals {
+  /** Galletas que lleva al tocar la bandera, ya descontados los pinchazos. */
+  cookies: number;
+  /** Galletas que se pueden ganar en la fase (bloques «?» y premios de los retos del recorrido). */
+  cookiesTotal: number;
+  /** Preguntas acertadas de la prueba de la bandera, en cualquier intento. */
+  quizCorrect: number;
+  /** Preguntas de la prueba de la bandera. */
+  quizTotal: number;
 }
 
 /**
- * Estrellas por retos del recorrido (mundo 2, `docs/MUNDO-2.md`): 3 con el 75 % o más acertados a la
- * primera, 2 con el 40 % o más y 1 en el resto. Un nivel sin retos da 3.
+ * Estrellas por objetivos, iguales en todos los mundos: 1 por llegar con al menos el 50 % de las
+ * galletas de la fase y otra por acertar al menos 1 pregunta de la prueba, independientes entre sí.
+ * Las 3 exigen el 80 % de las galletas y todas las preguntas. Una fase sin galletas cuenta como el 100 %.
  */
-export function starsForChallenges(firstTry: number, total: number): Stars {
-  if (total <= 0) return 3;
-  const ok = Math.max(0, Math.min(firstTry, total));
-  if (ok * 4 >= total * 3) return 3;
-  if (ok * 5 >= total * 2) return 2;
-  return 1;
+export function starsForGoals({ cookies, cookiesTotal, quizCorrect, quizTotal }: StarGoals): Stars {
+  const total = Math.max(0, Math.floor(cookiesTotal));
+  const got = Math.max(0, Math.min(Math.floor(cookies), total));
+  const questions = Math.max(0, Math.floor(quizTotal));
+  const correct = Math.max(0, Math.min(Math.floor(quizCorrect), questions));
+  const share = (num: number, den: number): boolean => total === 0 || got * den >= total * num;
+  if (share(4, 5) && questions > 0 && correct >= questions) return 3;
+  return ((share(1, 2) ? 1 : 0) + (correct >= 1 ? 1 : 0)) as Stars;
 }
