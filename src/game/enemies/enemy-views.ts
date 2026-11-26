@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
-import type { BeeSpawn, EnemySpawn, HedgehogSpawn } from './enemy-layout';
-import { beeBox, beePosition, hedgehogBox, hedgehogX, type Rect } from './enemy-motion';
+import type { BeeSpawn, CrabSpawn, EnemySpawn, FrogSpawn, HedgehogSpawn } from './enemy-layout';
+import { beeBox, beePosition, crabBox, crabX, frogBox, frogState, hedgehogBox, hedgehogX, type Rect } from './enemy-motion';
 
 /** Por debajo del zorro (10) y sus piernas (9), por encima de la bandera (5). */
 const ENEMY_DEPTH = 8;
@@ -20,7 +20,74 @@ export interface EnemyView {
 }
 
 export function createEnemyView(scene: Phaser.Scene, spawn: EnemySpawn, groundY: number): EnemyView {
-  return spawn.kind === 'hedgehog' ? hedgehogView(scene, spawn, groundY) : beeView(scene, spawn);
+  switch (spawn.kind) {
+    case 'hedgehog':
+      return hedgehogView(scene, spawn, groundY);
+    case 'bee':
+      return beeView(scene, spawn);
+    case 'frog':
+      return frogView(scene, spawn, groundY);
+    case 'crab':
+      return crabView(scene, spawn, groundY);
+  }
+}
+
+/**
+ * Rana: quieta respira un poco; antes de saltar se agacha (se aplasta y ensancha) para avisar, y en el
+ * aire se estira. Salta siempre en el sitio.
+ */
+function frogView(scene: Phaser.Scene, spawn: FrogSpawn, groundY: number): EnemyView {
+  const img = scene.add.image(spawn.x, groundY + 2, 'frog').setOrigin(0.5, 1).setDepth(ENEMY_DEPTH);
+  let height = 0;
+  let pop = 1;
+  return {
+    spawn,
+    update(timeMs) {
+      const s = frogState(timeMs, spawn);
+      height = s.height;
+      let sx = 1;
+      let sy = 1;
+      if (s.pose === 'sit') sy = 1 + Math.sin(timeMs / 260) * 0.03;
+      else if (s.pose === 'crouch') {
+        // Se agacha cada vez más y tiembla un poco justo antes de saltar.
+        const c = Math.sin(s.crouch * Math.PI * 0.5);
+        sx = 1 + 0.18 * c;
+        sy = 1 - 0.28 * c + (s.crouch > 0.7 ? Math.sin(timeMs / 22) * 0.03 : 0);
+      } else {
+        sx = 0.9;
+        sy = 1.14;
+      }
+      img.setPosition(spawn.x, groundY + 2 - height);
+      img.setScale(sx * pop, sy * pop);
+    },
+    box: () => frogBox(spawn.x, height, groundY),
+    gesture() {
+      // Hincha la garganta: crece un 15 % y vuelve.
+      scene.tweens.addCounter({ from: 0, to: 1, duration: 160, onUpdate: (tw) => (pop = 1 + 0.15 * Math.sin((tw.getValue() ?? 0) * Math.PI)), onComplete: () => (pop = 1) });
+    },
+  };
+}
+
+/** Cangrejo: anda de lado (no se voltea) moviendo las pinzas arriba y abajo. */
+function crabView(scene: Phaser.Scene, spawn: CrabSpawn, groundY: number): EnemyView {
+  const img = scene.add.image(spawn.minX, groundY + 2, 'crab').setOrigin(0.5, 1).setDepth(ENEMY_DEPTH);
+  let x = spawn.minX;
+  return {
+    spawn,
+    update(timeMs) {
+      x = crabX(timeMs, spawn).x;
+      const step = Math.sin((timeMs / 1000) * HEDGEHOG_STEP_HZ * 1.5 * Math.PI * 2);
+      img.setPosition(x, groundY + 2 - Math.abs(step) * 2);
+      img.setAngle(step * 4);
+    },
+    box: () => crabBox(x, groundY),
+    gesture() {
+      // Levanta las pinzas: se estira hacia arriba y vuelve.
+      scene.tweens.killTweensOf(img);
+      img.setScale(1);
+      scene.tweens.add({ targets: img, scaleY: 1.18, duration: 80, yoyo: true, ease: 'Quad.easeOut' });
+    },
+  };
 }
 
 /** Erizo: el dibujo mira a la derecha; se voltea para ir a la izquierda y se balancea al andar. */
