@@ -1,0 +1,47 @@
+# Despliegue de una preview en un canal temporal de Firebase Hosting.
+# Se lanza en cada PR contra main y comenta en la PR la URL de la preview.
+# Las PR desde forks no tienen acceso a los secretos, así que se saltan.
+name: Despliegue de preview (Firebase)
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: firebase-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  preview:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Pruebas
+        run: npm test
+
+      - name: Compilar
+        run: npm run build
+
+      - name: Publicar preview en Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: juegorafa-edu
+          channelId: pr-${{ github.event.pull_request.number }}
+          expires: 7d
