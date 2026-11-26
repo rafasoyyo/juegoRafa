@@ -24,7 +24,11 @@ export const RUN_SPEED = 110 * SCALE;
 
 export { GROUND_TOP };
 
-export const AMBIENT_IDS = ['prado', 'flores', 'bosque', 'otono', 'atardecer', 'noche', 'playa', 'selva', 'montana', 'nieve', 'desierto', 'nubes'] as const;
+/** Los 12 paisajes del mundo 1 y, después, los 12 tramos del río (mundo 2). */
+export const AMBIENT_IDS = [
+  'prado', 'flores', 'bosque', 'otono', 'atardecer', 'noche', 'playa', 'selva', 'montana', 'nieve', 'desierto', 'nubes',
+  'manantial', 'arroyo', 'cascada', 'molino', 'canaveral', 'lago', 'embarcadero', 'puente', 'huertas', 'lluvia', 'puerto', 'desembocadura',
+] as const;
 export type AmbientId = (typeof AMBIENT_IDS)[number];
 
 export type BlockRow = keyof typeof ROW_BASE;

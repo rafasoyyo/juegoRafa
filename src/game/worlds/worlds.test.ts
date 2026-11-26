@@ -57,8 +57,8 @@ describe('registro de mundos', () => {
     expect(UPCOMING.map((b) => b.icon ?? b.label)).toEqual(['icon-shapes', 'Aa']);
   });
 
-  it('el río va detrás del interruptor mundo-2-rio y se abre con 6 años o al llegar al nivel 12 del mundo 1', () => {
-    expect(worldDef('rio').gate).toEqual({ flag: 'mundo-2-rio', openAge: 6, after: { world: 'arcoiris', level: 12 } });
+  it('el río se abre con 6 años o al llegar al nivel 12 del mundo 1, sin interruptor de desarrollo', () => {
+    expect(worldDef('rio').gate).toEqual({ openAge: 6, after: { world: 'arcoiris', level: 12 } });
     expect(WORLDS[0]!.gate).toBeUndefined();
   });
 
@@ -78,18 +78,27 @@ describe('registro de mundos', () => {
     ]);
   });
 
-  it('el nivel 2 del río (borrador) mezcla retos A con marco de diez y dos puentes', () => {
-    const challenges = worldDef('rio').levels[1]!.challenges;
-    expect(challenges.map((c) => c.kind)).toEqual(['count', 'bridge', 'count', 'bridge']);
-  });
-
-  it('el nivel 3 del río (borrador) prueba la barca: la primera con demostración', () => {
-    const challenges = worldDef('rio').levels[2]!.challenges;
-    expect(challenges.map((c) => [c.kind, c.demo])).toEqual([
-      ['boat', true],
-      ['count', false],
-      ['boat', false],
+  it('los 12 tramos del río siguen la tabla de docs/MUNDO-2.md: retos, paisajes y novedades', () => {
+    const rio = worldDef('rio');
+    expect(rio.levelCount).toBe(12);
+    const K = { count: 'A', bridge: 'B', boat: 'C' } as const;
+    const mix = rio.levels.map((l) => l.challenges.map((c) => K[c.kind]).sort().join(''));
+    expect(mix).toEqual(['AAA', 'AAA', 'AAA', 'AABB', 'BBBB', 'AABB', 'AACC', 'BBCC', 'ABBCC', 'BBBCC', 'ABBCC', 'ABBCC']);
+    expect(rio.levels.map((l) => l.ambient)).toEqual([
+      'manantial', 'arroyo', 'cascada', 'molino', 'canaveral', 'lago', 'embarcadero', 'puente', 'huertas', 'lluvia', 'puerto', 'desembocadura',
     ]);
+    // Lalo hace la demostración la primera vez que sale cada mecánica, y solo entonces.
+    const demos = rio.levels.flatMap((l, i) => l.challenges.filter((c) => c.demo).map((c) => [i + 1, c.kind]));
+    expect(demos).toEqual([[1, 'count'], [4, 'bridge'], [7, 'boat']]);
+    for (const [n, kind] of demos as [number, string][]) expect(rio.levels[n - 1]!.challenges.find((c) => c.kind === kind)!.demo).toBe(true);
+    // Nivel 1: puntos; 2: marco de diez; 3: al revés.
+    expect(rio.levels[1]!.challenges.every((c) => c.show === 'tenframe' && !c.reverse)).toBe(true);
+    expect(rio.levels[2]!.challenges.every((c) => c.reverse)).toBe(true);
+    // Primeros escalones en el 2, primeros fosos en el 4, primeras plataformas en el 5.
+    const first = (has: (l: (typeof rio.levels)[number]) => boolean): number => rio.levels.findIndex(has) + 1;
+    expect(first((l) => l.steps.length > 0)).toBe(2);
+    expect(first((l) => l.spikes.length > 0)).toBe(4);
+    expect(first((l) => l.platforms.length > 0)).toBe(5);
   });
 
   it('pruebas de la bandera del río: una propia en cada nivel y el repaso en el 12', () => {

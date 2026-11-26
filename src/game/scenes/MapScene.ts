@@ -120,6 +120,11 @@ export class MapScene extends Phaser.Scene {
       if (d.size > 0) img.setScale(d.size / Math.max(img.width, img.height));
     }
     for (const c of map.clouds) this.add.image(width * c.x, c.y, 'cloud').setScale(c.scale);
+    if (map.river) {
+      const { from, to, offset } = map.river;
+      const stops = map.nodes.slice(0, this.def.levelCount + (this.def.castle ? 1 : 0)).map(([x, y]) => [x, y + offset] as const);
+      this.drawRiver([from, ...stops, to].map(at));
+    }
 
     const nodes = map.nodes.slice(0, this.def.levelCount);
     // El castillo, si el mundo tiene, es la parada siguiente al último nivel.
@@ -195,6 +200,14 @@ export class MapScene extends Phaser.Scene {
     this.arrows = { left, right };
     this.update();
     return [left, right];
+  }
+
+  /** Río ancho y azul bajo el camino, con un reflejo claro en el centro. */
+  private drawRiver(points: Phaser.Math.Vector2[]): void {
+    const spline = new Phaser.Curves.Spline(points).getPoints(200);
+    const g = this.add.graphics();
+    g.lineStyle(64, 0x8fd3ff).strokePoints(spline);
+    g.lineStyle(18, 0xc9ecff).strokePoints(spline);
   }
 
   private drawPath(points: Phaser.Math.Vector2[]): void {

@@ -42,6 +42,11 @@ export interface WorldMap {
   screens: number;
   /** Posición de cada nivel (`nodes[0]` es el nivel 1) y, tras el último, la del castillo si lo hay. */
   nodes: readonly (readonly [number, number])[];
+  /**
+   * Río que acompaña al camino por debajo, desde `from` hasta `to` pasando junto a cada parada, `offset`
+   * px más abajo que ella. Sin él, el camino va solo.
+   */
+  river?: { from: readonly [number, number]; to: readonly [number, number]; offset: number };
   decor: readonly MapDecor[];
   /** Nubes del fondo: `x` en pantallas, `y` en px lógicos y escala. */
   clouds: readonly { x: number; y: number; scale: number }[];

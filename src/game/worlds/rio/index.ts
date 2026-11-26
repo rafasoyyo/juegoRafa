@@ -1,8 +1,7 @@
 /**
- * Mundo 2, «El río de los números» (`docs/MUNDO-2.md`). BORRADOR: niveles 1 a 3 con ambientes y prueba
- * provisionales del mundo 1; el 1 con tres retos A, el 2 con retos A y B (puente) y el 3 con retos C (barca),
- * para probarlos en desarrollo. Las pruebas (paso 7) y los 12 recorridos con su mapa
- * (paso 9) llegan con sus cambios. Está detrás del interruptor `mundo-2-rio`. TypeScript puro (sin Phaser).
+ * Mundo 2, «El río de los números» (`docs/MUNDO-2.md`): 12 tramos del río, del manantial a la
+ * desembocadura, con los retos del recorrido (contar, puente y barca), una prueba de la bandera por nivel
+ * y el castillo con la medalla. TypeScript puro (sin Phaser).
  */
 
 import type { QuizKind } from '../../../learning/quiz';
@@ -16,7 +15,7 @@ const LEVELS = levelsFrom('rio', import.meta.glob('../../../../content/levels/ri
 
 /** El erizo y la abeja del mundo 1, la rana desde el nivel 3 y el cangrejo desde el 7 (`docs/MUNDO-2.md`). */
 export const ENEMIES: EnemyRules = {
-  perLevel: [2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10].slice(0, LEVELS.length),
+  perLevel: [2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10],
   kinds: [
     { kind: 'bee', fromLevel: 2 },
     { kind: 'hedgehog', fromLevel: 1 },
@@ -33,7 +32,7 @@ function durationLimits(): DurationLimits {
 export const COURSE: CourseRules = {
   blockLimits: () => ({ min: 12, max: 25 }),
   // Fosos de pinchos desde el nivel 4.
-  spikesPerLevel: [0, 0, 0, 2, 2, 3, 3, 3, 4, 4, 5, 5].slice(0, LEVELS.length),
+  spikesPerLevel: [0, 0, 0, 2, 2, 3, 3, 3, 4, 4, 5, 5],
   narrowSpikesUntil: 6,
   durationLimits,
 };
@@ -63,7 +62,7 @@ export const QUIZ_BY_LEVEL: Readonly<Record<number, QuizKind>> = {
 const CASTLE_QUIZZES: readonly QuizKind[] = ['fingers', 'ten-frame', 'neighbor', 'number-line', 'biggest', 'ten-friends', 'train', 'frog-jumps'];
 
 export const CASTLE: CastleDef = {
-  ambient: 'playa',
+  ambient: 'desembocadura',
   steps: [{ challenge: 'count' }, { challenge: 'bridge' }, { challenge: 'boat' }, { quiz: CASTLE_QUIZZES }, { quiz: CASTLE_QUIZZES }],
 };
 
@@ -72,13 +71,12 @@ function quizFor(level: number): QuizKind {
 }
 
 /**
- * Mapa provisional: el río baja de izquierda a derecha en dos pantallas, con 12 tramos y el castillo
- * junto a la desembocadura. Solo se dibujan los nodos de los niveles que existen.
+ * Mapa del río: baja de izquierda a derecha en dos pantallas, del manantial de la montaña a la
+ * desembocadura, con el camino por la orilla y el castillo al final.
  */
 const MAP: WorldMap = {
   sky: 'sky-map',
-  // Mientras el borrador tenga pocos niveles, el camino cabe en una pantalla.
-  screens: LEVELS.length <= 6 ? 1 : 2,
+  screens: 2,
   nodes: [
     [150, 530],
     [330, 430],
@@ -87,18 +85,25 @@ const MAP: WorldMap = {
     [870, 500],
     [1050, 330],
     [1230, 460],
+    // Como en el mundo 1, como mucho a la altura de los más bajos: más abajo, el selector taparía las estrellas.
     [1400, 530],
     [1580, 410],
     [1760, 510],
     [1930, 380],
     [2100, 480],
-    [2250, 380],
+    // El castillo, junto a la desembocadura.
+    [2250, 370],
   ],
+  river: { from: [40, 330], to: [2360, 560], offset: 70 },
   decor: [
-    { at: [260, 330], key: 'decor-pine-snow', size: 120 },
+    { at: [70, 360], key: 'decor-peak', size: 170 },
+    { at: [250, 330], key: 'decor-pine-snow', size: 110 },
     { at: [610, 690], key: 'tree', size: 0 },
-    { at: [1310, 360], key: 'tree', size: 0 },
-    { at: [1860, 690], key: 'decor-palm', size: 150 },
+    { at: [960, 300], key: 'tree', size: 0 },
+    { at: [1310, 360], key: 'decor-tree-autumn', size: 110 },
+    { at: [1490, 700], key: 'decor-flowers', size: 110 },
+    { at: [1850, 330], key: 'tree', size: 0 },
+    { at: [2020, 700], key: 'decor-palm', size: 150 },
   ],
   clouds: [
     { x: 0.3, y: 160, scale: 1 },
@@ -116,9 +121,9 @@ export const RIO: WorldDef = {
   horizonRainbow: false,
   map: MAP,
   selector: { color: 0xe3f2fd, shadow: 0xb9d9ef, icon: 'icon-ten-frame', iconSize: 104 },
-  // Abierto con 6 años o más; con menos, al llegar al nivel 12 del mundo 1.
+  // Abierto con 6 años o más; con menos, al llegar al nivel 12 del mundo 1 (hecho o pendiente).
   castle: CASTLE,
-  gate: { flag: 'mundo-2-rio', openAge: 6, after: { world: 'arcoiris', level: 12 } },
+  gate: { openAge: 6, after: { world: 'arcoiris', level: 12 } },
   // Las estrellas cuentan los retos del recorrido acertados a la primera.
   stars: 'challenges',
 };

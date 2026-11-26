@@ -1,0 +1,36 @@
+{
+  "ambient": "molino",
+  "length": 194,
+  "steps": [
+    { "x": 89.9, "width": 4, "height": 1 },
+    { "x": 100.9, "width": 4, "height": 1 },
+    { "x": 175.0, "width": 5, "height": 1 },
+    { "x": 180.0, "width": 4, "height": 2 }
+  ],
+  "platforms": [],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 54.7, "row": "high" },
+    { "x": 55.9, "row": "high" },
+    { "x": 91.9, "row": "high", "on": "step" },
+    { "x": 102.9, "row": "high", "on": "step" },
+    { "x": 129.4, "row": "low" },
+    { "x": 130.6, "row": "low" },
+    { "x": 131.8, "row": "low" },
+    { "x": 139.8, "row": "high" },
+    { "x": 141.0, "row": "high" },
+    { "x": 177.5, "row": "low", "on": "step" },
+    { "x": 182.0, "row": "high", "on": "step" }
+  ],
+  "spikes": [
+    { "x": 21.2, "width": 1 },
+    { "x": 46.2, "width": 1 }
+  ],
+  "challenges": [
+    { "kind": "count", "x": 35.2, "show": "tenframe" },
+    { "kind": "bridge", "x": 64.4, "demo": true },
+    { "kind": "count", "x": 117.9, "show": "dots", "reverse": true },
+    { "kind": "bridge", "x": 149.5 }
+  ]
+}

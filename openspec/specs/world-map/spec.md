@@ -162,15 +162,15 @@ El mundo del río SHALL estar abierto desde el principio para perfiles de 6 año
 - **THEN** el río queda abierto, aunque ese nivel siga pendiente
 
 ### Requirement: Mundos en desarrollo
-Un mundo en construcción SHALL estar detrás de un interruptor que solo se activa en desarrollo. Con el interruptor apagado, como en el juego publicado, el mundo SHALL mostrarse en el selector como un mundo que aún no existe, sin candado, y SHALL NOT abrirse para ningún perfil. El río SHALL estar detrás del interruptor `mundo-2-rio` hasta que su contenido esté terminado.
+Un mundo en construcción SHALL estar detrás de un interruptor que solo se activa en desarrollo. Con el interruptor apagado, como en el juego publicado, el mundo SHALL mostrarse en el selector como un mundo que aún no existe, sin candado, y SHALL NOT abrirse para ningún perfil. El río SHALL NOT depender de ningún interruptor: está terminado y se abre en el juego publicado según la edad y el progreso.
 
 #### Scenario: Juego publicado
-- **WHEN** un perfil de 8 años toca el río en el juego publicado
-- **THEN** el botón tiembla como formas y `Aa`, y el mapa no cambia
+- **WHEN** un perfil de 6 años toca el río en el juego publicado
+- **THEN** se abre el mapa del río
 
 #### Scenario: En desarrollo
-- **WHEN** un perfil de 6 años toca el río con `npm run dev`
-- **THEN** se abre el mapa del río
+- **WHEN** un mundo tiene el interruptor apagado (como en el juego publicado) y un perfil de 8 años lo toca
+- **THEN** el botón tiembla como formas y `Aa`, y el mapa no cambia
 
 ### Requirement: Mapa de cada mundo
 Cada mundo SHALL tener su propio mapa, con su camino, sus adornos y sus niveles, y el mapa SHALL abrirse en el último mundo que se jugó en la sesión si sigue abierto para el perfil; si no, en el mundo de los números.
@@ -211,3 +211,10 @@ El botón de un mundo en el selector SHALL mostrar su medalla en una esquina cua
 #### Scenario: Medalla del río
 - **WHEN** el niño ha ganado la medalla del río y abre cualquier mapa
 - **THEN** el botón del río muestra la medalla en su esquina
+
+### Requirement: Mapa del río
+El mapa del río SHALL tener dos pantallas con los 12 niveles y el castillo, y un río que baja junto al camino desde el manantial, al principio, hasta la desembocadura, junto al castillo.
+
+#### Scenario: El río acompaña al camino
+- **WHEN** se abre el mapa del río a 844×390 y se desplaza hasta el final
+- **THEN** el río pasa bajo todas las paradas y el castillo queda tras el nivel 12, sin que el selector tape las estrellas

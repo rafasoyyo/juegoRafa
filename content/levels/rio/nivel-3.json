@@ -1,32 +1,35 @@
 {
-  "ambient": "playa",
-  "length": 178,
+  "ambient": "cascada",
+  "length": 163,
   "steps": [
-    { "x": 52, "width": 4, "height": 1 },
-    { "x": 150, "width": 5, "height": 1 }
+    { "x": 50.4, "width": 4, "height": 1 },
+    { "x": 62.4, "width": 4, "height": 1 },
+    { "x": 133.2, "width": 5, "height": 1 },
+    { "x": 138.2, "width": 4, "height": 2 }
   ],
-  "platforms": [
-    { "x": 84, "width": 4, "height": 1.5 },
-    { "x": 138, "width": 4, "height": 1.5 }
-  ],
+  "platforms": [],
   "blocks": [
-    { "x": 14, "row": "low" },
-    { "x": 15.2, "row": "low" },
-    { "x": 54, "row": "high", "on": "step" },
-    { "x": 62, "row": "low" },
-    { "x": 63.2, "row": "low" },
-    { "x": 86, "row": "low", "on": "platform" },
-    { "x": 95, "row": "high" },
-    { "x": 124, "row": "high" },
-    { "x": 125.2, "row": "high" },
-    { "x": 140, "row": "low", "on": "platform" },
-    { "x": 152.5, "row": "low", "on": "step" },
-    { "x": 162, "row": "low" }
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 22.7, "row": "high" },
+    { "x": 23.9, "row": "high" },
+    { "x": 52.4, "row": "high", "on": "step" },
+    { "x": 64.4, "row": "high", "on": "step" },
+    { "x": 92.9, "row": "low" },
+    { "x": 94.1, "row": "low" },
+    { "x": 95.3, "row": "low" },
+    { "x": 104.3, "row": "high" },
+    { "x": 105.5, "row": "high" },
+    { "x": 106.7, "row": "high" },
+    { "x": 135.7, "row": "low", "on": "step" },
+    { "x": 140.2, "row": "high", "on": "step" },
+    { "x": 150.7, "row": "high" },
+    { "x": 151.9, "row": "high" }
   ],
   "spikes": [],
   "challenges": [
-    { "kind": "boat", "x": 36, "demo": true },
-    { "kind": "count", "x": 74, "show": "dots" },
-    { "kind": "boat", "x": 106 }
+    { "kind": "count", "x": 38.4, "show": "dots", "reverse": true },
+    { "kind": "count", "x": 80.4, "show": "dots", "reverse": true },
+    { "kind": "count", "x": 121.2, "show": "tenframe", "reverse": true }
   ]
 }
