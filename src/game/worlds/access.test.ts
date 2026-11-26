@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Flags } from '../flags';
 import { completeLevel, createGameState, worldProgress, type GameState } from '../state';
-import { worldAccess } from './access';
+import { opensAfter, worldAccess } from './access';
 import { ARCOIRIS } from './arcoiris';
 import { RIO } from './rio';
 
@@ -57,5 +57,20 @@ describe('puerta de los mundos', () => {
     expect(worldAccess(RIO, state, undefined, ON)).toBe('locked');
     completeLevel(state, 'arcoiris', 12, 2, 0);
     expect(worldAccess(RIO, state, undefined, ON)).toBe('open');
+  });
+});
+
+describe('mundos que abre el final de otro', () => {
+  it('el final del arcoíris abre el río a los menores de 6 años, no a los de 6 o más', () => {
+    expect(opensAfter(RIO, ARCOIRIS.id, 5, ON)).toBe(true);
+    expect(opensAfter(RIO, ARCOIRIS.id, 3, ON)).toBe(true);
+    expect(opensAfter(RIO, ARCOIRIS.id, 6, ON)).toBe(false);
+    expect(opensAfter(RIO, ARCOIRIS.id, 8, ON)).toBe(false);
+  });
+
+  it('ni el final de otro mundo, ni un mundo sin puerta, ni uno tras un interruptor apagado', () => {
+    expect(opensAfter(RIO, RIO.id, 5, ON)).toBe(false);
+    expect(opensAfter(ARCOIRIS, ARCOIRIS.id, 5, ON)).toBe(false);
+    expect(opensAfter({ ...RIO, gate: { ...RIO.gate, flag: 'mundo-2-rio' } }, ARCOIRIS.id, 5, OFF)).toBe(false);
   });
 });

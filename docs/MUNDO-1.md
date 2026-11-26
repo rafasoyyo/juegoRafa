@@ -119,6 +119,6 @@ Un cambio de OpenSpec por pieza, cada uno con su ciclo: `openspec-propose` → `
 | 4 | `final-del-arcoiris` | La lluvia sobre la montaña. Va después de `progreso-por-mundos` del mundo 2; el manantial que abre el río se ve cuando el río se abre con `mundo-2-rio`. | `world-map`, `level-complete`, `mascot-guide` | Perfil de 5 años que termina el nivel 12: ve el final y el río se abre. Perfil de 6 años: ve la lluvia y el manantial sin la animación del botón. No se repite. |
 | 5 | `castillo-del-arcoiris` | Castillo del mundo 1 con la pieza de `castillo-y-medalla` del mundo 2, como parada propia tras el nivel 12: 5 retos y la medalla del arcoíris. | `world-castle`, `world-map` | El castillo siempre da medalla y la medalla se ve en el selector. |
 
-**Estado (26 de noviembre de 2026):** hechos los pasos 0, 1 (`arcoiris-en-el-horizonte`), 2 (`mapa-del-arcoiris`) y 3 (`prologo-del-arcoiris`); la prueba con niños se dio por validada. Lo siguiente es el paso 4.
+**Estado (26 de noviembre de 2026):** hechos los pasos 0, 1 (`arcoiris-en-el-horizonte`), 2 (`mapa-del-arcoiris`), 3 (`prologo-del-arcoiris`) y 4 (`final-del-arcoiris`); la prueba con niños se dio por validada. Lo siguiente es el paso 5.
 
 Para empezar cada paso: `openspec-propose` con el nombre del cambio y una frase como «sigue docs/MUNDO-1.md, sección El mapa del arcoíris», para que la propuesta parta de lo aprobado.

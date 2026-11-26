@@ -100,6 +100,12 @@ export interface WorldDef extends WorldShape {
    * Lalo le señala el arcoíris. Sin él, el nivel 1 empieza sin más.
    */
   prologue?: boolean;
+  /**
+   * Final al volver al mapa con todos los niveles jugados, una vez por perfil (`story/finale.ts`): la
+   * lluvia sobre la montaña hace nacer el río. Abre con una animación los mundos cuya puerta depende de
+   * terminar este (`gate.after`).
+   */
+  finale?: boolean;
   map: WorldMap;
   selector: SelectorButton;
   gate?: WorldGate;

@@ -22,3 +22,14 @@ export function worldAccess(def: WorldDef, state: GameState, age: number | undef
   }
   return 'locked';
 }
+
+/**
+ * Si el mundo `def` se abre para este perfil justo al terminar el mundo `world` (con su final): su
+ * puerta depende de terminar `world`, no está tras un interruptor apagado y la edad no lo había abierto ya.
+ */
+export function opensAfter(def: WorldDef, world: string, age: number | undefined, flags: Flags): boolean {
+  const gate = def.gate;
+  if (!gate?.after || gate.after.world !== world) return false;
+  if (gate.flag && !flags[gate.flag]) return false;
+  return !(gate.openAge !== undefined && age !== undefined && age >= gate.openAge);
+}

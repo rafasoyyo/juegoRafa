@@ -4,13 +4,15 @@ import { COLORS, GAME_H, MAX_W } from '../config';
 import { FLAGS } from '../flags';
 import { skyColorAt, type SkyStop } from '../map/map-sky';
 import { bandAngles, paintedBands, rainbowMemory } from '../map/rainbow-arc';
-import { activeAge, activeProfileId } from '../profile/active';
+import { activeAge, activeProfileId, saveActive } from '../profile/active';
+import { Finale } from '../story/finale';
+import { markSeen, shouldPlayFinale } from '../story/story';
 import { castleStatus, currentLevel, levelStatus, session, type CastleStatus } from '../state';
 import { drawFox, drawLalo } from '../ui/characters';
 import { digits, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
 import { cookieCounter, fixToCamera } from '../ui/widgets';
-import { worldAccess, type WorldAccess } from '../worlds/access';
+import { opensAfter, worldAccess, type WorldAccess } from '../worlds/access';
 import { showWorld, shownWorld, UPCOMING, WORLDS, worldDef } from '../worlds/registry';
 import type { SelectorButton, WorldDef, WorldId } from '../worlds/types';
 
@@ -63,6 +65,13 @@ export class MapScene extends Phaser.Scene {
   private def!: WorldDef;
   /** Gajos que se están animando; mientras haya, un toque acaba la animación. */
   private animating: number[] = [];
+  /** El final del mundo está en marcha (tras los gajos nuevos, si los hay). */
+  private inFinale = false;
+  /** Mundos que se abren al acabar el final: su botón lleva candado hasta entonces. */
+  private unlocking: WorldId[] = [];
+  /** Candado de cada botón del selector que lo lleva. */
+  private selectorLocks = new Map<WorldId, Phaser.GameObjects.GameObject[]>();
+  private selectorButtons = new Map<WorldId, RoundButton>();
   /** Cambia cada vez que se construye el mapa: los pasos pendientes de una animación anterior se descartan. */
   private buildId = 0;
 
@@ -84,11 +93,19 @@ export class MapScene extends Phaser.Scene {
     // Gajos pintados desde la última vez que se vio este mapa con este perfil: se pintan delante del niño.
     const painted = this.def.map.rainbow ? paintedBands(session, this.def) : [];
     this.animating = rainbowMemory.take(`${activeProfileId() ?? '-'}/${this.def.id}`, painted);
+    // Final del mundo: una vez por perfil, marcado ya al empezar para que salir o recargar no lo repita.
+    this.inFinale = shouldPlayFinale(session, this.def);
+    this.unlocking = [];
+    if (this.inFinale) {
+      markSeen(session, 'final', this.def.id);
+      saveActive();
+      this.unlocking = WORLDS.filter((w) => opensAfter(w, this.def.id, activeAge(), FLAGS)).map((w) => w.id);
+    }
     this.build(this.scale.width);
     onResize(this, () => this.rebuild());
 
     this.input.on(Phaser.Input.Events.POINTER_DOWN, (p: Phaser.Input.Pointer) => {
-      if (this.animating.length > 0) {
+      if (this.busy) {
         // Un toque durante la animación la acaba: todo en su sitio, sin abrir nada.
         this.rebuild();
         return;
@@ -128,6 +145,8 @@ export class MapScene extends Phaser.Scene {
   /** Vuelve a montar el mapa en su estado final, sin animación. */
   private rebuild(): void {
     this.animating = [];
+    this.inFinale = false;
+    this.unlocking = [];
     this.tweens.killAll();
     this.time.removeAllEvents();
     this.children.removeAll(true);
@@ -150,6 +169,8 @@ export class MapScene extends Phaser.Scene {
     const worldW = width * map.screens;
     this.maxScroll = worldW - width;
     this.nodeButtons = [];
+    this.selectorLocks.clear();
+    this.selectorButtons.clear();
     this.buildId++;
     this.cameras.main.setBounds(0, 0, worldW, GAME_H);
 
@@ -164,7 +185,7 @@ export class MapScene extends Phaser.Scene {
         const zone = this.add.zone(img.x, img.y - img.displayHeight / 2, Math.max(120, img.displayWidth), Math.max(120, img.displayHeight));
         zone.setInteractive({ useHandCursor: true });
         zone.on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => {
-          if (this.drag?.dragging || this.animating.length > 0) return;
+          if (this.drag?.dragging || this.busy) return;
           audio.sfx('tap');
           goTo(this, 'Level', { world: this.def.id, level: 1, prologue: true });
         });
@@ -211,9 +232,14 @@ export class MapScene extends Phaser.Scene {
     };
     // Se abre con el nivel actual centrado (o lo más centrado posible).
     this.scrollTo(foxStart.x - width / 2);
+    const afterFox = (): void => (this.inFinale ? this.playFinale(fox, foxEnd, width, bob) : this.ready(bob));
+    if (this.busy) for (const b of this.nodeButtons) b.disableInteractive();
     if (arc && fresh.length > 0) {
-      for (const b of this.nodeButtons) b.disableInteractive();
-      this.paintFresh(arc, fresh, () => this.hopFox(fox, foxEnd, width, bob));
+      this.paintFresh(arc, fresh, () => this.hopFox(fox, foxEnd, width, afterFox));
+    } else if (this.inFinale) {
+      // Sin la animación del gajo, se espera a que entre la escena.
+      const id = this.buildId;
+      this.time.delayedCall(500, () => id === this.buildId && this.playFinale(fox, foxEnd, width, bob));
     } else {
       bob();
     }
@@ -352,16 +378,54 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
+  /** Hay una animación en marcha (gajos o final): un toque la acaba y los niveles no se abren. */
+  private get busy(): boolean {
+    return this.animating.length > 0 || this.inFinale;
+  }
+
+  /** Acabadas las animaciones: los niveles vuelven a abrirse y el zorro respira. */
+  private ready(bob: () => void): void {
+    this.animating = [];
+    this.inFinale = false;
+    for (const b of this.nodeButtons) b.setInteractive({ useHandCursor: true });
+    bob();
+  }
+
+  /**
+   * Final del mundo (`story/finale.ts`): Rufo salta de alegría sobre el último nivel, la viñeta de la
+   * lluvia y el manantial y, al acabar, el candado de los mundos que se abren salta.
+   */
+  private playFinale(fox: Phaser.GameObjects.Container, at: Phaser.Math.Vector2, width: number, bob: () => void): void {
+    const id = this.buildId;
+    this.tweens.killTweensOf(fox);
+    fox.setPosition(at.x, at.y);
+    this.scrollTo(at.x - width / 2);
+    audio.sfx('goal');
+    this.tweens.add({ targets: fox, y: at.y - 46, duration: 260, yoyo: true, repeat: 2, repeatDelay: 80, ease: 'Quad.easeOut' });
+    this.time.delayedCall(1300, () => {
+      if (id !== this.buildId) return;
+      new Finale(this, width).play(() => {
+        if (id !== this.buildId) return;
+        const locks = this.unlocking.flatMap((w) => this.selectorLocks.get(w) ?? []);
+        this.unlocking = [];
+        if (locks.length === 0) return this.ready(bob);
+        audio.sfx('prize');
+        for (const [w, btn] of this.selectorButtons) if (locks.some((l) => (this.selectorLocks.get(w) ?? []).includes(l))) this.tweens.add({ targets: btn.face, alpha: 1, duration: 400 });
+        // Al acabar se vuelve a montar el mapa, con esos mundos ya abiertos al tocarlos.
+        this.tweens.add({ targets: locks, scale: 1.8, alpha: 0, angle: 25, duration: 600, ease: 'Back.easeIn', onComplete: () => id === this.buildId && this.rebuild() });
+      });
+    });
+  }
+
   /** Tras pintar los gajos: la cámara vuelve al zorro, que salta al nivel actual; luego, todo listo para jugar. */
-  private hopFox(fox: Phaser.GameObjects.Container, to: Phaser.Math.Vector2, width: number, bob: () => void): void {
+  private hopFox(fox: Phaser.GameObjects.Container, to: Phaser.Math.Vector2, width: number, done: () => void): void {
     const id = this.buildId;
     const cam = this.cameras.main;
     const from = new Phaser.Math.Vector2(fox.x, fox.y);
     const finish = (): void => {
       if (id !== this.buildId) return;
       this.animating = [];
-      for (const b of this.nodeButtons) b.setInteractive({ useHandCursor: true });
-      bob();
+      done();
     };
     this.tweens.add({
       targets: cam,
@@ -568,7 +632,8 @@ export class MapScene extends Phaser.Scene {
 
     // Los mundos del registro, en su orden, y después los huecos de los que aún no existen.
     const worlds: (SelectorButton & { id?: WorldId; active?: boolean; access: WorldAccess })[] = [
-      ...WORLDS.map((w) => ({ ...w.selector, id: w.id, active: w.id === this.def.id, access: this.access(w) })),
+      // Los mundos que abre el final en marcha se ven con candado hasta que acaba.
+      ...WORLDS.map((w) => ({ ...w.selector, id: w.id, active: w.id === this.def.id, access: this.unlocking.includes(w.id) ? ('locked' as const) : this.access(w) })),
       ...UPCOMING.map((b) => ({ ...b, access: 'soon' as const })),
     ];
     worlds.forEach((w, i) => {
@@ -601,7 +666,9 @@ export class MapScene extends Phaser.Scene {
         const lock = this.add.circle(bw / 2 - 18, -bh / 2 + 18, 22, COLORS.white);
         const icon = this.add.image(bw / 2 - 18, -bh / 2 + 17, 'icon-lock').setDisplaySize(28, 28);
         btn.add([lock, icon]);
+        if (w.id) this.selectorLocks.set(w.id, [lock, icon]);
       }
+      if (w.id) this.selectorButtons.set(w.id, btn);
       parts.push(btn);
     });
     return parts;
