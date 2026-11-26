@@ -18,6 +18,13 @@ export const QUIZ_KINDS = [
   'tracks',
   'balance',
   'mirror',
+  // Mundo 2, el río de los números (`docs/MUNDO-2.md`).
+  'fingers',
+  'ten-frame',
+  'memory',
+  'neighbor',
+  'number-line',
+  'biggest',
 ] as const;
 export type QuizKind = (typeof QUIZ_KINDS)[number];
 
@@ -109,7 +116,15 @@ export type SceneData =
   | { kind: 'balance'; mode: 'gap'; left: number; right: number }
   | { kind: 'balance'; mode: 'equiv'; cookies: number; berries: number }
   | { kind: 'mirror'; mode: 'picture'; picture: PictureId }
-  | { kind: 'mirror'; mode: 'grid'; rows: number; cols: number; painted: GridCell[] };
+  | { kind: 'mirror'; mode: 'grid'; rows: number; cols: number; painted: GridCell[] }
+  /** Manos con dedos levantados (uno por mano, de 0 a 5). */
+  | { kind: 'fingers'; hands: number[] }
+  /** Marco de 5 o de 10 con `filled` fichas; se pregunta cuántas hay o cuántas faltan para llenarlo. */
+  | { kind: 'ten-frame'; cells: 5 | 10; filled: number; ask: 'count' | 'missing' }
+  /** Cartas que se ven `showMs` y se dan la vuelta; la de la consigna (`items[0]`) es su pareja. */
+  | { kind: 'memory'; showMs: number }
+  /** Recta de `from` a `to` de `step` en `step`, con algunos números a la vista (`labels`). */
+  | { kind: 'number-line'; from: number; to: number; step: number; labels: number[]; target: number };
 
 export interface Prompt {
   layout: PromptLayout;
@@ -161,7 +176,9 @@ export type HintKind =
   | 'ghost-walk'
   | 'heft'
   | 'swap-fruit'
-  | 'fold';
+  | 'fold'
+  | 'peek'
+  | 'hop';
 
 export interface Question {
   kind: QuizKind;

@@ -9,7 +9,7 @@ import Phaser from 'phaser';
 import { COLORS } from '../../config';
 import { halfPrims, type Prim } from '../../../learning/quiz/pictures';
 import type { Dir, LandmarkId, ObjectId, PictureId, QuizKind, Visual, WeightId } from '../../../learning/quiz/types';
-import { fitImage } from '../round-button';
+import { digits, fitImage } from '../round-button';
 
 type G = Phaser.GameObjects.Graphics;
 type C = Phaser.GameObjects.Container;
@@ -292,6 +292,37 @@ export function drawNewPictogram(scene: Phaser.Scene, kind: QuizKind, size: numb
       parts.push(half, ghost);
       break;
     }
+    case 'fingers':
+      g.fillStyle(0xffc9a0).fillRoundedRect(-r * 0.42, -r * 0.05, r * 0.84, r * 0.6, 14);
+      for (let k = 0; k < 3; k++) g.fillRoundedRect(-r * 0.38 + k * r * 0.27, -r * 0.62, r * 0.2, r * 0.7, 8);
+      g.fillEllipse(r * 0.5, r * 0.15, r * 0.2, r * 0.36);
+      break;
+    case 'ten-frame':
+      g.fillStyle(0x4da3ff).fillRoundedRect(-r * 0.72, -r * 0.34, r * 1.44, r * 0.68, 8);
+      for (let i = 0; i < 10; i++) {
+        const x = -r * 0.58 + (i % 5) * r * 0.29;
+        const y = -r * 0.16 + Math.floor(i / 5) * r * 0.32;
+        g.fillStyle(COLORS.white).fillRect(x - r * 0.11, y - r * 0.11, r * 0.22, r * 0.22);
+        if (i < 7) g.fillStyle(COLORS.coral).fillCircle(x, y, r * 0.08);
+      }
+      break;
+    case 'memory':
+      g.fillStyle(COLORS.purple).fillRoundedRect(-r * 0.66, -r * 0.42, r * 0.6, r * 0.84, 8);
+      g.fillStyle(COLORS.white).fillRoundedRect(r * 0.06, -r * 0.42, r * 0.6, r * 0.84, 8);
+      parts.push(digits(scene, r * 0.36, 0, '3', r * 0.6));
+      break;
+    case 'neighbor':
+      [-0.5, 0, 0.5].forEach((x, i) => g.fillStyle(i === 2 ? COLORS.white : COLORS.purple, i === 2 ? 0.9 : 1).fillRoundedRect(x * r - r * 0.2, -r * 0.2, r * 0.4, r * 0.4, 6));
+      parts.push(digits(scene, r * 0.5, 0, '?', r * 0.4, '#FF6B5E'));
+      break;
+    case 'number-line':
+      g.lineStyle(6, COLORS.ink).lineBetween(-r * 0.75, r * 0.2, r * 0.75, r * 0.2);
+      for (let i = 0; i < 5; i++) g.lineBetween(-r * 0.6 + i * r * 0.3, r * 0.05, -r * 0.6 + i * r * 0.3, r * 0.35);
+      g.fillStyle(COLORS.coral).fillCircle(r * 0.3, -r * 0.25, r * 0.16);
+      break;
+    case 'biggest':
+      parts.push(digits(scene, -r * 0.32, r * 0.08, '3', r * 0.5), digits(scene, r * 0.3, 0, '8', r * 0.85, '#FF6B5E'));
+      break;
     default:
       break;
   }

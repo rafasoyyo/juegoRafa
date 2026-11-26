@@ -78,6 +78,36 @@ export const GUIDE_TEXT: Record<QuizKind, GuideText> = {
     goal: 'Reconocer la simetría.',
     how: 'Si doblamos el dibujo por la mitad, ¿cómo quedaría el otro lado?',
   },
+  fingers: {
+    title: '¿Cuántos dedos?',
+    goal: 'Ver cantidades sin contar: una mano entera son 5.',
+    how: 'Enséñale tus manos. ¿Cuántos dedos hay sin contarlos uno a uno?',
+  },
+  'ten-frame': {
+    title: 'El marco de diez',
+    goal: 'Ver cantidades en el marco de diez y cuánto falta para llenarlo.',
+    how: '¿Cuántas fichas hay? ¿Cuántas casillas quedan vacías?',
+  },
+  memory: {
+    title: 'Parejas',
+    goal: 'Relacionar una cantidad con su número y recordar dónde estaba.',
+    how: '¿Dónde viste ese número? Miradlo juntos antes de que se den la vuelta.',
+  },
+  neighbor: {
+    title: 'El vecino',
+    goal: 'El número anterior y el siguiente.',
+    how: '¿Qué número va justo después? ¿Y justo antes? Contad en voz alta.',
+  },
+  'number-line': {
+    title: '¿Dónde va?',
+    goal: 'Cada número tiene su sitio en la recta numérica.',
+    how: 'Contad desde el principio de la recta. ¿Dónde está este número?',
+  },
+  biggest: {
+    title: 'El número más grande',
+    goal: 'Comparar números sin contar objetos.',
+    how: '¿Cuál es más grande? ¿Cuál viene después al contar?',
+  },
 };
 
 export function guideWordCount(t: GuideText): number {

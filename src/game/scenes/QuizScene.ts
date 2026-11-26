@@ -83,6 +83,13 @@ const AREAS: Record<QuizKind, { prompt: Area; options: Area; cell: [number, numb
   tracks: { prompt: { top: 150, bottom: 690 }, options: { top: 190, bottom: 690 }, cell: [400, 120] },
   balance: { prompt: { top: 150, bottom: 580 }, options: { top: 590, bottom: 705 }, cell: [150, 108] },
   mirror: { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 705 }, cell: [200, 190] },
+  // Río de los números.
+  fingers: { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 700 }, cell: [150, 150] },
+  'ten-frame': { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 700 }, cell: [150, 150] },
+  memory: { prompt: { top: 150, bottom: 440 }, options: { top: 470, bottom: 700 }, cell: [130, 156] },
+  neighbor: { prompt: { top: 170, bottom: 420 }, options: { top: 470, bottom: 690 }, cell: [160, 160] },
+  'number-line': { prompt: { top: 150, bottom: 560 }, options: { top: 560, bottom: 700 }, cell: [96, 150] },
+  biggest: { prompt: { top: 130, bottom: 260 }, options: { top: 300, bottom: 690 }, cell: [200, 200] },
 };
 
 interface OptionView {

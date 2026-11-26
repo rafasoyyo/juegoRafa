@@ -37,9 +37,21 @@ export const COURSE: CourseRules = {
   durationLimits,
 };
 
-/** Provisional: las pruebas del río llegan en el paso 7. */
-function quizFor(): QuizKind {
-  return 'count';
+/**
+ * Prueba de la bandera de cada nivel del río (`docs/MUNDO-2.md`, «Los 12 tramos del río»). Los niveles 7 a
+ * 12 tienen la de contar mientras llegan las suyas.
+ */
+export const QUIZ_BY_LEVEL: Readonly<Record<number, QuizKind>> = {
+  1: 'fingers',
+  2: 'ten-frame',
+  3: 'memory',
+  4: 'neighbor',
+  5: 'number-line',
+  6: 'biggest',
+};
+
+function quizFor(level: number): QuizKind {
+  return QUIZ_BY_LEVEL[level] ?? 'count';
 }
 
 /**
