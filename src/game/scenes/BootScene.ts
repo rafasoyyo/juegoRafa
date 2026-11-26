@@ -143,7 +143,7 @@ export class BootScene extends Phaser.Scene {
 
   /**
    * Decoración del fondo de los ambientes, propia y dibujada por código (ver LICENSES.md):
-   * árbol verde, árbol de otoño, mata de flores, sol bajo, luna y estrella.
+   * árbol verde, árbol de otoño, mata de flores, sol bajo, luna, estrella y la madriguera del mapa.
    */
   private makeDecor(): void {
     const g = this.make.graphics({}, false);
@@ -208,6 +208,20 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xfff4d6).fillPoints(pts, true);
     g.fillCircle(14, 14, 5);
     g.generateTexture('decor-star', 28, 28);
+
+    // Madriguera de Rufo en la colina: loma verde con la boca redonda y oscura, una piedra y unas
+    // matas (mapa del arcoíris).
+    g.clear();
+    g.fillStyle(0x5cc46b).fillEllipse(110, 118, 220, 150);
+    g.fillStyle(0x6fd07c).fillEllipse(84, 96, 120, 70);
+    g.fillStyle(0xc98a58).fillEllipse(118, 128, 96, 78);
+    g.fillStyle(0x6b4a3a).fillEllipse(118, 136, 70, 60);
+    g.fillStyle(0x5cc46b).fillRect(0, 150, 220, 40);
+    g.fillStyle(0xa58a74).fillEllipse(176, 148, 34, 22);
+    g.fillStyle(0x3fa652).fillCircle(40, 140, 16).fillCircle(56, 134, 12);
+    g.fillStyle(0xff9ec4).fillCircle(46, 128, 5);
+    g.fillStyle(0xffd23f).fillCircle(186, 108, 5);
+    g.generateTexture('decor-burrow', 220, 170);
     g.destroy();
   }
 

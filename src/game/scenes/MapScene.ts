@@ -2,7 +2,9 @@ import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
 import { FLAGS } from '../flags';
-import { activeAge } from '../profile/active';
+import { skyColorAt, type SkyStop } from '../map/map-sky';
+import { bandAngles, paintedBands, rainbowMemory } from '../map/rainbow-arc';
+import { activeAge, activeProfileId } from '../profile/active';
 import { castleStatus, currentLevel, levelStatus, session, type CastleStatus } from '../state';
 import { drawFox, drawLalo } from '../ui/characters';
 import { digits, RoundButton } from '../ui/round-button';
@@ -22,6 +24,26 @@ const ARROW_STEP = 0.7;
 const ARROW_MS = 450;
 const HUD_DEPTH = 100;
 
+/** Las 6 bandas del arcoíris, de fuera adentro (las mismas que `decor-rainbow`). */
+const BAND_COLORS = [0xff9b93, 0xffc27a, 0xffe58a, 0x9fdc8f, 0x8fc7f2, 0xb9a6ee];
+/** Tamaño de la textura del paisaje a lo ancho: se estira al camino entero. */
+const SKY_TEX_W = 256;
+const SKY_TEX_H = 72;
+/** Animación del gajo nuevo: viaje de la cámara, cada banda, pausas y salto del zorro (ms). */
+const PAN_MS = 650;
+const BAND_MS = 150;
+const BAND_GAP_MS = 220;
+const HOLD_MS = 350;
+const HOP_MS = 520;
+
+/** Geometría del arco del mapa en px lógicos. */
+interface Arc {
+  x: number;
+  y: number;
+  radius: number;
+  band: number;
+}
+
 interface MapData {
   /** Mundo que se muestra; sin dato, el último abierto en esta sesión. */
   world?: WorldId;
@@ -39,6 +61,10 @@ export class MapScene extends Phaser.Scene {
   private maxScroll = 0;
   private drag?: { startX: number; startScroll: number; dragging: boolean };
   private def!: WorldDef;
+  /** Gajos que se están animando; mientras haya, un toque acaba la animación. */
+  private animating: number[] = [];
+  /** Cambia cada vez que se construye el mapa: los pasos pendientes de una animación anterior se descartan. */
+  private buildId = 0;
 
   constructor() {
     super('Map');
@@ -55,14 +81,18 @@ export class MapScene extends Phaser.Scene {
     enter(this);
     audio.playMusic('map');
     this.drag = undefined;
+    // Gajos pintados desde la última vez que se vio este mapa con este perfil: se pintan delante del niño.
+    const painted = this.def.map.rainbow ? paintedBands(session, this.def) : [];
+    this.animating = rainbowMemory.take(`${activeProfileId() ?? '-'}/${this.def.id}`, painted);
     this.build(this.scale.width);
-    onResize(this, (w) => {
-      this.tweens.killAll();
-      this.children.removeAll(true);
-      this.build(w);
-    });
+    onResize(this, () => this.rebuild());
 
     this.input.on(Phaser.Input.Events.POINTER_DOWN, (p: Phaser.Input.Pointer) => {
+      if (this.animating.length > 0) {
+        // Un toque durante la animación la acaba: todo en su sitio, sin abrir nada.
+        this.rebuild();
+        return;
+      }
       this.drag = {
         startX: p.x,
         startScroll: this.cameras.main.scrollX,
@@ -95,6 +125,15 @@ export class MapScene extends Phaser.Scene {
     this.arrows.right.setVisible(x < this.maxScroll - 2);
   }
 
+  /** Vuelve a montar el mapa en su estado final, sin animación. */
+  private rebuild(): void {
+    this.animating = [];
+    this.tweens.killAll();
+    this.time.removeAllEvents();
+    this.children.removeAll(true);
+    this.build(this.scale.width);
+  }
+
   private access(def: WorldDef): WorldAccess {
     return worldAccess(def, session, activeAge(), FLAGS);
   }
@@ -111,15 +150,25 @@ export class MapScene extends Phaser.Scene {
     const worldW = width * map.screens;
     this.maxScroll = worldW - width;
     this.nodeButtons = [];
+    this.buildId++;
     this.cameras.main.setBounds(0, 0, worldW, GAME_H);
 
-    this.add.image(0, 0, map.sky).setOrigin(0, 0).setDisplaySize(MAX_W, GAME_H).setScrollFactor(0);
+    if (map.skyline) this.add.image(0, 0, this.skylineTexture(map.skyline, map.screens)).setOrigin(0, 0).setDisplaySize(worldW, GAME_H);
+    else this.add.image(0, 0, map.sky).setOrigin(0, 0).setDisplaySize(MAX_W, GAME_H).setScrollFactor(0);
     for (const d of map.decor) {
       const p = at(d.at);
       const img = this.add.image(p.x, p.y, d.key).setOrigin(0.5, 1);
       if (d.size > 0) img.setScale(d.size / Math.max(img.width, img.height));
     }
     for (const c of map.clouds) this.add.image(width * c.x, c.y, 'cloud').setScale(c.scale);
+    const arc: Arc | undefined = map.rainbow && {
+      x: map.rainbow.center[0] * sx,
+      y: map.rainbow.center[1] * sy,
+      radius: map.rainbow.radius * sy,
+      band: map.rainbow.band * sy,
+    };
+    const fresh = this.animating;
+    if (arc) this.drawArc(arc, paintedBands(session, this.def).filter((l) => !fresh.includes(l)));
     if (map.river) {
       const { from, to, offset } = map.river;
       const stops = map.nodes.slice(0, this.def.levelCount + (this.def.castle ? 1 : 0)).map(([x, y]) => [x, y + offset] as const);
@@ -141,17 +190,23 @@ export class MapScene extends Phaser.Scene {
     const onCastle = castleNode !== undefined && level === null && castle !== 'locked';
     const foxAt = at(onCastle ? castleNode : nodes[current - 1]!);
     const nodeR = onCastle ? 60 : levelStatus(session, this.def, current) === 'current' ? 56 : 48;
-    const fox = drawFox(this, foxAt.x, foxAt.y - nodeR + 6, 'idle', session.hat, 104);
-    this.tweens.add({
-      targets: fox,
-      y: fox.y - 8,
-      duration: 650,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
-    });
+    const foxEnd = new Phaser.Math.Vector2(foxAt.x, foxAt.y - nodeR + 6);
+    // Con gajos nuevos, el zorro empieza en el último nivel terminado y salta al actual al acabar.
+    const lastFresh = fresh[fresh.length - 1];
+    const fromNode = lastFresh !== undefined && arc ? nodes[lastFresh - 1] : undefined;
+    const foxStart = fromNode ? at(fromNode).add(new Phaser.Math.Vector2(0, -48 + 6)) : foxEnd;
+    const fox = drawFox(this, foxStart.x, foxStart.y, 'idle', session.hat, 104);
+    const bob = (): void => {
+      this.tweens.add({ targets: fox, y: foxEnd.y - 8, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    };
     // Se abre con el nivel actual centrado (o lo más centrado posible).
-    this.scrollTo(foxAt.x - width / 2);
+    this.scrollTo(foxStart.x - width / 2);
+    if (arc && fresh.length > 0) {
+      for (const b of this.nodeButtons) b.disableInteractive();
+      this.paintFresh(arc, fresh, () => this.hopFox(fox, foxEnd, width, bob));
+    } else {
+      bob();
+    }
 
     // Barra superior: galletas, Lalo y acceso a mi personaje (fijos a la cámara).
     const hud: Phaser.GameObjects.GameObject[] = [];
@@ -171,6 +226,157 @@ export class MapScene extends Phaser.Scene {
     hud.push(...this.buildWorldSelector(width));
     hud.push(...this.buildArrows(width));
     for (const obj of hud) fixToCamera((obj as Phaser.GameObjects.Container).setDepth(HUD_DEPTH));
+  }
+
+  /**
+   * Paisaje a lo ancho (`WorldMap.skyline`): una textura pequeña por mundo, pintada punto a punto, que se
+   * estira a todo el camino.
+   */
+  private skylineTexture(skyline: readonly SkyStop[], screens: number): string {
+    const key = `map-sky-${this.def.id}`;
+    if (this.textures.exists(key)) return key;
+    const tex = this.textures.createCanvas(key, SKY_TEX_W, SKY_TEX_H);
+    if (!tex) return this.def.map.sky;
+    const ctx = tex.context;
+    const img = ctx.createImageData(SKY_TEX_W, SKY_TEX_H);
+    const artW = DESIGN_W * screens;
+    for (let j = 0; j < SKY_TEX_H; j++) {
+      for (let i = 0; i < SKY_TEX_W; i++) {
+        const [r, g, b] = skyColorAt(skyline, ((i + 0.5) / SKY_TEX_W) * artW, (j + 0.5) / SKY_TEX_H);
+        const k = (j * SKY_TEX_W + i) * 4;
+        img.data[k] = r;
+        img.data[k + 1] = g;
+        img.data[k + 2] = b;
+        img.data[k + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    tex.refresh();
+    return key;
+  }
+
+  /** Arco de gajos: los de `painted` con sus 6 bandas y el resto como una silueta clara, con dos nubes al pie. */
+  private drawArc(arc: Arc, painted: readonly number[]): void {
+    const count = this.def.levelCount;
+    const g = this.add.graphics();
+    const thick = arc.band * BAND_COLORS.length;
+    for (let level = 1; level <= count; level++) {
+      const { start, end } = bandAngles(level, count);
+      if (painted.includes(level)) {
+        for (let k = 0; k < BAND_COLORS.length; k++) this.strokeBand(g, arc, k, start, end);
+      } else {
+        g.lineStyle(thick, COLORS.white, 0.5).beginPath();
+        g.arc(arc.x, arc.y, arc.radius - thick / 2, start, end, false);
+        g.strokePath();
+      }
+    }
+    const mid = arc.radius - thick / 2;
+    for (const dir of [-1, 1]) {
+      const cloud = this.add.image(arc.x + dir * mid, arc.y + arc.band, 'cloud');
+      cloud.setScale((thick * 2.1) / cloud.width);
+    }
+  }
+
+  /** Banda `k` (0 la de fuera) de un gajo, entre los ángulos `start` y `end`. */
+  private strokeBand(g: Phaser.GameObjects.Graphics, arc: Arc, k: number, start: number, end: number): void {
+    g.lineStyle(arc.band + 0.5, BAND_COLORS[k]!).beginPath();
+    g.arc(arc.x, arc.y, arc.radius - arc.band * (k + 0.5), start, end, false);
+    g.strokePath();
+  }
+
+  /**
+   * Pinta los gajos nuevos delante del niño: la cámara va al arco, cada gajo se colorea banda a banda,
+   * de fuera adentro, con una nota y destellos, y al final llama a `done`. El final del mundo (paso 4 de
+   * `docs/MUNDO-1.md`) puede encadenar aquí lo que pase con el último gajo.
+   */
+  private paintFresh(arc: Arc, fresh: readonly number[], done: () => void): void {
+    const id = this.buildId;
+    const cam = this.cameras.main;
+    const g = this.add.graphics();
+    const count = this.def.levelCount;
+    const later = (ms: number, fn: () => void): void => {
+      this.time.delayedCall(ms, () => {
+        if (id === this.buildId) fn();
+      });
+    };
+    this.tweens.add({
+      targets: cam,
+      scrollX: Phaser.Math.Clamp(arc.x - this.scale.width / 2, 0, this.maxScroll),
+      duration: PAN_MS,
+      ease: 'Sine.easeInOut',
+    });
+    let t = PAN_MS + 150;
+    for (const level of fresh) {
+      const { start, end } = bandAngles(level, count);
+      for (let k = 0; k < BAND_COLORS.length; k++) {
+        later(t, () => {
+          this.strokeBand(g, arc, k, start, end);
+          audio.sfx('band', { index: k });
+          const a = (start + end) / 2;
+          const r = arc.radius - arc.band * (k + 0.5);
+          this.sparkle(arc.x + Math.cos(a) * r, arc.y + Math.sin(a) * r, BAND_COLORS[k]!);
+        });
+        t += BAND_MS;
+      }
+      t += BAND_GAP_MS;
+    }
+    later(t + HOLD_MS, done);
+  }
+
+  /** Destello que crece, gira y se desvanece. */
+  private sparkle(x: number, y: number, tint: number): void {
+    for (let i = 0; i < 2; i++) {
+      const s = this.add.image(x, y, 'sparkle').setTint(i === 0 ? tint : COLORS.white).setScale(0.6);
+      const a = Math.random() * Math.PI * 2;
+      this.tweens.add({
+        targets: s,
+        x: x + Math.cos(a) * 34,
+        y: y + Math.sin(a) * 34,
+        scale: 1.6,
+        angle: 90,
+        alpha: 0,
+        duration: 520,
+        ease: 'Quad.easeOut',
+        onComplete: () => s.destroy(),
+      });
+    }
+  }
+
+  /** Tras pintar los gajos: la cámara vuelve al zorro, que salta al nivel actual; luego, todo listo para jugar. */
+  private hopFox(fox: Phaser.GameObjects.Container, to: Phaser.Math.Vector2, width: number, bob: () => void): void {
+    const id = this.buildId;
+    const cam = this.cameras.main;
+    const from = new Phaser.Math.Vector2(fox.x, fox.y);
+    const finish = (): void => {
+      if (id !== this.buildId) return;
+      this.animating = [];
+      for (const b of this.nodeButtons) b.setInteractive({ useHandCursor: true });
+      bob();
+    };
+    this.tweens.add({
+      targets: cam,
+      scrollX: Phaser.Math.Clamp((from.x + to.x) / 2 - width / 2, 0, this.maxScroll),
+      duration: PAN_MS,
+      ease: 'Sine.easeInOut',
+      onComplete: () => {
+        if (id !== this.buildId) return;
+        if (from.distance(to) < 1) return finish();
+        audio.sfx('jump');
+        const hop = { t: 0 };
+        const height = 90 + Math.abs(to.x - from.x) * 0.15;
+        this.tweens.add({
+          targets: hop,
+          t: 1,
+          duration: HOP_MS,
+          ease: 'Sine.easeInOut',
+          onUpdate: () => {
+            fox.x = from.x + (to.x - from.x) * hop.t;
+            fox.y = from.y + (to.y - from.y) * hop.t - Math.sin(hop.t * Math.PI) * height;
+          },
+          onComplete: finish,
+        });
+      },
+    });
   }
 
   /** Flechas grandes a los lados: solo se ven si queda camino por ese lado. */

@@ -55,9 +55,13 @@ export type SfxName =
   | 'gate'
   | 'tick'
   | 'scale'
-  | 'horn';
+  | 'horn'
+  | 'band';
 export interface SfxOptions {
-  /** Para `star`: 0, 1 o 2; cada una más aguda. Para `tick`: el número que se cuenta (1, 2…), cada uno más agudo. */
+  /**
+   * Para `star`: 0, 1 o 2; cada una más aguda. Para `tick`: el número que se cuenta (1, 2…), cada uno más agudo.
+   * Para `band`: la banda del gajo del arcoíris, de 0 (fuera) a 5 (dentro), cada una más aguda.
+   */
   index?: number;
 }
 
@@ -74,6 +78,8 @@ const tone = (start: number, dur: number, wave: Wave, freq: ToneLayer['freq'], g
 });
 
 const STAR_NOTES = ['C6', 'E6', 'G6'];
+/** Notas de las 6 bandas de un gajo del arcoíris del mapa, de fuera adentro: una escala que sube. */
+export const BAND_NOTES = ['C5', 'D5', 'E5', 'G5', 'A5', 'C6'];
 
 /** Jingle de victoria a partir de la partitura `victory`. */
 function victoryRecipe(): Recipe {
@@ -176,6 +182,12 @@ export function recipe(name: SfxName, opts: SfxOptions = {}): Recipe {
       return {
         layers: ['C5', 'D5', 'E5', 'F5', 'G5', 'A5', 'B5', 'C6'].map((n, i) => tone(i * 0.07, i === 7 ? 0.4 : 0.14, 'triangle', hz(n), 0.24, 0.006)),
       };
+    case 'band': {
+      // Banda del gajo del arcoíris: campana corta y clara, más aguda de fuera adentro.
+      const i = Math.max(0, Math.min(BAND_NOTES.length - 1, Math.round(opts.index ?? 0)));
+      const f = hz(BAND_NOTES[i]!);
+      return { layers: [tone(0, 0.32, 'sine', f, 0.26, 0.005), tone(0, 0.2, 'triangle', f * 2, 0.08, 0.005)] };
+    }
     case 'horn':
       // Bocina de la barca: dos toques graves y redondos (una quinta), el segundo más largo.
       return {
@@ -230,4 +242,5 @@ export const SFX_NAMES: readonly SfxName[] = [
   'tick',
   'scale',
   'horn',
+  'band',
 ];

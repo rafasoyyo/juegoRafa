@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { QUIZ_KINDS } from '../../learning/quiz';
 import { courseFor, enemyCount, freeStretches } from '../enemies/enemy-layout';
 import { AMBIENTS } from '../levels/ambients';
+import { ARCOIRIS } from './arcoiris';
 import { estimateDuration } from '../levels/duration';
 import { toWorld } from '../levels/parse';
 import { validateLevel } from '../levels/validate';
@@ -117,5 +118,44 @@ describe('registro de mundos', () => {
     expect(clampLevel(w, 0)).toBe(1);
     expect(clampLevel(w, w.levelCount + 5)).toBe(w.levelCount);
     expect(levelData(w, 99)).toBe(w.levels[w.levelCount - 1]);
+  });
+});
+
+describe('mapa del arcoíris', () => {
+  const map = ARCOIRIS.map;
+
+  it('tiene arco y paisaje con paradas ordenadas, dentro del camino y de ambientes que existen', () => {
+    expect(map.rainbow).toBeDefined();
+    const skyline = map.skyline ?? [];
+    expect(skyline.length).toBeGreaterThan(1);
+    for (let i = 1; i < skyline.length; i++) expect(skyline[i]!.x).toBeGreaterThan(skyline[i - 1]!.x);
+    for (const stop of skyline) {
+      expect(AMBIENTS[stop.ambient]).toBeDefined();
+      expect(stop.x).toBeLessThanOrEqual(1180 * map.screens);
+    }
+  });
+
+  it('el cielo sigue el viaje: noche sobre el 6, playa sobre el 7 y nubes sobre el 12', () => {
+    const skyline = map.skyline ?? [];
+    const at = (level: number): string | undefined => {
+      const x = map.nodes[level - 1]![0];
+      return [...skyline].reverse().find((s) => s.x <= x)?.ambient;
+    };
+    expect(at(6)).toBe('noche');
+    expect(at(7)).toBe('playa');
+    expect(at(12)).toBe('nubes');
+  });
+
+  it('el arco queda por encima de los nodos, sin que ninguno lo tape', () => {
+    const { center, radius } = map.rainbow!;
+    // Los pies del arco están a la altura de su centro; los nodos (radio de 64 px del artboard) más abajo.
+    for (const [, y] of map.nodes.slice(0, ARCOIRIS.levelCount)) expect(y - 64).toBeGreaterThan(center[1] - radius);
+    for (const [x, y] of map.nodes.slice(7, ARCOIRIS.levelCount)) {
+      if (Math.abs(x - center[0]) < radius) expect(y - 64).toBeGreaterThanOrEqual(center[1]);
+    }
+  });
+
+  it('los demás mundos no tienen arco', () => {
+    for (const w of WORLDS.filter((w) => w.id !== ARCOIRIS.id)) expect(w.map.rainbow).toBeUndefined();
   });
 });
