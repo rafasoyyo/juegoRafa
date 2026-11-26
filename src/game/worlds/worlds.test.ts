@@ -92,6 +92,11 @@ describe('registro de mundos', () => {
     ]);
   });
 
+  it('pruebas de la bandera del río: niveles 1 a 6 con las suyas, distintas entre sí', () => {
+    const rio = worldDef('rio');
+    expect([1, 2, 3, 4, 5, 6].map((n) => rio.quizFor(n))).toEqual(['fingers', 'ten-frame', 'memory', 'neighbor', 'number-line', 'biggest']);
+  });
+
   it('un mundo desconocido o sin dato da el primero', () => {
     expect(worldDef(undefined)).toBe(WORLDS[0]);
     expect(worldDef('no-existe')).toBe(WORLDS[0]);

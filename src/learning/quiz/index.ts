@@ -1,17 +1,23 @@
 /** La prueba de la bandera: genera las tres preguntas del tipo y la franja de edad que tocan. */
 
 import { balanceQuiz } from './balance';
+import { biggestQuiz } from './biggest';
 import { cableCarQuiz } from './cable-car';
 import { compareQuiz } from './compare';
 import { countQuiz } from './count';
+import { fingersQuiz } from './fingers';
+import { memoryQuiz } from './memory';
 import { mirrorQuiz } from './mirror';
 import { nameLettersQuiz } from './name-letters';
+import { neighborQuiz } from './neighbor';
+import { numberLineQuiz } from './number-line';
 import { orderQuiz } from './order';
 import { recallQuiz } from './recall';
 import type { Rng } from './rng';
 import { seriesQuiz } from './series';
 import { shapesQuiz } from './shapes';
 import { shareQuiz } from './share';
+import { tenFrameQuiz } from './ten-frame';
 import { tracksQuiz } from './tracks';
 import type { AgeBand, Question, QuizContext, QuizKind } from './types';
 
@@ -41,6 +47,18 @@ export function generateQuiz(kind: QuizKind, band: AgeBand, rng: Rng, ctx: QuizC
       return balanceQuiz(band, rng);
     case 'mirror':
       return mirrorQuiz(band, rng);
+    case 'fingers':
+      return fingersQuiz(band, rng);
+    case 'ten-frame':
+      return tenFrameQuiz(band, rng);
+    case 'memory':
+      return memoryQuiz(band, rng);
+    case 'neighbor':
+      return neighborQuiz(band, rng);
+    case 'number-line':
+      return numberLineQuiz(band, rng);
+    case 'biggest':
+      return biggestQuiz(band, rng);
   }
 }
 
