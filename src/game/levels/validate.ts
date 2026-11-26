@@ -53,16 +53,6 @@ export const RULES = {
 
 export type Rules = typeof RULES;
 
-/** Bloques «?» del nivel `level` (se comprueban en `catalog.test.ts`): 12–20 en los niveles 1 a 6 y 20–25 en los 7 a 12. */
-export function blockLimits(level: number): { min: number; max: number } {
-  return level <= 6 ? { min: 12, max: 20 } : { min: 20, max: 25 };
-}
-
-/** Zonas de pinchos de los niveles 1 a 12 (los 1 a 6 no tienen). */
-export const SPIKES_PER_LEVEL: readonly number[] = [0, 0, 0, 0, 0, 0, 2, 3, 3, 4, 5, 6];
-/** Hasta este nivel las zonas miden solo 1 baldosa. */
-export const NARROW_SPIKES_UNTIL = 8;
-
 interface Span {
   name: string;
   from: number;

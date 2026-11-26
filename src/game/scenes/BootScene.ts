@@ -68,6 +68,7 @@ export class BootScene extends Phaser.Scene {
     svg('icon-cape', 'icon-cape', 60);
     svg('icon-colors', 'icon-colors', 60);
     svg('icon-shapes', 'icon-shapes', 96, 48);
+    svg('icon-ten-frame', 'icon-ten-frame', 112, 48);
   }
 
   create(): void {

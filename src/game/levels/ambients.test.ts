@@ -3,7 +3,9 @@ import { COLORS } from '../config';
 import { AMBIENTS, INK, pitWall, PIT_WALL_MIX } from './ambients';
 import { RAINBOW_ALPHA } from './horizon-rainbow';
 import { STEEL } from './spikes';
-import { LEVELS } from './catalog';
+import { ARCOIRIS } from '../worlds/arcoiris';
+
+const LEVELS = ARCOIRIS.levels;
 import { AMBIENT_IDS } from './types';
 
 const hex = (css: string): number => parseInt(css.slice(1), 16);

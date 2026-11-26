@@ -6,7 +6,6 @@ import { overlaps } from '../enemies/enemy-motion';
 import { createEnemyView, type EnemyView } from '../enemies/enemy-views';
 import { BLOCK_SIZE, GROUND_TOP, JUMP_SPEED, KNOCK_VY, MAX_VELOCITY, SCALE } from '../level-course';
 import { AMBIENTS, type Ambient } from '../levels/ambients';
-import { levelData } from '../levels/catalog';
 import { toWorld } from '../levels/parse';
 import {
   CONES_PER_TILE,
@@ -24,7 +23,9 @@ import {
 } from '../levels/spikes';
 import { RUN_SPEED, TILE, type WorldLevel } from '../levels/types';
 import { FRUIT_SIZE, FRUIT_VX, FRUIT_VY, loseCookie, pickFruitBlock, powerPhase, type PowerPhase } from '../power/power';
-import { LEVEL_COUNT, session } from '../state';
+import { session } from '../state';
+import { clampLevel, levelData, showWorld, worldDef } from '../worlds/registry';
+import type { WorldDef, WorldId } from '../worlds/types';
 import type { QuizData } from './QuizScene';
 import { drawLalo, FOX_UNITS, makeHat, placeHat, type FoxPose } from '../ui/characters';
 import { RoundButton } from '../ui/round-button';
@@ -101,15 +102,19 @@ const GLOW_LEG_LIGHTEN = 0.45;
 const PLATFORM_BODY = 40;
 
 interface LevelData {
+  /** Mundo del nivel; sin dato, el primero. */
+  world?: WorldId;
   level?: number;
 }
 
 /**
  * Nivel de plataformas: mover, saltar, golpear bloques «?» desde abajo y llegar a la bandera.
- * Cada nivel se construye con su recorrido (`content/levels/`) y su ambiente. Todavía sin retos
+ * Cada nivel se construye con el recorrido de su mundo (`content/levels/<mundo>/`) y su ambiente. Todavía sin retos
  * educativos (fase 2).
  */
 export class LevelScene extends Phaser.Scene {
+  /** Mundo al que pertenece el nivel: sus enemigos, su escenario y su número de niveles. */
+  private def!: WorldDef;
   private level = 1;
   private world!: WorldLevel;
   private ambient!: Ambient;
@@ -170,8 +175,10 @@ export class LevelScene extends Phaser.Scene {
   }
 
   init(data: LevelData): void {
-    this.level = Phaser.Math.Clamp(data?.level ?? 1, 1, LEVEL_COUNT);
-    this.world = toWorld(levelData(this.level));
+    this.def = worldDef(data?.world);
+    showWorld(this.def.id);
+    this.level = clampLevel(this.def, data?.level);
+    this.world = toWorld(levelData(this.def, this.level));
     this.ambient = AMBIENTS[this.world.ambient];
     this.cookies = 0;
     this.blocksHit = 0;
@@ -214,7 +221,8 @@ export class LevelScene extends Phaser.Scene {
 
     const spans = groundSpans(worldW, this.world.spikes);
     const pits = this.world.spikes.map((z) => ({ from: z.x, to: z.x + z.width }));
-    addScenery(this, this.ambient, worldW, GROUND_TOP, this.level, this.scale.width, { spans, pits });
+    const horizon = this.def.horizonRainbow ? { level: this.level, lastLevel: this.def.levelCount } : null;
+    addScenery(this, this.ambient, worldW, GROUND_TOP, horizon, this.scale.width, { spans, pits });
     // Suelo por tramos entre los fosos y, en cada foso, un fondo a la altura de las puntas.
     const ground = spans.map((span) => this.staticZone(span.from, GROUND_TOP, span.to - span.from, 100));
     const pitFloors = pits.map((pit) => this.staticZone(pit.from, GROUND_TOP + PIT_TIP, pit.to - pit.from, 100 - PIT_TIP));
@@ -362,7 +370,7 @@ export class LevelScene extends Phaser.Scene {
 
   /** Enemigos al azar en zonas seguras (suelo llano); cambian cada vez que se entra en el nivel. */
   private buildEnemies(): void {
-    const spawns = layoutEnemies(this.level, courseFor(this.world));
+    const spawns = layoutEnemies(this.def.enemies, this.level, courseFor(this.world));
     this.enemyCounts = { hedgehog: 0, bee: 0 };
     for (const spawn of spawns) this.enemyCounts[spawn.kind] += 1;
     this.enemies = spawns.map((spawn) => createEnemyView(this, spawn, GROUND_TOP));
@@ -795,6 +803,7 @@ export class LevelScene extends Phaser.Scene {
     this.updateProgress(1);
     this.time.delayedCall(CELEBRATE_MS, () =>
       goTo(this, 'Quiz', {
+        world: this.def.id,
         level: this.level,
         ambient: this.world.ambient,
         hedgehogs: this.enemyCounts.hedgehog,
@@ -814,7 +823,7 @@ export class LevelScene extends Phaser.Scene {
       icon: 'icon-home',
       iconSize: 48,
       onTap: () => {
-        if (!this.finished) goTo(this, 'Map');
+        if (!this.finished) goTo(this, 'Map', { world: this.def.id });
       },
     });
 

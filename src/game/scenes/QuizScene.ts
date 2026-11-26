@@ -1,10 +1,9 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
 import { COLORS } from '../config';
-import { AMBIENT_IDS, type AmbientId } from '../levels/types';
+import type { AmbientId } from '../levels/types';
 import { skyKey } from '../levels/ambients';
 import { activeAge, activeAlias } from '../profile/active';
-import { LEVEL_COUNT } from '../state';
 import { drawLalo } from '../ui/characters';
 import { LaloBubble } from '../ui/lalo-bubble';
 import {
@@ -24,6 +23,8 @@ import { VIEW_KINDS, type DrawResult, type QuizView, type ViewState } from '../u
 import { digits, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
 import { addSky } from '../ui/widgets';
+import { clampLevel, worldDef } from '../worlds/registry';
+import type { WorldDef, WorldId } from '../worlds/types';
 import {
   ageBand,
   createRng,
@@ -36,7 +37,6 @@ import {
   type HintKind,
   isFinished,
   marks,
-  quizForLevel,
   result,
   tap,
   usedOptions,
@@ -50,8 +50,8 @@ import {
 } from '../../learning/quiz';
 import type { LevelCompleteData } from './LevelCompleteScene';
 
-/** Datos con los que se abre la prueba: lo que pasó en el nivel. */
-export type QuizData = Partial<LevelRecap>;
+/** Datos con los que se abre la prueba: el mundo del nivel y lo que pasó en él. */
+export type QuizData = Partial<LevelRecap> & { world?: WorldId };
 
 /** Ancho útil como mucho: en pantallas muy alargadas la prueba se centra. */
 const MAX_USEFUL_W = 1200;
@@ -97,6 +97,7 @@ interface OptionView {
  * dibuja y se anima.
  */
 export class QuizScene extends Phaser.Scene {
+  private def!: WorldDef;
   private recap!: LevelRecap;
   private kind: QuizKind = 'count';
   private run!: QuizRun;
@@ -136,7 +137,8 @@ export class QuizScene extends Phaser.Scene {
   }
 
   init(data: QuizData): void {
-    const level = Phaser.Math.Clamp(data?.level ?? 1, 1, LEVEL_COUNT);
+    this.def = worldDef(data?.world);
+    const level = clampLevel(this.def, data?.level);
     this.recap = {
       level,
       ambient: data?.ambient ?? 'prado',
@@ -146,12 +148,13 @@ export class QuizScene extends Phaser.Scene {
       blocksHit: data?.blocksHit ?? 0,
       blocksTotal: data?.blocksTotal ?? 0,
     };
-    this.kind = quizForLevel(level);
+    this.kind = this.def.quizFor(level);
     this.seed = (Date.now() ^ (level * 7919)) >>> 0;
     const questions = generateQuiz(this.kind, ageBand(activeAge()), createRng(this.seed), {
       alias: activeAlias(),
       recap: this.recap,
-      ambients: AMBIENT_IDS,
+      // «¿Te acuerdas?» pregunta por los paisajes de este mundo.
+      ambients: [...new Set(this.def.levels.map((l) => l.ambient))],
     });
     this.run = createRun(questions);
     this.busy = false;
@@ -660,6 +663,7 @@ export class QuizScene extends Phaser.Scene {
     const { passed } = result(this.run);
     this.time.delayedCall(END_MS, () => {
       const data: LevelCompleteData = {
+        world: this.def.id,
         level: this.recap.level,
         blocksHit: this.recap.blocksHit,
         blocksTotal: this.recap.blocksTotal,

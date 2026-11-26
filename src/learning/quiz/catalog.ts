@@ -1,6 +1,6 @@
 import type { QuizKind } from './types';
 
-/** Tipo de prueba de cada nivel del mundo de los números (siempre el mismo). */
+/** Tipo de prueba de cada nivel del mundo 1, el camino del arcoíris (siempre el mismo). Cada mundo elige la suya en su `WorldDef.quizFor`. */
 export const QUIZ_BY_LEVEL: Readonly<Record<number, QuizKind>> = {
   1: 'count',
   2: 'compare',

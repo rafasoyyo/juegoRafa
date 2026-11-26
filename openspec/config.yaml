@@ -34,7 +34,7 @@ context: |
   ## Estructura
 
   `src/game/` (Phaser: scenes, ui, audio, enemies, levels, power, profile, state) ·
-  `src/learning/` (pruebas de la bandera en `quiz/`, puntuación) · `content/levels/` (12 niveles en JSON) ·
+  `src/learning/` (pruebas de la bandera en `quiz/`, puntuación) · `content/levels/<mundo>/` (niveles en JSON por mundo; definiciones en `src/game/worlds/`) ·
   `public/` (assets SVG, fuentes, iconos; licencias en `public/assets/LICENSES.md`).
   `src/data/` (repositorios Firebase) aún no existe: llegará con la fase 3.
 

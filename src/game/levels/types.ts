@@ -1,5 +1,5 @@
 /**
- * Formato de los recorridos (`content/levels/nivel-N.json`) y su geometría.
+ * Formato de los recorridos (`content/levels/<mundo>/nivel-N.json`) y su geometría.
  * TypeScript puro (sin Phaser) para poder probarlo en Vitest.
  *
  * En el JSON las posiciones van en baldosas de 84 px (el tamaño de un bloque «?»), contadas desde el
