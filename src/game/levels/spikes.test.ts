@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { BLOCK_SIZE, GRAVITY, GROUND_TOP, KNOCK_VY, MAX_VELOCITY } from '../level-course';
 import { FRUIT_SIZE, FRUIT_VX, FRUIT_VY } from '../power/power';
-import { LEVELS } from './catalog';
+import { ARCOIRIS } from '../worlds/arcoiris';
+
+const LEVELS = ARCOIRIS.levels;
 import { toWorld } from './parse';
 import {
   airTimeUp,

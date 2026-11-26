@@ -29,6 +29,7 @@ export function estimateDuration(level: LevelData): Duration {
   return { fastS, calmS };
 }
 
+/** Límites de duración de un nivel (cada mundo da los suyos en `CourseRules.durationLimits`). */
 export interface DurationLimits {
   /** Mínimo a tope, en s. */
   minFastS: number;
@@ -37,7 +38,3 @@ export interface DurationLimits {
   maxCalmS: number;
 }
 
-/** Límites de duración del nivel `level` (1..12): los niveles 7 a 12 son más largos. */
-export function durationLimits(level: number): DurationLimits {
-  return level <= 6 ? { minFastS: 30, minCalmS: 60, maxCalmS: 120 } : { minFastS: 35, minCalmS: 90, maxCalmS: 150 };
-}

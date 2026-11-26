@@ -1,47 +1,17 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
-import { currentLevel, LEVEL_COUNT, levelStatus, session } from '../state';
+import { currentLevel, levelStatus, session } from '../state';
 import { drawFox, drawLalo } from '../ui/characters';
 import { digits, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
 import { cookieCounter, fixToCamera } from '../ui/widgets';
+import { showWorld, shownWorld, UPCOMING, WORLDS, worldDef } from '../worlds/registry';
+import type { SelectorButton, WorldDef, WorldId } from '../worlds/types';
 
-/**
- * Posición de los nodos en el artboard de diseño (dos pantallas de 1180×820); se escala con el ancho
- * real de una pantalla. Los 6 primeros llenan la primera pantalla y los otros 6 siguen el camino.
- */
-const NODES: readonly [number, number][] = [
-  [150, 530],
-  [330, 440],
-  [520, 530],
-  [710, 390],
-  [880, 490],
-  [1040, 310],
-  [1220, 470],
-  // Como mucho a la altura de los más bajos de la primera pantalla: más abajo, el selector de mundos
-  // taparía sus estrellas.
-  [1400, 530],
-  [1580, 420],
-  [1760, 520],
-  [1940, 370],
-  [2150, 480],
-];
-/** Adornos del fondo: árboles en la primera mitad y algunos de los ambientes nuevos en la segunda. */
-const DECOR: readonly { at: [number, number]; key: string; size: number }[] = [
-  { at: [115, 450], key: 'tree', size: 0 },
-  { at: [605, 370], key: 'tree', size: 0 },
-  { at: [975, 680], key: 'tree', size: 0 },
-  { at: [1310, 360], key: 'decor-palm', size: 150 },
-  { at: [1480, 720], key: 'tree', size: 0 },
-  { at: [1690, 330], key: 'decor-pine-snow', size: 120 },
-  { at: [1860, 690], key: 'decor-cactus', size: 105 },
-  { at: [2290, 700], key: 'tree', size: 0 },
-];
+/** Artboard de diseño de una pantalla del mapa; los nodos y adornos de cada mundo van en él. */
 const DESIGN_W = 1180;
 const DESIGN_H = 820;
-/** El mapa mide dos pantallas de ancho. */
-const SCREENS = 2;
 /** Lo que hay que mover el dedo para que un toque pase a ser un arrastre del mapa, en px. */
 const DRAG_THRESHOLD = 12;
 /** Las flechas desplazan el mapa esta fracción del ancho visible. */
@@ -49,9 +19,14 @@ const ARROW_STEP = 0.7;
 const ARROW_MS = 450;
 const HUD_DEPTH = 100;
 
+interface MapData {
+  /** Mundo que se muestra; sin dato, el último abierto en esta sesión. */
+  world?: WorldId;
+}
+
 /**
- * Mapa del mundo de los números: 12 niveles en un camino más ancho que la pantalla, el zorro sobre el
- * actual. Se desplaza arrastrando o con las flechas; el contador, Lalo, mi personaje y el selector de
+ * Mapa de un mundo (lo describe su `WorldDef.map`): sus niveles en un camino más ancho que la
+ * pantalla, el zorro sobre el actual. Se desplaza arrastrando o con las flechas; el contador, Lalo, mi personaje y el selector de
  * mundos quedan fijos.
  */
 export class MapScene extends Phaser.Scene {
@@ -60,9 +35,15 @@ export class MapScene extends Phaser.Scene {
   private arrows?: { left: RoundButton; right: RoundButton };
   private maxScroll = 0;
   private drag?: { startX: number; startScroll: number; dragging: boolean };
+  private def!: WorldDef;
 
   constructor() {
     super('Map');
+  }
+
+  init(data: MapData): void {
+    this.def = data?.world ? worldDef(data.world) : shownWorld();
+    showWorld(this.def.id);
   }
 
   create(): void {
@@ -117,27 +98,28 @@ export class MapScene extends Phaser.Scene {
     const sx = width / DESIGN_W;
     const sy = GAME_H / DESIGN_H;
     const at = ([x, y]: readonly [number, number]): Phaser.Math.Vector2 => new Phaser.Math.Vector2(x * sx, y * sy);
-    const worldW = width * SCREENS;
+    const map = this.def.map;
+    const worldW = width * map.screens;
     this.maxScroll = worldW - width;
     this.nodeButtons = [];
     this.cameras.main.setBounds(0, 0, worldW, GAME_H);
 
-    this.add.image(0, 0, 'sky-map').setOrigin(0, 0).setDisplaySize(MAX_W, GAME_H).setScrollFactor(0);
-    for (const d of DECOR) {
+    this.add.image(0, 0, map.sky).setOrigin(0, 0).setDisplaySize(MAX_W, GAME_H).setScrollFactor(0);
+    for (const d of map.decor) {
       const p = at(d.at);
       const img = this.add.image(p.x, p.y, d.key).setOrigin(0.5, 1);
       if (d.size > 0) img.setScale(d.size / Math.max(img.width, img.height));
     }
-    this.add.image(width * 0.39, 170, 'cloud');
-    this.add.image(width * 1.45, 150, 'cloud').setScale(0.9);
+    for (const c of map.clouds) this.add.image(width * c.x, c.y, 'cloud').setScale(c.scale);
 
-    this.drawPath(NODES.map(at));
+    const nodes = map.nodes.slice(0, this.def.levelCount);
+    this.drawPath(nodes.map(at));
 
-    const current = currentLevel(session) ?? LEVEL_COUNT;
-    NODES.forEach((node, i) => this.buildNode(i + 1, at(node)));
+    const current = currentLevel(session, this.def) ?? this.def.levelCount;
+    nodes.forEach((node, i) => this.buildNode(i + 1, at(node)));
 
-    const foxAt = at(NODES[current - 1]!);
-    const nodeR = levelStatus(session, current) === 'current' ? 56 : 48;
+    const foxAt = at(nodes[current - 1]!);
+    const nodeR = levelStatus(session, this.def, current) === 'current' ? 56 : 48;
     const fox = drawFox(this, foxAt.x, foxAt.y - nodeR + 6, 'idle', session.hat, 104);
     this.tweens.add({
       targets: fox,
@@ -212,8 +194,8 @@ export class MapScene extends Phaser.Scene {
   }
 
   private buildNode(level: number, p: Phaser.Math.Vector2): void {
-    const status = levelStatus(session, level);
-    const last = level === LEVEL_COUNT;
+    const status = levelStatus(session, this.def, level);
+    const last = level === this.def.levelCount;
     if (last) this.add.image(p.x + 46, p.y - 52, 'icon-flag').setOrigin(0.2, 0.9).setDisplaySize(64, 64);
 
     if (status === 'locked') {
@@ -229,7 +211,7 @@ export class MapScene extends Phaser.Scene {
       return;
     }
 
-    const play = (): void => goTo(this, 'Level', { level });
+    const play = (): void => goTo(this, 'Level', { world: this.def.id, level });
     if (status === 'current') {
       const halo = this.add.circle(p.x, p.y + 4, 66, COLORS.white, 0.55);
       this.tweens.add({
@@ -288,7 +270,7 @@ export class MapScene extends Phaser.Scene {
         onTap: play,
       }),
     );
-    const stars = session.stars.get(level) ?? 0;
+    const stars = session.worlds.get(this.def.id)?.stars.get(level) ?? 0;
     for (let i = 0; i < 3; i++) {
       this.add.image(p.x + (i - 1) * 34, p.y + 48 + 26, i < stars ? 'star' : 'star-empty').setDisplaySize(34, 34);
     }
@@ -299,7 +281,8 @@ export class MapScene extends Phaser.Scene {
     const bh = 96;
     const gap = 12;
     const pad = 12;
-    const panelW = bw * 4 + gap * 3 + pad * 2;
+    const count = WORLDS.length + UPCOMING.length;
+    const panelW = bw * count + gap * (count - 1) + pad * 2;
     const panelH = bh + pad * 2 + 8;
     const cy = GAME_H - 24 - panelH / 2;
     const g = this.add.graphics();
@@ -307,18 +290,10 @@ export class MapScene extends Phaser.Scene {
     g.fillStyle(COLORS.white).fillRoundedRect(width / 2 - panelW / 2, cy - panelH / 2, panelW, panelH, 44);
     const parts: Phaser.GameObjects.GameObject[] = [g];
 
-    const worlds: {
-      color: number;
-      shadow: number;
-      label?: string;
-      icon?: string;
-      iconSize?: number;
-      active?: boolean;
-    }[] = [
-      { color: 0xffe9e6, shadow: 0xf2c4bd, label: '123', active: true },
-      { color: 0xf1ecfb, shadow: 0xd9cfe0, label: 'Aa' },
-      { color: 0xe4f4e8, shadow: 0xbfe0c6, icon: 'icon-shapes', iconSize: 88 },
-      { color: 0xe8edf3, shadow: 0xc9d3de, icon: 'icon-lock', iconSize: 42 },
+    // Los mundos del registro, en su orden, y después los huecos de los que aún no existen.
+    const worlds: (SelectorButton & { id?: WorldId; active?: boolean })[] = [
+      ...WORLDS.map((w) => ({ ...w.selector, id: w.id, active: w.id === this.def.id })),
+      ...UPCOMING,
     ];
     worlds.forEach((w, i) => {
       const x = width / 2 - panelW / 2 + pad + bw / 2 + i * (bw + gap);
@@ -335,10 +310,12 @@ export class MapScene extends Phaser.Scene {
         icon: w.icon,
         iconSize: w.iconSize,
         onTap: () => {
-          if (!w.active) btn.shake();
+          if (w.active) return;
+          if (w.id) goTo(this, 'Map', { world: w.id });
+          else btn.shake();
         },
       });
-      if (!w.active && w.label) btn.face.setAlpha(0.7);
+      if (!w.active && !w.id && w.label) btn.face.setAlpha(0.7);
       parts.push(btn);
     });
     return parts;

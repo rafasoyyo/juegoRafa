@@ -3,13 +3,17 @@ import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
 import { starsFor, type Stars } from '../../learning/scoring';
 import { saveActive } from '../profile/active';
-import { completeLevel, LEVEL_COUNT, markPending, session } from '../state';
+import { completeLevel, markPending, session } from '../state';
 import { drawFox } from '../ui/characters';
 import { digits, fitImage, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
 import { addSky, drawGround } from '../ui/widgets';
+import { clampLevel, worldDef } from '../worlds/registry';
+import type { WorldDef, WorldId } from '../worlds/types';
 
 export interface LevelCompleteData {
+  /** Mundo del nivel; sin dato, el primero. */
+  world?: WorldId;
   level: number;
   blocksHit: number;
   blocksTotal: number;
@@ -32,6 +36,7 @@ const CONFETTI_COLORS = [COLORS.coral, COLORS.yellow, COLORS.purple, COLORS.gras
  * de la bandera, pantalla de ánimo: sin confeti ni estrellas, el nivel queda pendiente y se puede seguir.
  */
 export class LevelCompleteScene extends Phaser.Scene {
+  private def!: WorldDef;
   private result!: LevelCompleteData;
   private stars: Stars = 1;
 
@@ -40,8 +45,10 @@ export class LevelCompleteScene extends Phaser.Scene {
   }
 
   init(data: LevelCompleteData): void {
+    this.def = worldDef(data?.world);
     this.result = {
-      level: data?.level ?? 1,
+      world: this.def.id,
+      level: clampLevel(this.def, data?.level),
       blocksHit: data?.blocksHit ?? 0,
       blocksTotal: data?.blocksTotal ?? 0,
       cookies: data?.cookies ?? 0,
@@ -52,8 +59,8 @@ export class LevelCompleteScene extends Phaser.Scene {
   create(): void {
     // Se guarda una sola vez al llegar, no en cada recolocación.
     this.stars = starsFor(this.result.blocksHit, this.result.blocksTotal);
-    if (this.result.passed) completeLevel(session, this.result.level, this.stars, this.result.cookies);
-    else markPending(session, this.result.level, this.result.cookies);
+    if (this.result.passed) completeLevel(session, this.def.id, this.result.level, this.stars, this.result.cookies);
+    else markPending(session, this.def.id, this.result.level, this.result.cookies);
     saveActive();
 
     enter(this);
@@ -88,13 +95,14 @@ export class LevelCompleteScene extends Phaser.Scene {
 
     const y = GAME_H - 32 - 75;
     const { level } = this.result;
+    const world = this.def.id;
     new RoundButton(this, width / 2 - 180, y, {
       width: 110,
       color: COLORS.white,
       shadowColor: COLORS.shadow,
       icon: 'icon-map',
       iconSize: 54,
-      onTap: () => goTo(this, 'Map'),
+      onTap: () => goTo(this, 'Map', { world }),
     });
     new RoundButton(this, width / 2, y, {
       width: 190,
@@ -105,7 +113,7 @@ export class LevelCompleteScene extends Phaser.Scene {
       shadowDepth: 10,
       icon: 'icon-next-white',
       iconSize: 88,
-      onTap: () => (level < LEVEL_COUNT ? goTo(this, 'Level', { level: level + 1 }) : goTo(this, 'Map')),
+      onTap: () => (level < this.def.levelCount ? goTo(this, 'Level', { world, level: level + 1 }) : goTo(this, 'Map', { world })),
     });
     new RoundButton(this, width / 2 + 180, y, {
       width: 110,
@@ -113,7 +121,7 @@ export class LevelCompleteScene extends Phaser.Scene {
       shadowColor: COLORS.shadow,
       icon: 'icon-replay',
       iconSize: 54,
-      onTap: () => goTo(this, 'Level', { level }),
+      onTap: () => goTo(this, 'Level', { world, level }),
     });
   }
 

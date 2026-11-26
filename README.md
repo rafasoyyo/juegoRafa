@@ -53,7 +53,7 @@ src/
   main.ts            arranque de Phaser y escenas
   game/              motor: escenas, UI, audio, enemigos, niveles, perfiles, estado
   learning/          lógica pedagógica en TypeScript puro (pruebas, puntuación)
-content/levels/      los 12 recorridos del mundo 1, en JSON
+content/levels/      los recorridos de cada mundo en JSON (arcoiris/ = mundo 1)
 public/              arte SVG, fuentes, iconos (con LICENSES.md)
 scripts/             utilidades (generación de iconos)
 docs/PROPUESTA.md    propuesta educativa y técnica completa
