@@ -178,3 +178,10 @@ Acertar un reto SHALL sonar con el bloque y una compuerta que se abre (notas que
 #### Scenario: Pista contando
 - **WHEN** tras el segundo fallo se encienden 4 puntos del cartel
 - **THEN** suenan 4 tics, cada uno más agudo que el anterior
+
+### Requirement: Escala del puente
+Al colocarse la tabla del puente SHALL sonar una escala de notas que sube, distinta de la compuerta, respetando el silencio.
+
+#### Scenario: Tabla colocada
+- **WHEN** la tabla del puente llega al hueco
+- **THEN** suena una escala de notas que sube

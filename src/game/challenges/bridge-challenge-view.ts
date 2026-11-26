@@ -18,10 +18,17 @@ const WATER_DARK = 0x4da3dc;
 const FOAM = 0xd9f1fd;
 const WOOD = 0xc98a58;
 const WOOD_DARK = 0x9c6639;
-/** Tabla: grosor bajo la línea del suelo y placa con el número en su cara. */
+/** Tabla: grosor bajo la línea del suelo. */
 const DECK_H = 58;
-const BADGE_W = 70;
-const BADGE_H = 50;
+/**
+ * Recta numérica: una cuerda entre dos postes en los extremos del puente, por encima de los bloques, con
+ * un cartel colgado sobre cada tramo. Ahí no la tapan ni el zorro ni los controles.
+ */
+const ROPE_Y = GROUND_TOP - 360;
+const SIGN_W = 96;
+const SIGN_H = 80;
+const SIGN_Y = ROPE_Y + 30 + SIGN_H / 2;
+const ROPE = 0x8a5a2e;
 const COUNT_STEP_MS = 420;
 const DEMO_TRIGGER_TILES = 8;
 
@@ -34,7 +41,9 @@ export function bridgeHole(left: number, challenge: BridgeChallenge): WorldSpike
 export class BridgeChallengeView extends ChallengeView {
   private readonly hole: WorldSpike;
   private readonly planks: (Phaser.GameObjects.Container | undefined)[] = [];
+  private readonly signs: (Phaser.GameObjects.Container | undefined)[] = [];
   private readonly slot: Phaser.GameObjects.Graphics;
+  private gapSign: Phaser.GameObjects.Container;
   private counting = false;
 
   constructor(
@@ -56,14 +65,20 @@ export class BridgeChallengeView extends ChallengeView {
     water.fillStyle(FOAM);
     for (let x = this.hole.x + 14; x < this.hole.x + s - 20; x += 46) water.fillRoundedRect(x, GROUND_TOP + 30, 26, 6, 3);
 
-    // Tramos firmes, cada uno con su número (o sus puntos) en la cara.
-    for (let i = 0; i < BRIDGE_SECTIONS; i++) {
-      if (i === challenge.gap) {
-        this.planks.push(undefined);
-        continue;
-      }
-      this.planks.push(this.plank(left + i * s + s / 2, challenge.shown[i] ? i : -1));
+    // Tramos firmes.
+    for (let i = 0; i < BRIDGE_SECTIONS; i++) this.planks.push(i === challenge.gap ? undefined : this.plank(left + i * s + s / 2));
+
+    // Recta numérica: postes, cuerda y el número (o los puntos) de cada tramo; el del hueco, vacío.
+    const rope = scene.add.graphics().setDepth(CHALLENGE_DEPTH - 1);
+    for (const px of [left, left + BRIDGE_SECTIONS * s]) {
+      rope.fillStyle(WOOD_DARK).fillRoundedRect(px - 8, ROPE_Y - 20, 16, GROUND_TOP - ROPE_Y + 20, 6);
+      rope.fillStyle(WOOD).fillCircle(px, ROPE_Y - 20, 12);
     }
+    rope.lineStyle(5, ROPE).lineBetween(left, ROPE_Y, left + BRIDGE_SECTIONS * s, ROPE_Y);
+    for (let i = 0; i < BRIDGE_SECTIONS; i++) {
+      this.signs.push(i !== challenge.gap && challenge.shown[i] ? this.sign(left + i * s + s / 2, i) : undefined);
+    }
+    this.gapSign = this.sign(this.hole.x + s / 2, -1);
 
     // Hueco: el sitio de la tabla, marcado con un contorno que parpadea en la pista.
     this.slot = scene.add.graphics().setDepth(CHALLENGE_DEPTH);
@@ -80,21 +95,31 @@ export class BridgeChallengeView extends ChallengeView {
     return this.run.solved ? [] : [this.hole];
   }
 
-  /** Tabla de un tramo centrada en `cx`, con la cara del tramo `face` (−1: sin número). */
-  private plank(cx: number, face: number): Phaser.GameObjects.Container {
+  /** Tabla de un tramo centrada en `cx`. */
+  private plank(cx: number): Phaser.GameObjects.Container {
     const s = BRIDGE_SECTION * TILE;
     const g = this.scene.add.graphics();
     g.fillStyle(WOOD_DARK).fillRoundedRect(-s / 2 + 2, -4, s - 4, DECK_H, 12);
     g.fillStyle(WOOD).fillRoundedRect(-s / 2 + 2, -4, s - 4, DECK_H - 8, 12);
     g.fillStyle(WOOD_DARK);
     for (let x = -s / 2 + 2 + s / 4; x < s / 2 - 10; x += s / 4) g.fillRect(x, 0, 4, DECK_H - 16);
+    return this.scene.add.container(cx, GROUND_TOP, [g]).setDepth(CHALLENGE_DEPTH);
+  }
+
+  /** Cartel colgado de la cuerda en `cx` con la cara del tramo `i`; con −1, el hueco: vacío y punteado. */
+  private sign(cx: number, i: number): Phaser.GameObjects.Container {
+    const g = this.scene.add.graphics();
+    g.lineStyle(4, ROPE).lineBetween(-SIGN_W / 4, -SIGN_H / 2, -SIGN_W / 4, ROPE_Y - SIGN_Y).lineBetween(SIGN_W / 4, -SIGN_H / 2, SIGN_W / 4, ROPE_Y - SIGN_Y);
     const parts: Phaser.GameObjects.GameObject[] = [g];
-    if (face >= 0) {
-      const badge = this.scene.add.graphics();
-      badge.fillStyle(COLORS.white).fillRoundedRect(-BADGE_W / 2, DECK_H / 2 - BADGE_H / 2 - 4, BADGE_W, BADGE_H, 14);
-      parts.push(badge, drawFace(this.scene, this.challenge.faces[face]!, BADGE_H * 0.86).container.setY(DECK_H / 2 - 4));
+    if (i >= 0) {
+      g.fillStyle(COLORS.shadow).fillRoundedRect(-SIGN_W / 2, -SIGN_H / 2 + 6, SIGN_W, SIGN_H, 18);
+      g.fillStyle(COLORS.white).fillRoundedRect(-SIGN_W / 2, -SIGN_H / 2, SIGN_W, SIGN_H, 18);
+      parts.push(drawFace(this.scene, this.challenge.faces[i]!, SIGN_H * 0.86).container);
+    } else {
+      g.fillStyle(COLORS.white, 0.35).fillRoundedRect(-SIGN_W / 2, -SIGN_H / 2, SIGN_W, SIGN_H, 18);
+      g.lineStyle(5, COLORS.white).strokeRoundedRect(-SIGN_W / 2, -SIGN_H / 2, SIGN_W, SIGN_H, 18);
     }
-    return this.scene.add.container(cx, GROUND_TOP, parts).setDepth(CHALLENGE_DEPTH);
+    return this.scene.add.container(cx, SIGN_Y, parts).setDepth(CHALLENGE_DEPTH);
   }
 
   protected override demoTriggerX(): number {
@@ -105,9 +130,19 @@ export class BridgeChallengeView extends ChallengeView {
     this.countUp(() => this.pointCorrect());
   }
 
-  /** El hueco parpadea. */
+  /** El hueco y su cartel vacío parpadean. */
   protected hintOne(): void {
-    this.scene.tweens.add({ targets: this.slot, alpha: 0.1, duration: 160, yoyo: true, repeat: 3, onComplete: () => this.slot.setAlpha(1) });
+    this.scene.tweens.add({
+      targets: [this.slot, this.gapSign],
+      alpha: 0.1,
+      duration: 160,
+      yoyo: true,
+      repeat: 3,
+      onComplete: () => {
+        this.slot.setAlpha(1);
+        this.gapSign.setAlpha(1);
+      },
+    });
   }
 
   protected hintTwo(): void {
@@ -123,8 +158,10 @@ export class BridgeChallengeView extends ChallengeView {
       this.scene.time.delayedCall(i * COUNT_STEP_MS, () => {
         audio.sfx('tick', { index: i + 1 });
         const p = this.planks[i];
+        const sign = i === this.challenge.gap ? this.gapSign : this.signs[i];
         if (p) this.scene.tweens.add({ targets: p, y: GROUND_TOP - 16, duration: 120, yoyo: true, ease: 'Quad.easeOut' });
         else this.hintOne();
+        if (sign) this.scene.tweens.add({ targets: sign, y: SIGN_Y - 18, duration: 120, yoyo: true, ease: 'Quad.easeOut' });
       });
     }
     this.scene.time.delayedCall(steps * COUNT_STEP_MS + 200, () => {
@@ -136,9 +173,8 @@ export class BridgeChallengeView extends ChallengeView {
   /** La tabla del número correcto vuela del bloque al hueco; al llegar, suena la escala y se cierra. */
   protected solve(block: Phaser.GameObjects.Container): void {
     const s = BRIDGE_SECTION * TILE;
-    const plank = this.plank(block.x, this.challenge.gap);
+    const plank = this.plank(block.x);
     plank.setPosition(block.x, block.y).setScale(0.4).setDepth(CHALLENGE_DEPTH + 2);
-    // Se ve el número aunque el tramo estuviera oculto: es la respuesta.
     this.scene.tweens.add({
       targets: plank,
       x: this.hole.x + s / 2,
@@ -149,6 +185,10 @@ export class BridgeChallengeView extends ChallengeView {
       onComplete: () => {
         plank.setDepth(CHALLENGE_DEPTH);
         this.slot.setVisible(false);
+        // El cartel del hueco pasa a tener su número.
+        this.gapSign.destroy();
+        const filled = this.sign(this.hole.x + s / 2, this.challenge.gap);
+        this.scene.tweens.add({ targets: filled, scale: { from: 1.3, to: 1 }, duration: 260, ease: 'Back.easeOut' });
         audio.sfx('scale');
         this.hooks.closeHole(this.hole);
       },
