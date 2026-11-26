@@ -33,3 +33,17 @@ export function shouldPlayPrologue(state: GameState, world: WorldShape & { prolo
 export function markSeen(state: GameState, scene: StoryScene, world: string): void {
   state.seen.add(storyKey(scene, world));
 }
+
+/**
+ * Si al abrir el mapa del mundo toca su final: el mundo lo tiene, todos sus niveles están hechos o
+ * pendientes y el perfil aún no lo ha visto.
+ */
+export function shouldPlayFinale(state: GameState, world: WorldShape & { finale?: boolean }): boolean {
+  if (!world.finale || state.seen.has(storyKey('final', world.id))) return false;
+  const progress = state.worlds.get(world.id);
+  if (!progress) return false;
+  for (let level = 1; level <= world.levelCount; level++) {
+    if (!progress.stars.has(level) && !progress.pending.has(level)) return false;
+  }
+  return true;
+}
