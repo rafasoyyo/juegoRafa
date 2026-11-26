@@ -4,6 +4,7 @@
  */
 
 import { quizForLevel } from '../../../learning/quiz/catalog';
+import type { CastleDef } from '../../castle/castle';
 import type { EnemyRules } from '../../enemies/enemy-layout';
 import type { DurationLimits } from '../../levels/duration';
 import { levelsFrom } from '../load-levels';
@@ -77,7 +78,9 @@ const MAP: WorldMap = {
     [1590, 490],
     [1770, 525],
     [1950, 490],
-    [2190, 475],
+    [2140, 480],
+    // El castillo, sobre una nube al pie derecho del arcoíris.
+    [2280, 385],
   ],
   rainbow: { center: [1940, 395], radius: 300, band: 13 },
   decor: [
@@ -95,11 +98,21 @@ const MAP: WorldMap = {
     { at: [1500, 690], key: 'decor-leaf', size: 110 },
     { at: [1680, 450], key: 'decor-pine-snow', size: 110 },
     { at: [1860, 690], key: 'decor-cactus', size: 100 },
+    { at: [2280, 480], key: 'cloud', size: 250 },
   ],
   clouds: [
     { x: 0.39, y: 150, scale: 1 },
     { x: 1.3, y: 120, scale: 0.8 },
   ],
+};
+
+/**
+ * Castillo del arcoíris (`docs/MUNDO-1.md`, «El castillo y la medalla»): un paseo por las nubes hasta la
+ * bandera, sin retos, y allí una pregunta de cada una de estas pruebas del mundo.
+ */
+export const CASTLE: CastleDef = {
+  ambient: 'nubes',
+  steps: [{ quiz: ['count'] }, { quiz: ['compare'] }, { quiz: ['series'] }, { quiz: ['share'] }, { quiz: ['balance'] }],
 };
 
 export const ARCOIRIS: WorldDef = {
@@ -114,4 +127,5 @@ export const ARCOIRIS: WorldDef = {
   finale: true,
   map: MAP,
   selector: { color: 0xffe9e6, shadow: 0xf2c4bd, label: '123' },
+  castle: CASTLE,
 };

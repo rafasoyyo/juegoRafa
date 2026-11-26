@@ -78,12 +78,41 @@ describe.each(WORLDS.filter((w) => w.castle).map((w) => [w.id, w] as const))('ca
     for (const pool of castleQuizPools(castle)) for (const k of pool) expect(QUIZ_KINDS).toContain(k as QuizKind);
   });
 
-  it('tiene 5 retos: uno de cada mecánica y dos preguntas de la bandera', () => {
+  it('tiene 5 retos y sus preguntas son de las pruebas de la bandera del mundo', () => {
     expect(castle.steps).toHaveLength(5);
-    expect([...castleChallenges(castle)].sort()).toEqual(['boat', 'bridge', 'count']);
-    expect(castleQuizPools(castle)).toHaveLength(2);
-    // Las preguntas son de las pruebas de la bandera del mundo (su catálogo tiene 12 niveles).
+    // Su catálogo tiene 12 niveles.
     const worldQuizzes = Array.from({ length: 12 }, (_, i) => world.quizFor(i + 1));
     for (const pool of castleQuizPools(castle)) for (const k of pool) expect(worldQuizzes).toContain(k);
+  });
+
+  it('su nodo va a la derecha del último nivel y dentro del mapa', () => {
+    const last = world.map.nodes[world.levelCount - 1]!;
+    const node = world.map.nodes[world.levelCount]!;
+    expect(node[0]).toBeGreaterThan(last[0]);
+    expect(node[0] + 62).toBeLessThanOrEqual(1180 * world.map.screens);
+  });
+});
+
+describe('castillos de cada mundo', () => {
+  const byId = (id: string) => WORLDS.find((w) => w.id === id)!.castle!;
+
+  it('el del río tiene uno de cada mecánica y dos preguntas de la bandera', () => {
+    const castle = byId('rio');
+    expect([...castleChallenges(castle)].sort()).toEqual(['boat', 'bridge', 'count']);
+    expect(castleQuizPools(castle)).toHaveLength(2);
+  });
+
+  it('el del arcoíris es un paseo por las nubes con 5 preguntas de pruebas distintas', () => {
+    const castle = byId('arcoiris');
+    expect(castle.ambient).toBe('nubes');
+    expect(castleChallenges(castle)).toEqual([]);
+    const pools = castleQuizPools(castle);
+    expect(pools.flat()).toEqual(['count', 'compare', 'series', 'share', 'balance']);
+    for (const age of [4, 5, 6]) {
+      for (let seed = 1; seed <= 20; seed++) {
+        const qs = generateCastleQuiz(pools, ageBand(age), createRng(seed), CTX);
+        expect(qs.map((q) => q.kind)).toEqual(['count', 'compare', 'series', 'share', 'balance']);
+      }
+    }
   });
 });
