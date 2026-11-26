@@ -90,6 +90,13 @@ const AREAS: Record<QuizKind, { prompt: Area; options: Area; cell: [number, numb
   neighbor: { prompt: { top: 170, bottom: 420 }, options: { top: 470, bottom: 690 }, cell: [160, 160] },
   'number-line': { prompt: { top: 150, bottom: 560 }, options: { top: 560, bottom: 700 }, cell: [96, 150] },
   biggest: { prompt: { top: 130, bottom: 260 }, options: { top: 300, bottom: 690 }, cell: [200, 200] },
+  'ten-friends': { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 700 }, cell: [150, 150] },
+  train: { prompt: { top: 150, bottom: 600 }, options: { top: 600, bottom: 700 }, cell: [120, 120] },
+  socks: { prompt: { top: 150, bottom: 450 }, options: { top: 470, bottom: 700 }, cell: [200, 200] },
+  'frog-jumps': { prompt: { top: 150, bottom: 560 }, options: { top: 560, bottom: 700 }, cell: [96, 150] },
+  boats: { prompt: { top: 150, bottom: 400 }, options: { top: 450, bottom: 690 }, cell: [140, 150] },
+  // El repaso dibuja cada pregunta con las zonas de su propio tipo.
+  'river-review': { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 700 }, cell: [150, 150] },
 };
 
 interface OptionView {
@@ -110,6 +117,8 @@ export class QuizScene extends Phaser.Scene {
   /** Retos del recorrido acertados a la primera, para las estrellas (se pasa tal cual). */
   private challenges?: ChallengeTally;
   private kind: QuizKind = 'count';
+  /** Tipo de la pregunta en pantalla: el de la prueba salvo en el repaso, que mezcla varios. */
+  private qkind: QuizKind = 'count';
   private run!: QuizRun;
   private seed = 1;
   private width = 0;
@@ -284,10 +293,11 @@ export class QuizScene extends Phaser.Scene {
     this.shownIndex = this.run.index;
     this.willDemo = firstTime && !this.demoDone.has(this.run.index);
     const rng = createRng(this.seed + this.run.index * 101);
-    if (VIEW_KINDS.includes(this.kind)) {
+    this.qkind = q.kind;
+    if (VIEW_KINDS.includes(q.kind)) {
       const top = this.add.container(0, 0);
       this.viewTopLayer = top;
-      this.view = createView(this.kind, { scene: this, layer: this.layer, top, width: this.width, usefulW: this.usefulW, state: () => this.viewState() });
+      this.view = createView(q.kind, { scene: this, layer: this.layer, top, width: this.width, usefulW: this.usefulW, state: () => this.viewState() });
     }
     this.drawPrompt(q, rng);
     this.drawOptions(q);
@@ -322,7 +332,7 @@ export class QuizScene extends Phaser.Scene {
       this.promptAnchor = this.drawResult.anchor;
       return;
     }
-    const area = AREAS[this.kind].prompt;
+    const area = AREAS[this.qkind].prompt;
     const cx = this.width / 2;
     const cy = (area.top + area.bottom) / 2;
     const h = area.bottom - area.top;
@@ -510,7 +520,7 @@ export class QuizScene extends Phaser.Scene {
   private drawRowOptions(opts: Question['options'], rowArea?: DrawResult['rowArea']): void {
     const n = opts.length;
     if (n === 0) return;
-    const base = AREAS[this.kind];
+    const base = AREAS[this.qkind];
     const area = rowArea ?? base.options;
     const availW = rowArea?.w ?? this.usefulW;
     const centerX = rowArea?.cx ?? this.width / 2;

@@ -240,9 +240,53 @@ export function drawExtraVisual(scene: Phaser.Scene, v: Visual, w: number, h: nu
       return drawLandmark(scene, v.id, s * 0.85);
     case 'weight':
       return drawWeight(scene, v.id, s * 0.8);
+    case 'sock':
+      return drawSock(scene, v.color, v.pattern, s * 0.85);
+    case 'pairs':
+      return drawPairs(scene, v.odd, Math.min(w, h * 1.6) * 0.9);
     default:
       return null;
   }
+}
+
+/** Colores de los calcetines (índice de `sock.color`). */
+export const SOCK_PALETTE = [0xff6b5e, 0x4da3ff, 0xffc93c, 0x8e6cf0, 0x58c25a] as const;
+
+/** Calcetín de `size` px de alto con su dibujo: 0 liso, 1 rayas, 2 lunares. */
+export function drawSock(scene: Phaser.Scene, color: number, pattern: number, size: number): C {
+  const c = SOCK_PALETTE[color % SOCK_PALETTE.length]!;
+  const w = size * 0.34;
+  const g = scene.add.graphics();
+  // Caña y pie.
+  g.fillStyle(c).fillRoundedRect(-w / 2, -size / 2, w, size * 0.7, w * 0.25);
+  g.fillStyle(c).fillRoundedRect(-w / 2, size * 0.08, w * 1.9, w * 0.95, w * 0.45);
+  g.fillStyle(COLORS.white, 0.9).fillRoundedRect(-w / 2, -size / 2, w, size * 0.12, w * 0.2);
+  g.fillStyle(COLORS.white, 0.85);
+  if (pattern === 1) for (let k = 0; k < 3; k++) g.fillRect(-w / 2, -size * 0.28 + k * size * 0.13, w, size * 0.05);
+  if (pattern === 2) for (let k = 0; k < 4; k++) g.fillCircle(-w * 0.18 + (k % 2) * w * 0.36, -size * 0.25 + Math.floor(k / 2) * size * 0.2, size * 0.04);
+  // Talón y punta más oscuros.
+  g.fillStyle(COLORS.ink, 0.15).fillCircle(-w * 0.1, size * 0.27, w * 0.32).fillCircle(w * 1.2, size * 0.27, w * 0.3);
+  const box = scene.add.container(0, 0, [g]);
+  g.x = -w * 0.45;
+  return box;
+}
+
+/** Respuesta de pares y nones: dos parejas juntas, o dos parejas y uno solo con un brillo. */
+function drawPairs(scene: Phaser.Scene, odd: boolean, size: number): C {
+  const c = scene.add.container(0, 0);
+  const s = size * (odd ? 0.4 : 0.48);
+  const xs = odd ? [-0.34, -0.02] : [-0.2, 0.2];
+  xs.forEach((x, i) => {
+    c.add(drawSock(scene, i, i, s).setPosition(x * size - s * 0.12, 0));
+    c.add(drawSock(scene, i, i, s).setPosition(x * size + s * 0.12, 0));
+  });
+  if (odd) {
+    // El que sobra, aparte y con un brillo.
+    const g = scene.add.graphics();
+    g.fillStyle(COLORS.yellow, 0.7).fillCircle(size * 0.34, 0, s * 0.5);
+    c.add([g, drawSock(scene, 2, 2, s).setPosition(size * 0.34, 0)]);
+  }
+  return c;
 }
 
 // --- Pictogramas ---------------------------------------------------------------------------------
@@ -319,6 +363,38 @@ export function drawNewPictogram(scene: Phaser.Scene, kind: QuizKind, size: numb
       g.lineStyle(6, COLORS.ink).lineBetween(-r * 0.75, r * 0.2, r * 0.75, r * 0.2);
       for (let i = 0; i < 5; i++) g.lineBetween(-r * 0.6 + i * r * 0.3, r * 0.05, -r * 0.6 + i * r * 0.3, r * 0.35);
       g.fillStyle(COLORS.coral).fillCircle(r * 0.3, -r * 0.25, r * 0.16);
+      break;
+    case 'ten-friends':
+      g.fillStyle(0x4da3ff).fillRoundedRect(-r * 0.72, -r * 0.34, r * 1.44, r * 0.68, 8);
+      for (let i = 0; i < 10; i++) {
+        const x = -r * 0.58 + (i % 5) * r * 0.29;
+        const y = -r * 0.16 + Math.floor(i / 5) * r * 0.32;
+        g.fillStyle(i < 7 ? COLORS.coral : COLORS.yellow).fillCircle(x, y, r * 0.1);
+      }
+      break;
+    case 'train':
+      g.fillStyle(COLORS.coral).fillRoundedRect(-r * 0.75, -r * 0.3, r * 0.5, r * 0.5, 6);
+      g.fillStyle(0x4da3ff).fillRoundedRect(-r * 0.15, -r * 0.2, r * 0.38, r * 0.4, 6);
+      g.fillStyle(0x58c25a).fillRoundedRect(r * 0.3, -r * 0.2, r * 0.38, r * 0.4, 6);
+      g.fillStyle(COLORS.ink).fillCircle(-r * 0.6, r * 0.28, r * 0.1).fillCircle(-r * 0.35, r * 0.28, r * 0.1).fillCircle(r * 0.04, r * 0.28, r * 0.08).fillCircle(r * 0.5, r * 0.28, r * 0.08);
+      break;
+    case 'socks':
+      parts.push(drawSock(scene, 0, 1, r * 1.1).setPosition(-r * 0.3, 0), drawSock(scene, 0, 1, r * 1.1).setPosition(r * 0.25, 0));
+      break;
+    case 'frog-jumps':
+      g.lineStyle(5, COLORS.ink).lineBetween(-r * 0.75, r * 0.35, r * 0.75, r * 0.35);
+      g.lineStyle(5, COLORS.grassDark).beginPath().arc(-r * 0.3, r * 0.3, r * 0.3, Math.PI, 0).strokePath();
+      g.beginPath().arc(r * 0.3, r * 0.3, r * 0.3, Math.PI, 0).strokePath();
+      break;
+    case 'boats':
+      [-0.5, 0, 0.5].forEach((x, i) => {
+        g.fillStyle(COLORS.coral).fillRoundedRect(x * r - r * 0.2, r * 0.05 - i * r * 0.15, r * 0.4, r * 0.2, 6);
+        g.fillStyle(COLORS.white).fillTriangle(x * r, -r * 0.5 - i * r * 0.15, x * r, r * 0.02 - i * r * 0.15, x * r + r * 0.2, r * 0.02 - i * r * 0.15);
+      });
+      break;
+    case 'river-review':
+      g.fillStyle(0x4da3ff).fillEllipse(0, r * 0.25, r * 1.5, r * 0.5);
+      parts.push(digits(scene, -r * 0.35, -r * 0.2, '1', r * 0.5), digits(scene, r * 0.05, -r * 0.25, '2', r * 0.5), digits(scene, r * 0.45, -r * 0.2, '3', r * 0.5));
       break;
     case 'biggest':
       parts.push(digits(scene, -r * 0.32, r * 0.08, '3', r * 0.5), digits(scene, r * 0.3, 0, '8', r * 0.85, '#FF6B5E'));

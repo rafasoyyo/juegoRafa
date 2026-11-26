@@ -92,9 +92,11 @@ describe('registro de mundos', () => {
     ]);
   });
 
-  it('pruebas de la bandera del río: niveles 1 a 6 con las suyas, distintas entre sí', () => {
+  it('pruebas de la bandera del río: una propia en cada nivel y el repaso en el 12', () => {
     const rio = worldDef('rio');
-    expect([1, 2, 3, 4, 5, 6].map((n) => rio.quizFor(n))).toEqual(['fingers', 'ten-frame', 'memory', 'neighbor', 'number-line', 'biggest']);
+    const kinds = Array.from({ length: 12 }, (_, i) => rio.quizFor(i + 1));
+    expect(kinds).toEqual(['fingers', 'ten-frame', 'memory', 'neighbor', 'number-line', 'biggest', 'ten-friends', 'train', 'socks', 'frog-jumps', 'boats', 'river-review']);
+    expect(new Set(kinds).size).toBe(12);
   });
 
   it('un mundo desconocido o sin dato da el primero', () => {
