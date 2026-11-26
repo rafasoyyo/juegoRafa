@@ -108,6 +108,36 @@ export const GUIDE_TEXT: Record<QuizKind, GuideText> = {
     goal: 'Comparar números sin contar objetos.',
     how: '¿Cuál es más grande? ¿Cuál viene después al contar?',
   },
+  'ten-friends': {
+    title: 'Los amigos del 10',
+    goal: 'Descomponer el 10 (o el 5, o el 20): cuánto falta para completarlo.',
+    how: '¿Cuántas fichas hay? ¿Cuántas faltan para llenar el marco?',
+  },
+  train: {
+    title: 'El tren',
+    goal: 'Los ordinales: primero, segundo, tercero…',
+    how: 'Contad los vagones desde la locomotora: primero, segundo…',
+  },
+  socks: {
+    title: 'Calcetines',
+    goal: 'Emparejar y descubrir los números pares e impares.',
+    how: 'Juntad los calcetines de dos en dos. ¿Sobra alguno?',
+  },
+  'frog-jumps': {
+    title: 'Saltos de rana',
+    goal: 'Contar a saltos sobre la recta numérica.',
+    how: '¿Dónde está la rana? Contad cada salto con ella.',
+  },
+  boats: {
+    title: 'Los barcos del puerto',
+    goal: 'Ordenar números de menor a mayor.',
+    how: '¿Qué barco lleva el número más pequeño? ¿Y después?',
+  },
+  'river-review': {
+    title: 'Repaso del río',
+    goal: 'Repasar lo aprendido en el río: cantidades, recta y comparar.',
+    how: 'Recordad cómo lo hicisteis en los niveles anteriores.',
+  },
 };
 
 export function guideWordCount(t: GuideText): number {

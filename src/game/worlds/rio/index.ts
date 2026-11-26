@@ -38,8 +38,7 @@ export const COURSE: CourseRules = {
 };
 
 /**
- * Prueba de la bandera de cada nivel del río (`docs/MUNDO-2.md`, «Los 12 tramos del río»). Los niveles 7 a
- * 12 tienen la de contar mientras llegan las suyas.
+ * Prueba de la bandera de cada nivel del río (`docs/MUNDO-2.md`, «Los 12 tramos del río»); el 12, un repaso.
  */
 export const QUIZ_BY_LEVEL: Readonly<Record<number, QuizKind>> = {
   1: 'fingers',
@@ -48,6 +47,12 @@ export const QUIZ_BY_LEVEL: Readonly<Record<number, QuizKind>> = {
   4: 'neighbor',
   5: 'number-line',
   6: 'biggest',
+  7: 'ten-friends',
+  8: 'train',
+  9: 'socks',
+  10: 'frog-jumps',
+  11: 'boats',
+  12: 'river-review',
 };
 
 function quizFor(level: number): QuizKind {

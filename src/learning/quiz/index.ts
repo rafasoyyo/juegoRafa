@@ -2,6 +2,12 @@
 
 import { balanceQuiz } from './balance';
 import { biggestQuiz } from './biggest';
+import { boatsQuiz } from './boats';
+import { frogJumpsQuiz } from './frog-jumps';
+import { riverReviewQuiz } from './river-review';
+import { socksQuiz } from './socks';
+import { tenFriendsQuiz } from './ten-friends';
+import { trainQuiz } from './train';
 import { cableCarQuiz } from './cable-car';
 import { compareQuiz } from './compare';
 import { countQuiz } from './count';
@@ -59,6 +65,18 @@ export function generateQuiz(kind: QuizKind, band: AgeBand, rng: Rng, ctx: QuizC
       return numberLineQuiz(band, rng);
     case 'biggest':
       return biggestQuiz(band, rng);
+    case 'ten-friends':
+      return tenFriendsQuiz(band, rng);
+    case 'train':
+      return trainQuiz(band, rng);
+    case 'socks':
+      return socksQuiz(band, rng);
+    case 'frog-jumps':
+      return frogJumpsQuiz(band, rng);
+    case 'boats':
+      return boatsQuiz(band, rng);
+    case 'river-review':
+      return riverReviewQuiz(band, rng);
   }
 }
 
