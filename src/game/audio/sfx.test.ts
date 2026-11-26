@@ -113,3 +113,12 @@ describe('escala del puente', () => {
     for (let i = 1; i < fs.length; i++) expect(fs[i]).toBeGreaterThan(fs[i - 1]!);
   });
 });
+
+describe('bocina de la barca', () => {
+  it('es grave y distinta de la compuerta y de la escala', () => {
+    const fs = recipeFrequencies(recipe('horn'));
+    expect(Math.max(...fs)).toBeLessThan(400);
+    expect(recipe('horn')).not.toEqual(recipe('gate'));
+    expect(recipe('horn')).not.toEqual(recipe('scale'));
+  });
+});

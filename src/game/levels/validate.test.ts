@@ -219,3 +219,21 @@ describe('puentes', () => {
     expectError(withBridge(54, (l) => l.platforms.push({ x: 60, width: 4, height: 1.5 })), 'challenges[0]', /platforms\[1\]/);
   });
 });
+
+describe('barcas', () => {
+  const withBoat = (x: number, extra: (l: LevelData) => void = () => undefined): LevelData =>
+    withChanges((l) => {
+      l.length = 100;
+      l.blocks.push({ x: 82, row: 'low' });
+      l.challenges.push({ kind: 'boat', x, show: 'dots', reverse: false, demo: false });
+      extra(l);
+    });
+
+  it('una barca con su muelle y su lago sobre suelo llano y libre es válida', () => {
+    expect(validateLevel(withBoat(60))).toEqual([]);
+  });
+
+  it('un escalón en el muelle de la barca falla', () => {
+    expectError(withBoat(60, (l) => l.steps.push({ x: 55, width: 2, height: 1 })), 'challenges[0]', /steps\[/);
+  });
+});

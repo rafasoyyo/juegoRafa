@@ -54,7 +54,8 @@ export type SfxName =
   | 'goal'
   | 'gate'
   | 'tick'
-  | 'scale';
+  | 'scale'
+  | 'horn';
 export interface SfxOptions {
   /** Para `star`: 0, 1 o 2; cada una más aguda. Para `tick`: el número que se cuenta (1, 2…), cada uno más agudo. */
   index?: number;
@@ -175,6 +176,14 @@ export function recipe(name: SfxName, opts: SfxOptions = {}): Recipe {
       return {
         layers: ['C5', 'D5', 'E5', 'F5', 'G5', 'A5', 'B5', 'C6'].map((n, i) => tone(i * 0.07, i === 7 ? 0.4 : 0.14, 'triangle', hz(n), 0.24, 0.006)),
       };
+    case 'horn':
+      // Bocina de la barca: dos toques graves y redondos (una quinta), el segundo más largo.
+      return {
+        layers: [0, 0.3].flatMap((start, i) => {
+          const dur = i === 0 ? 0.2 : 0.55;
+          return [tone(start, dur, 'triangle', hz('G3'), 0.32, 0.03), tone(start, dur, 'sine', hz('D4'), 0.18, 0.03), tone(start, dur, 'square', hz('G2'), 0.06, 0.03)];
+        }),
+      };
     case 'tick': {
       // «Tic» de contar: corto, más agudo con cada número (una escala que sube).
       const k = Math.max(0, Math.min(20, Math.round(opts.index ?? 1) - 1));
@@ -220,4 +229,5 @@ export const SFX_NAMES: readonly SfxName[] = [
   'gate',
   'tick',
   'scale',
+  'horn',
 ];

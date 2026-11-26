@@ -18,6 +18,7 @@ const HIT_COOLDOWN_MS = 350;
 /** Tras el tercer fallo, lo que tarda en resolverse solo mientras Lalo señala. */
 const LALO_SOLVES_MS = 1400;
 export const CHALLENGE_DEPTH = 4;
+export const FADED_ALPHA = 0.45;
 
 export interface ChallengeHooks {
   lalo: LaloFlyer;
@@ -25,6 +26,10 @@ export interface ChallengeHooks {
   reward(count: number, x: number, y: number): void;
   /** Cierra un hueco del suelo (el del puente): pasa a ser suelo firme. */
   closeHole(hole: WorldSpike): void;
+  /** Mientras `on`, el zorro no responde a los controles (va en la barca). */
+  hold(on: boolean): void;
+  /** Mueve al zorro `dx` px junto con la plataforma que lo lleva. */
+  carry(dx: number): void;
 }
 
 export interface BlockView {
@@ -114,7 +119,7 @@ export abstract class ChallengeView {
     }
     audio.sfx('nope');
     this.wobble(block.visual);
-    if (event === 'wobble') this.hintOne();
+    if (event === 'wobble') this.hintOne(i);
     else if (event === 'count-up') this.hintTwo();
     else {
       const b = this.correctBlock().visual;
@@ -129,7 +134,7 @@ export abstract class ChallengeView {
   /** Resuelto: el resto de bloques se apaga, la mecánica hace lo suyo y Lalo vuelve a su sitio. */
   private resolve(from: number): void {
     this.blocks.forEach((b, i) => {
-      if (i !== this.correct) b.visual.setAlpha(0.45);
+      if (i !== this.correct) b.visual.setAlpha(FADED_ALPHA);
     });
     this.solve(this.blocks[from]!.visual);
     if (this.hooks.lalo.flying) this.scene.time.delayedCall(500, () => this.hooks.lalo.home());
@@ -139,8 +144,8 @@ export abstract class ChallengeView {
     this.scene.tweens.add({ targets: target, angle: { from: -9, to: 9 }, duration: 70, yoyo: true, repeat: 2, onComplete: () => target.setAngle(0) });
   }
 
-  /** Primer fallo (además del tambaleo del bloque). */
-  protected abstract hintOne(): void;
+  /** Primer fallo (además del tambaleo del bloque `block`). */
+  protected abstract hintOne(block: number): void;
   /** Segundo fallo: contar. */
   protected abstract hintTwo(): void;
   /** El reto queda resuelto desde el bloque `block` (el correcto). */

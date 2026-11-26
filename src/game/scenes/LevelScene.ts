@@ -1,10 +1,12 @@
 import Phaser from 'phaser';
+import { boatChallenge, type BoatChallenge } from '../../learning/challenges/boat';
 import { bridgeChallenge, type BridgeChallenge } from '../../learning/challenges/bridge';
 import { countChallenge, countRange, type CountChallenge } from '../../learning/challenges/count-blocks';
 import { tally } from '../../learning/challenges/ladder';
 import { ageBand } from '../../learning/quiz/age';
 import { createRng } from '../../learning/quiz/rng';
 import { audio } from '../audio/audio-engine';
+import { BoatChallengeView } from '../challenges/boat-challenge-view';
 import { BridgeChallengeView, bridgeHole } from '../challenges/bridge-challenge-view';
 import type { ChallengeView } from '../challenges/challenge-view';
 import { CountChallengeView } from '../challenges/count-challenge-view';
@@ -30,7 +32,7 @@ import {
   SPIKE_PLATE_H,
   STEEL,
 } from '../levels/spikes';
-import { RUN_SPEED, TILE, type WorldLevel, type WorldSpike } from '../levels/types';
+import { BOAT_LAKE, RUN_SPEED, TILE, type WorldLevel, type WorldSpike } from '../levels/types';
 import { FRUIT_SIZE, FRUIT_VX, FRUIT_VY, loseCookie, pickFruitBlock, powerPhase, type PowerPhase } from '../power/power';
 import { activeAge } from '../profile/active';
 import { session } from '../state';
@@ -179,9 +181,14 @@ export class LevelScene extends Phaser.Scene {
   /** Retos del recorrido (mundo 2) y Lalo volando para ayudar en ellos. */
   private challenges: ChallengeView[] = [];
   /** Retos generados para esta partida (con la edad del perfil), antes de dibujarlos. */
-  private plannedChallenges: (CountChallenge | BridgeChallenge)[] = [];
-  /** Huecos de agua de los puentes sin resolver: se sale de ellos rebotando, sin coste. */
+  private plannedChallenges: (CountChallenge | BridgeChallenge | BoatChallenge)[] = [];
+  /**
+   * Agua que cortan los retos en el suelo (hueco del puente y lago de la barca), para el escenario. La
+   * que hace rebotar en cada momento la da `water()`.
+   */
   private waterHoles: WorldSpike[] = [];
+  /** Rufo va en la barca: sin control hasta llegar. */
+  private held = false;
   private hudLalo?: Phaser.GameObjects.Image;
 
   private home!: RoundButton;
@@ -231,6 +238,7 @@ export class LevelScene extends Phaser.Scene {
     this.challenges = [];
     this.plannedChallenges = [];
     this.waterHoles = [];
+    this.held = false;
     this.hudLalo = undefined;
   }
 
@@ -298,19 +306,19 @@ export class LevelScene extends Phaser.Scene {
 
     // Durante el rebote se ignoran las flechas y el salto: si no, volvería a chocar.
     const knocked = time < this.knockUntil;
-    const dir = knocked ? 0 : (input.right ? 1 : 0) - (input.left ? 1 : 0);
+    const dir = knocked || this.held ? 0 : (input.right ? 1 : 0) - (input.left ? 1 : 0);
     if (this.spikeRebound && grounded && !knocked) this.spikeRebound = false;
     // Tras el rebote de los pinchos, si el niño no toca nada, Rufo acaba el arco fuera de la zona.
     const coasting = this.spikeRebound && dir === 0;
     if (!knocked && !coasting) this.fox.setVelocityX(dir * RUN_SPEED);
     // Parado en el borde de un foso casi sobre el hueco: se desliza hacia el suelo firme.
-    if (!knocked && !this.spikeRebound && dir === 0 && grounded && Math.abs(body.bottom - GROUND_TOP) <= 2) {
-      const nudge = lipNudge(body.x, body.width, [...this.world.spikes, ...this.waterHoles]);
+    if (!knocked && !this.held && !this.spikeRebound && dir === 0 && grounded && Math.abs(body.bottom - GROUND_TOP) <= 2) {
+      const nudge = lipNudge(body.x, body.width, [...this.world.spikes, ...this.water()]);
       if (nudge !== 0) this.fox.setVelocityX(nudge * LIP_NUDGE_SPEED);
     }
     if (dir !== 0) this.faceLeft = dir < 0;
 
-    if (input.jump && !this.prevJump && !knocked) this.jumpBufferedAt = time;
+    if (input.jump && !this.prevJump && !knocked && !this.held) this.jumpBufferedAt = time;
     this.prevJump = input.jump;
 
     const wantsJump = time - this.jumpBufferedAt <= BUFFER_MS;
@@ -416,10 +424,16 @@ export class LevelScene extends Phaser.Scene {
     const [min, max] = countRange(band);
     const pool = rng.shuffle(Array.from({ length: max - min + 1 }, (_, i) => min + i));
     let next = 0;
-    this.plannedChallenges = data.map((c) => (c.kind === 'bridge' ? bridgeChallenge(band, rng) : countChallenge(band, rng, c, pool[next++ % pool.length]!)));
+    this.plannedChallenges = data.map((c) => {
+      if (c.kind === 'bridge') return bridgeChallenge(band, rng);
+      if (c.kind === 'boat') return boatChallenge(band, rng);
+      return countChallenge(band, rng, c, pool[next++ % pool.length]!);
+    });
     this.waterHoles = data.flatMap((c, i) => {
       const plan = this.plannedChallenges[i]!;
-      return plan.kind === 'bridge' ? [bridgeHole(c.x, plan)] : [];
+      if (plan.kind === 'bridge') return [bridgeHole(c.x, plan)];
+      if (plan.kind === 'boat') return [{ index: -1, x: c.x, width: BOAT_LAKE * TILE }];
+      return [];
     });
   }
 
@@ -431,17 +445,29 @@ export class LevelScene extends Phaser.Scene {
       lalo,
       reward: (count: number, x: number, y: number) => this.rainCookies(count, x, y),
       closeHole: (hole: WorldSpike) => this.closeHole(hole),
+      hold: (on: boolean) => {
+        this.held = on;
+        if (on) this.fox.setVelocityX(0);
+      },
+      carry: (dx: number) => {
+        this.fox.x += dx;
+      },
     };
     this.challenges = data.map((c, i) => {
       const plan = this.plannedChallenges[i]!;
       if (plan.kind === 'bridge') return new BridgeChallengeView(this, this.fox, c, plan, hooks);
+      if (plan.kind === 'boat') return new BoatChallengeView(this, this.fox, c, plan, hooks);
       return new CountChallengeView(this, this.fox, c, plan, hooks);
     });
   }
 
+  /** Agua de los retos que hace rebotar ahora mismo (cambia al cerrar el puente o al cruzar la barca). */
+  private water(): WorldSpike[] {
+    return this.challenges.flatMap((c) => c.holes());
+  }
+
   /** Tabla del puente colocada: el hueco pasa a ser suelo firme. */
   private closeHole(hole: WorldSpike): void {
-    this.waterHoles = this.waterHoles.filter((h) => h.x !== hole.x);
     const plank = this.staticZone(hole.x, GROUND_TOP, hole.width, 100);
     this.physics.add.collider(this.fox, plank);
     this.surfaces.push(plank);
@@ -542,11 +568,12 @@ export class LevelScene extends Phaser.Scene {
    * (suelo, escalón o plataforma) se recuerda dónde, para rebotar hacia ese lado.
    */
   private checkSpikes(time: number, grounded: boolean): void {
-    const zone = grounded ? pitUnder(this.fox.body.bottom, this.fox.x, [...this.world.spikes, ...this.waterHoles]) : undefined;
+    const water = this.water();
+    const zone = grounded ? pitUnder(this.fox.body.bottom, this.fox.x, [...this.world.spikes, ...water]) : undefined;
     if (grounded && !zone) this.lastSafeX = this.fox.x;
     if (!zone) return;
-    if (this.waterHoles.includes(zone)) {
-      // Agua del puente: rebote fuera por donde entró, sin galleta ni parpadeo.
+    if (water.includes(zone)) {
+      // Agua del puente o del lago: rebote fuera por donde entró, sin galleta ni parpadeo.
       const side = exitSide(zone, this.lastSafeX, this.fox.x);
       this.knock(time, side, reboundVelocity(zone, side, this.fox.x), 'bump', false);
       this.spikeRebound = true;

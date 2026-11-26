@@ -185,3 +185,10 @@ Al colocarse la tabla del puente SHALL sonar una escala de notas que sube, disti
 #### Scenario: Tabla colocada
 - **WHEN** la tabla del puente llega al hueco
 - **THEN** suena una escala de notas que sube
+
+### Requirement: Bocina de la barca
+Al llenarse la barca SHALL sonar una bocina corta y grave, distinta de la compuerta y de la escala, respetando el silencio.
+
+#### Scenario: Barca llena
+- **WHEN** el último patito se sienta en la barca
+- **THEN** suena la bocina
