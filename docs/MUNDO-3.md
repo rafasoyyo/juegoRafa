@@ -1,6 +1,6 @@
 # Mundo 3: La isla de los dinosaurios
 
-Boceto aprobado el 26 de noviembre de 2026. Versión visual, con el mapa, las escenas de los retos y el plan: <https://claude.ai/artifact/5NyRuVYUF47ZGpRyAPtxGL>.
+Boceto aprobado el 26 de noviembre de 2026. Versión visual, con el mapa, las escenas de los retos y el plan: <https://claude.ai/artifact/5NyRuVYUF47ZGpRyAPtxGL>. Hoja de diseño de los dinosaurios (estilo A elegido): <https://claude.ai/artifact/6YvKsCLBKBPTz4ZunxJmvb>.
 
 Este documento manda sobre las specs de `openspec/specs/` en lo que toca al mundo 3. Si algo discrepa, se pregunta antes de cambiarlo.
 
@@ -42,6 +42,7 @@ Respuestas del usuario:
 - **Las piedras del géiser** entran como reto D.
 - **Enemigos**: tiranosaurio, pterosaurios y volcancitos que lanzan una piedra grande que sube y baja en vertical.
 - **Desbloqueo**: abierto desde el principio con 7 años o más; para los menores, al acabar el río.
+- **Aspecto menos infantil**, pensado para que no se vea de pequeños a ojos de un niño de 7 u 8 años: isla de expedición y dinosaurios en el **estilo A, documental** (ver «Dirección de arte»).
 
 Propuestas del boceto, aceptadas al aprobarlo (se ajustan si la prueba con niños dice otra cosa):
 
@@ -51,10 +52,20 @@ Propuestas del boceto, aceptadas al aprobarlo (se ajustan si la prueba con niño
 - **Demostración de Lalo** la primera vez que aparece cada reto.
 - **De 3 a 5 retos por nivel** y niveles de 90 a 150 s.
 - **Los herbívoros son amigos** y ayudan a pasar: el braquiosaurio lleva a Rufo, el triceratops aparta la roca de la cueva y el estegosaurio se agacha para que sus placas hagan de escalera.
-- **El gran volcán es amable**: echa humo y burbujas de colores y nunca hace daño. Solo los volcancitos del camino lanzan piedras.
+- **El gran volcán no hace daño**: humea, retumba y brilla al fondo. Solo los volcancitos del camino lanzan piedras.
 - **La lava es otro dibujo de los fosos de pinchos**: charcos naranjas redondeados, con el mismo «¡uy!», rebote y una galleta menos.
-- **Enemigos de dibujo amable**: el tiranosaurio es joven, redondo y sin dientes afilados, para que no dé miedo a los de 3 y 4 años.
-- **Dibujos propios**, en el estilo plano y redondeado de Rufo, sin parecerse a los de ninguna película ni serie, anotados en `public/assets/LICENSES.md`.
+- **Aventura sin sustos**: dinosaurios con proporciones reales, pero sin sangre, sin bocas abiertas hacia el jugador y siempre con aviso antes de moverse, para los de 3 y 4 años.
+- **Dibujos propios**, planos y sin contornos negros como el resto del juego, sin parecerse a los de ninguna película ni serie, anotados en `public/assets/LICENSES.md`.
+
+## Dirección de arte
+
+El mundo 3 sigue siendo plano y sin contornos negros, como todo el juego, pero cambia de registro para no verse infantil: es una isla de expedición, no de cuento. Rufo y Lalo no cambian; el contraste entre ellos y una isla más seria da la sensación de aventura. La paleta oscura entra en `visual-style` como ambiente propio del mundo 3, sin cambiar la de los mundos 1 y 2.
+
+- **Paleta y luz**: cielo de atardecer volcánico (azul pizarra a rosa óxido), selva verde profundo con franjas de niebla, basalto oscuro y piedra gris de ruinas. La luz sale de la lava y del cráter, con un resplandor naranja que tiñe lo que tiene cerca.
+- **Formas como grabados de una civilización perdida**: las formas de los retos son grabados en piedra que se iluminan (turquesa, ámbar y óxido), no pegatinas de colores. Hay ruinas por toda la isla: columnas, arcos, tótems y templos excavados en la roca.
+- **Bloques de piedra con borde dorado**: son los que se golpean en este mundo. Siguen leyéndose como «golpéame», pero encajan en la isla.
+- **Dinosaurios, estilo A (documental)**: anatomía de libro de ciencia y sombreado plano en tres tonos (luz en el lomo, color base, sombra en el vientre y en las patas del fondo). Ojos de reptil, ámbar con pupila vertical, sin mofletes ni sonrisas. Pieles en verdes, pardos y ocres con rayas, manchas y placas en óxido. El tiranosaurio va en postura horizontal, con los dientes solo asomando con la boca cerrada; los pterosaurios llevan alas de membrana con el dedo largo marcado.
+- **Sonido y efectos**: golpes de piedra, siseo de lava, retumbos lejanos y vapor, en lugar de «plop», «boing» o burbujas de colores. El suelo tiembla un poco antes de que el volcancito lance la piedra y cuando ruge el tiranosaurio.
 
 ## Qué se aprende
 
@@ -74,53 +85,53 @@ Los retos A, B y C se resuelven golpeando un bloque desde abajo, como en los mun
 
 ### A. El camino de huellas
 
-Para cruzar el barro caliente hay un camino de piedras, y cada piedra lleva una forma siguiendo una serie. Falta una piedra. El niño golpea el bloque con la forma que sigue, la piedra sale del barro con un «plop» y el camino se puede cruzar. Si cae al barro, rebota fuera como en los fosos. Usa la misma pieza que el hueco del puente de los números.
+Un puente en ruinas cruza un río de lava, y cada losa lleva grabada una forma siguiendo una serie. Falta una losa. El niño golpea el bloque con la forma que sigue, la losa sube y encaja con un golpe seco de piedra, y el puente se puede cruzar. Si cae a la lava, rebota fuera como en los fosos. Usa la misma pieza que el hueco del puente de los números.
 
 - 3-4 años: AB con colores. 5-6 años: AB, ABB y AAB con formas. 7-8 años: ABC y series que crecen.
 
 | Momento | Qué pasa |
 |---|---|
-| Acierta | La piedra sube, suena la serie como una melodía (una nota por forma) y se puede cruzar. |
+| Acierta | La losa encaja, los grabados se encienden uno tras otro con una nota cada uno y se puede cruzar. |
 | 1.er fallo | El bloque se tambalea y el hueco parpadea. |
-| 2.º fallo | Las piedras se encienden de una en una con su nota, y el ritmo deja oír lo que falta. |
-| 3.er fallo | Lalo señala el bloque correcto y la piedra sube sola. |
+| 2.º fallo | Las losas se encienden de una en una con su nota, y el ritmo deja oír lo que falta. |
+| 3.er fallo | Lalo señala el bloque correcto y la losa sube sola. |
 
 ### B. La puerta de la cueva
 
-Una roca tapa la entrada de la cueva y tiene un hueco con una forma. El niño golpea el bloque con la forma que encaja: la pieza vuela al hueco, gira si hace falta hasta encajar con un «clic», y el triceratops empuja la roca a un lado. Es la compuerta del río con otro dibujo.
+Una losa tapa la entrada de un templo excavado en la roca y tiene un hueco con una forma. El niño golpea el bloque con la forma que encaja: la pieza vuela al hueco, gira si hace falta hasta encajar con un chasquido de piedra, y el triceratops empuja la losa a un lado. Es la compuerta del río con otro dibujo.
 
 - 3-4 años: círculo, cuadrado y triángulo. 5-6 años: además estrella, rombo y óvalo, y alguna girada un cuarto de vuelta. 7-8 años: giros, volteos y formas compuestas.
 
 | Momento | Qué pasa |
 |---|---|
-| Acierta | La pieza encaja con un «clic», el triceratops empuja y la roca se aparta. |
-| 1.er fallo | La pieza vuela al hueco, no cabe, rebota con un «boing» y vuelve a su bloque. |
+| Acierta | La pieza encaja, el grabado se ilumina, el triceratops empuja y la losa se aparta. |
+| 1.er fallo | La pieza vuela al hueco, no cabe, rebota con un golpe sordo y vuelve a su bloque. |
 | 2.º fallo | El borde del hueco se recorre con un brillo, esquina a esquina. |
 | 3.er fallo | Lalo señala el bloque y la pieza encaja sola. |
 
 ### C. Paseo en braquiosaurio
 
-Un braquiosaurio espera en un lago de barro caliente para llevar a Rufo a la otra orilla. En el lomo lleva una silla con forma de dibujo (una casita, un barco, una flor) a la que le falta una pieza. El niño golpea el bloque que la completa; la pieza vuela a su sitio, Rufo sube y el braquiosaurio cruza despacio. Usa la plataforma que se mueve de la barca de diez.
+Un braquiosaurio espera en un río humeante para llevar a Rufo a la otra orilla. En el lomo lleva una plataforma con un emblema tallado (una flecha, un escudo, la cabeza de un dinosaurio) al que le falta una pieza. El niño golpea el bloque que lo completa; la pieza vuela a su sitio, Rufo sube y el braquiosaurio cruza despacio. Usa la plataforma que se mueve de la barca de diez.
 
 - 3-4 años: dos mitades. 5-6 años: 2 o 3 piezas. 7-8 años: tangram de 4 piezas.
 
 | Momento | Qué pasa |
 |---|---|
-| Acierta | La pieza encaja, el braquiosaurio dobla el cuello para que Rufo suba y cruza el lago. |
+| Acierta | La pieza encaja, el braquiosaurio dobla el cuello para que Rufo suba y cruza el río. |
 | 1.er fallo | La pieza se posa en el hueco, sobra o falta por un lado y vuelve a su bloque. |
 | 2.º fallo | El hueco se llena de puntitos que dibujan la forma que falta. |
-| 3.er fallo | Lalo señala el bloque y la silla se completa. |
+| 3.er fallo | Lalo señala el bloque y el emblema se completa. |
 
 ### D. Las piedras del géiser
 
-«Pisa solo los círculos», el ejemplo de la propuesta. Un cartel muestra una forma y sobre el barro hay una fila de piedras con formas. Las que tienen la forma del cartel aguantan; las otras se hunden despacio y Rufo rebota con suavidad a la piedra anterior, sin pinchazo ni galleta menos. Cuenta como acertado a la primera si cruza sin pisar ninguna piedra mala. Siempre hay un camino de piedras buenas que se puede saltar.
+«Pisa solo los círculos», el ejemplo de la propuesta. Un tótem de piedra muestra una forma y sobre un lago de lava hay una fila de piedras con formas. Las que tienen la forma del tótem aguantan; las otras se hunden despacio y Rufo rebota con suavidad a la piedra anterior, sin pinchazo ni galleta menos. Cuenta como acertado a la primera si cruza sin pisar ninguna piedra mala. Siempre hay un camino de piedras buenas que se puede saltar.
 
 - 3-4 años: la forma, siempre del mismo color. 5-6 años: la forma, aunque cambie de color o tamaño. 7-8 años: dos rasgos (por ejemplo, círculos azules) o la serie.
 
 | Momento | Qué pasa |
 |---|---|
-| Acierta | Cada piedra buena suena al pisarla y, al llegar a la orilla, salen chorritos de colores del géiser. |
-| 1.er fallo | La piedra se hunde despacio con un «blup» y Rufo vuelve a la anterior; el cartel da un saltito. |
+| Acierta | Cada piedra buena suena al pisarla y, al llegar a la orilla, el géiser lanza una columna de vapor detrás de Rufo. |
+| 1.er fallo | La piedra se hunde despacio con un siseo y Rufo vuelve a la anterior; la forma del tótem se ilumina. |
 | 2.º fallo | Las piedras buenas brillan un momento, de una en una. |
 | 3.er fallo | Lalo vuela sobre las piedras buenas y las malas se hunden solas: solo queda el camino bueno. |
 
@@ -170,11 +181,11 @@ La pieza `world-castle` del río, con 5 retos seguidos: uno de cada reto A, B y 
 
 ### Tiranosaurio, pterosaurios y volcancitos
 
-Se suman al erizo, la abeja, la rana y el cangrejo y siguen sus reglas: tocarlos es un pinchazo que resta una galleta del nivel, nunca baja de 0 y no cambia las estrellas. Los tres se mueven con un ritmo que se ve venir.
+Se suman al erizo, la abeja, la rana y el cangrejo y siguen sus reglas: tocarlos es un pinchazo que resta una galleta del nivel, nunca baja de 0 y no cambia las estrellas. Los tres se mueven con un ritmo que se ve venir y avisan antes: el tiranosaurio con su rugido, el pterosaurio con su sombra en el suelo y el volcancito temblando.
 
 - **Pterosaurios** (desde el nivel 3): vuelan en fila de dos o tres, en ondas regulares, siempre igual de altas. Se pasa por debajo cuando suben.
 - **Volcancito** (desde el nivel 5): un volcán pequeño en el suelo que lanza una piedra grande hacia arriba; la piedra sube y vuelve a caer en el mismo volcán, siempre en vertical. Antes de lanzarla tiembla y echa humo. Se salta el volcancito mientras la piedra está arriba.
-- **Tiranosaurio** (desde el nivel 7): joven, redondo y de bracitos cortos. Camina de un lado a otro de un tramo y cada pocos pasos se para a rugir (un rugido cómico, no un susto). Mientras ruge está quieto y se le salta por encima.
+- **Tiranosaurio** (desde el nivel 7): con proporciones reales, pero sin sangre ni gestos de ataque. Camina de un lado a otro de un tramo y cada pocos pasos se para a rugir (un rugido grave y corto que se oye venir, nunca de golpe). Mientras ruge está quieto y se le salta por encima.
 - Nunca se colocan junto a un reto, para que el niño piense con calma.
 
 ### Selector y desbloqueo
@@ -208,11 +219,11 @@ Ciclo de cada cambio: `openspec-explore` (si hay dudas) → `openspec-propose` �
 | 2 | `reto-puerta-formas` | El reto B: generador de formas y giros, la pieza que vuela y gira hasta encajar y el triceratops que aparta la roca. | `course-challenges`, `level-courses` | Pruebas del generador por franja (sin giro, un cuarto de vuelta, volteo). Revisión a 844×390. | |
 | 3 | `reto-braquiosaurio` | El reto C: siluetas con una pieza que falta y el braquiosaurio como plataforma que se mueve, reutilizando la barca. | `course-challenges`, `platformer-level`, `game-audio` | Pruebas de las siluetas (2, 3 y 4 piezas). Rufo no puede caerse del lomo en marcha. | |
 | 4 | `reto-geiser` | El reto D: piedras que aguantan o se hunden despacio según su forma, el rebote suave a la piedra anterior y el registro de «a la primera». | `course-challenges`, `platformer-level` (piedras que se hunden) | Pruebas del generador por franja. Siempre hay un camino de piedras buenas que se puede saltar. Revisión a 844×390. | |
-| 5 | `enemigos-de-la-isla` (en paralelo con 1 a 4) | Tiranosaurio, pterosaurios y volcancito. Solo toca `level-enemies`. | `level-enemies` (movimiento, aviso y colocación lejos de los retos); arte en `public/assets/svg` anotado en `LICENSES.md` | Pruebas de movimiento y de colocación. La piedra del volcancito nunca sale de su columna. El aviso del tiranosaurio y del volcancito se ve venir, comprobado en el móvil. | |
+| 5 | `enemigos-de-la-isla` (en paralelo con 1 a 4) | Tiranosaurio, pterosaurios y volcancito. Solo toca `level-enemies`. | `level-enemies` (movimiento, aviso y colocación lejos de los retos); arte en `public/assets/svg` en el estilo A de la hoja de diseño, anotado en `LICENSES.md` | Pruebas de movimiento y de colocación. La piedra del volcancito nunca sale de su columna. El aviso del tiranosaurio y del volcancito se ve venir, comprobado en el móvil. | |
 | 6 | `pruebas-bandera-isla` (en paralelo con 1 a 4) | Once tipos de prueba nuevos (niveles 1 a 11), el repaso del nivel 12 y el catálogo del mundo 3, partiendo de `shapes.ts`, `series.ts` y `mirror.ts`. TypeScript puro con el mismo contrato (`Question`, `AgeBand`, `Rng`). | `flag-quiz` | Pruebas deterministas con semilla para cada prueba y franja. Cada prueba revisada en la pantalla de la bandera a 844×390. | |
 | 7 | `huevo-del-mapa` | Las 12 manchas del huevo, la animación de la mancha nueva y el final con la eclosión. La cueva de las letras se añade cuando exista el mundo 4. | `world-map`, `mascot-guide`, `child-profile` | Función pura de manchas según el progreso (0, una pendiente, 12). El final se ve una vez y se salta tocando. | |
 | 8 | `castillo-del-volcan` | El nido del cráter con la pieza `world-castle` y la medalla de la huella. | `world-castle`, `world-map` | Siempre da medalla y se ve en el selector. | |
-| 9 | `mundo-3-isla` | El contenido: 12 ambientes (con la lava como dibujo de los fosos), 12 recorridos en JSON con sus retos, el mapa del volcán, el desbloqueo por edad (7 años) y la apertura del mundo (se quita el interruptor de desarrollo). | `level-courses`, `world-map`, `visual-style` | `validate.ts` y `duration.ts` pasan con los 12 niveles. Perfil de 6 años: la isla tiembla con candado hasta acabar el río. Recorrido completo del mundo en el móvil. | |
+| 9 | `mundo-3-isla` | El contenido: 12 ambientes (con la lava como dibujo de los fosos), 12 recorridos en JSON con sus retos, el mapa del volcán, el desbloqueo por edad (7 años) y la apertura del mundo (se quita el interruptor de desarrollo). | `level-courses`, `world-map`, `visual-style` (paleta y ambiente del mundo 3, bloques de piedra, grabados) | `validate.ts` y `duration.ts` pasan con los 12 niveles. Perfil de 6 años: la isla tiembla con candado hasta acabar el río. Recorrido completo del mundo en el móvil. | |
 | 10 | Prueba final con niños y ajustes | Rangos por edad, ritmo de los enemigos y si el tiranosaurio o el volcán dan miedo a los de 3 y 4 años. Los ajustes de valores no necesitan un cambio formal. Después, actualizar el estado en README y AGENTS.md y desplegar cuando se decida. | — | Notas de la prueba. | |
 
 Para empezar cada paso: `openspec-propose` con el nombre del cambio y una frase como «sigue docs/MUNDO-3.md, sección A. El camino de huellas», para que la propuesta parta de lo aprobado y no lo vuelva a inventar.
