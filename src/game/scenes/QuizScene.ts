@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import type { ChallengeTally } from '../../learning/challenges/ladder';
 import { audio } from '../audio/audio-engine';
 import { COLORS } from '../config';
 import type { AmbientId } from '../levels/types';
@@ -51,7 +52,7 @@ import {
 import type { LevelCompleteData } from './LevelCompleteScene';
 
 /** Datos con los que se abre la prueba: el mundo del nivel y lo que pasó en él. */
-export type QuizData = Partial<LevelRecap> & { world?: WorldId };
+export type QuizData = Partial<LevelRecap> & { world?: WorldId; challenges?: ChallengeTally };
 
 /** Ancho útil como mucho: en pantallas muy alargadas la prueba se centra. */
 const MAX_USEFUL_W = 1200;
@@ -99,6 +100,8 @@ interface OptionView {
 export class QuizScene extends Phaser.Scene {
   private def!: WorldDef;
   private recap!: LevelRecap;
+  /** Retos del recorrido acertados a la primera, para las estrellas (se pasa tal cual). */
+  private challenges?: ChallengeTally;
   private kind: QuizKind = 'count';
   private run!: QuizRun;
   private seed = 1;
@@ -148,6 +151,7 @@ export class QuizScene extends Phaser.Scene {
       blocksHit: data?.blocksHit ?? 0,
       blocksTotal: data?.blocksTotal ?? 0,
     };
+    this.challenges = data?.challenges;
     this.kind = this.def.quizFor(level);
     this.seed = (Date.now() ^ (level * 7919)) >>> 0;
     const questions = generateQuiz(this.kind, ageBand(activeAge()), createRng(this.seed), {
@@ -668,6 +672,7 @@ export class QuizScene extends Phaser.Scene {
         blocksHit: this.recap.blocksHit,
         blocksTotal: this.recap.blocksTotal,
         cookies: this.recap.cookies,
+        challenges: this.challenges,
         passed,
       };
       goTo(this, 'LevelComplete', data);

@@ -51,9 +51,11 @@ export type SfxName =
   | 'power-off'
   | 'prize'
   | 'star'
-  | 'goal';
+  | 'goal'
+  | 'gate'
+  | 'tick';
 export interface SfxOptions {
-  /** Para `star`: 0, 1 o 2; cada una más aguda. */
+  /** Para `star`: 0, 1 o 2; cada una más aguda. Para `tick`: el número que se cuenta (1, 2…), cada uno más agudo. */
   index?: number;
 }
 
@@ -159,6 +161,19 @@ export function recipe(name: SfxName, opts: SfxOptions = {}): Recipe {
     }
     case 'goal':
       return VICTORY;
+    case 'gate':
+      // Compuerta que se levanta: madera que cruje hacia arriba y cuatro notas que suben.
+      return {
+        layers: [
+          tone(0, 0.5, 'triangle', [[0, 160], [0.45, 320]], 0.22, 0.02),
+          ...['G5', 'C6', 'E6', 'G6'].map((n, i) => tone(0.1 + i * 0.08, 0.24, 'triangle', hz(n), 0.24, 0.006)),
+        ],
+      };
+    case 'tick': {
+      // «Tic» de contar: corto, más agudo con cada número (una escala que sube).
+      const k = Math.max(0, Math.min(20, Math.round(opts.index ?? 1) - 1));
+      return { layers: [tone(0, 0.09, 'sine', 523 * Math.pow(2, k / 12), 0.3, 0.006)] };
+    }
   }
 }
 
@@ -196,4 +211,6 @@ export const SFX_NAMES: readonly SfxName[] = [
   'prize',
   'star',
   'goal',
+  'gate',
+  'tick',
 ];

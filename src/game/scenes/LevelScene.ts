@@ -1,5 +1,11 @@
 import Phaser from 'phaser';
+import { countChallenges } from '../../learning/challenges/count-blocks';
+import { tally } from '../../learning/challenges/ladder';
+import { ageBand } from '../../learning/quiz/age';
+import { createRng } from '../../learning/quiz/rng';
 import { audio } from '../audio/audio-engine';
+import { CountChallengeView } from '../challenges/count-challenge-view';
+import { LaloFlyer } from '../challenges/lalo-flyer';
 import { COLORS, GAME_H } from '../config';
 import { courseFor, layoutEnemies } from '../enemies/enemy-layout';
 import { overlaps } from '../enemies/enemy-motion';
@@ -23,6 +29,7 @@ import {
 } from '../levels/spikes';
 import { RUN_SPEED, TILE, type WorldLevel } from '../levels/types';
 import { FRUIT_SIZE, FRUIT_VX, FRUIT_VY, loseCookie, pickFruitBlock, powerPhase, type PowerPhase } from '../power/power';
+import { activeAge } from '../profile/active';
 import { session } from '../state';
 import { clampLevel, levelData, showWorld, worldDef } from '../worlds/registry';
 import type { WorldDef, WorldId } from '../worlds/types';
@@ -166,6 +173,10 @@ export class LevelScene extends Phaser.Scene {
   private nextSparkleAt = 0;
   private glowing = false;
 
+  /** Retos del recorrido (mundo 2) y Lalo volando para ayudar en ellos. */
+  private challenges: CountChallengeView[] = [];
+  private hudLalo?: Phaser.GameObjects.Image;
+
   private home!: RoundButton;
   private progress!: { container: Phaser.GameObjects.Container; fill: Phaser.GameObjects.Graphics; face: Phaser.GameObjects.Image; barW: number };
   private counter!: CookieCounter;
@@ -210,6 +221,8 @@ export class LevelScene extends Phaser.Scene {
     this.sparkles = [];
     this.nextSparkleAt = 0;
     this.glowing = false;
+    this.challenges = [];
+    this.hudLalo = undefined;
   }
 
   create(): void {
@@ -235,6 +248,7 @@ export class LevelScene extends Phaser.Scene {
     this.buildFox();
     this.buildGoal();
     this.buildEnemies();
+    this.buildChallenges();
 
     this.physics.add.collider(this.fox, ground, undefined, () => this.groundIsSolid(), this);
     this.physics.add.collider(this.fox, pitFloors);
@@ -302,6 +316,7 @@ export class LevelScene extends Phaser.Scene {
     this.tickPower(time);
     this.checkEnemies(time);
     this.checkSpikes(time, grounded);
+    for (const c of this.challenges) c.update(this.fox.x);
     this.animateFox(time, delta, grounded, dir);
     this.updateProgress();
   }
@@ -375,6 +390,42 @@ export class LevelScene extends Phaser.Scene {
     for (const spawn of spawns) this.enemyCounts[spawn.kind] += 1;
     this.enemies = spawns.map((spawn) => createEnemyView(this, spawn, GROUND_TOP));
     for (const enemy of this.enemies) enemy.update(this.time.now);
+  }
+
+  /**
+   * Retos del recorrido: sus valores salen de la franja de edad del perfil y cambian en cada partida.
+   * Fallar no quita galletas; abrir la compuerta da `GATE_COOKIES`.
+   */
+  private buildChallenges(): void {
+    const data = this.world.challenges;
+    if (data.length === 0) return;
+    const rng = createRng((Date.now() ^ (this.level * 104729)) >>> 0);
+    const generated = countChallenges(ageBand(activeAge()), rng, data);
+    const lalo = new LaloFlyer(this, () => this.hudLalo);
+    const hooks = { lalo, reward: (count: number, x: number, y: number) => this.rainCookies(count, x, y) };
+    this.challenges = data.map((c, i) => new CountChallengeView(this, this.fox, c, generated[i]!, hooks));
+  }
+
+  /** Lluvia de galletas que suben del punto (x, y) y se suman al contador. */
+  private rainCookies(count: number, x: number, y: number): void {
+    for (let i = 0; i < count; i++) {
+      const cookie = this.add.image(x, y, 'cookie').setDepth(6);
+      this.tweens.add({
+        targets: cookie,
+        x: x + (i - (count - 1) / 2) * 70,
+        y: y - 90,
+        alpha: 0,
+        delay: i * 120,
+        duration: 600,
+        ease: 'Quad.easeOut',
+        onStart: () => audio.sfx('cookie'),
+        onComplete: () => cookie.destroy(),
+      });
+    }
+    this.cookies += count;
+    this.counter.setValue(this.cookies);
+    this.layout(this.scale.width, this.scale.height);
+    bump(this, this.counter.container);
   }
 
   /** Enemigos que tocan ahora la caja del zorro. */
@@ -811,6 +862,7 @@ export class LevelScene extends Phaser.Scene {
         cookies: this.cookies,
         blocksHit: this.blocksHit,
         blocksTotal: this.world.blocks.length,
+        challenges: tally(this.challenges),
       } satisfies QuizData),
     );
   }
@@ -844,6 +896,7 @@ export class LevelScene extends Phaser.Scene {
 
     this.counter = cookieCounter(this, 0, 0, 0);
     const lalo = drawLalo(this, 32, 140);
+    this.hudLalo = lalo.list[0] as Phaser.GameObjects.Image;
 
     for (const obj of [this.home, container, this.counter.container, lalo]) fixToCamera(obj.setDepth(HUD_DEPTH));
     this.updateProgress();

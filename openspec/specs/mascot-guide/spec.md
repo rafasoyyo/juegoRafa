@@ -59,3 +59,10 @@ SHALL ofrecer otro botón de silencio.
 #### Scenario: Buscar otro botón de silencio
 - **WHEN** el niño recorre el mapa, el nivel, mi personaje y la pantalla de nivel completado
 - **THEN** el único control que activa o quita el sonido es el altavoz de Lalo
+
+### Requirement: Lalo vuela a ayudar en los retos
+En la demostración de un reto y en su tercer fallo, Lalo SHALL volar desde su sitio del HUD hasta el reto, señalar el bloque correcto con una flecha que bota y volver a su sitio cuando el reto se resuelve. Mientras vuela SHALL NOT tapar los controles táctiles.
+
+#### Scenario: Ayuda tras tres fallos
+- **WHEN** el niño falla tres veces un reto
+- **THEN** Lalo vuela al bloque correcto, lo señala y vuelve a su sitio al abrirse la compuerta

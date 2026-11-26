@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
-import { starsFor, type Stars } from '../../learning/scoring';
+import type { ChallengeTally } from '../../learning/challenges/ladder';
+import { starsFor, starsForChallenges, type Stars } from '../../learning/scoring';
 import { saveActive } from '../profile/active';
 import { completeLevel, markPending, session } from '../state';
 import { drawFox } from '../ui/characters';
@@ -18,6 +19,8 @@ export interface LevelCompleteData {
   blocksHit: number;
   blocksTotal: number;
   cookies: number;
+  /** Retos del recorrido acertados a la primera (mundos que cuentan estrellas por retos). */
+  challenges?: ChallengeTally;
   /** Si se superó la prueba de la bandera. Sin dato (p. ej. abriendo la escena en desarrollo), sí. */
   passed?: boolean;
 }
@@ -52,13 +55,15 @@ export class LevelCompleteScene extends Phaser.Scene {
       blocksHit: data?.blocksHit ?? 0,
       blocksTotal: data?.blocksTotal ?? 0,
       cookies: data?.cookies ?? 0,
+      challenges: data?.challenges,
       passed: data?.passed ?? true,
     };
   }
 
   create(): void {
     // Se guarda una sola vez al llegar, no en cada recolocación.
-    this.stars = starsFor(this.result.blocksHit, this.result.blocksTotal);
+    const tally = this.result.challenges ?? { firstTry: 0, total: 0 };
+    this.stars = this.def.stars === 'challenges' ? starsForChallenges(tally.firstTry, tally.total) : starsFor(this.result.blocksHit, this.result.blocksTotal);
     if (this.result.passed) completeLevel(session, this.def.id, this.result.level, this.stars, this.result.cookies);
     else markPending(session, this.def.id, this.result.level, this.result.cookies);
     saveActive();
