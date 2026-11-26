@@ -1,0 +1,40 @@
+{
+  "ambient": "lago",
+  "length": 210,
+  "steps": [
+    { "x": 108.7, "width": 4, "height": 1 },
+    { "x": 146.2, "width": 5, "height": 1 },
+    { "x": 151.2, "width": 4, "height": 2 }
+  ],
+  "platforms": [
+    { "x": 55.7, "width": 4, "height": 1.5 },
+    { "x": 61.7, "width": 4, "height": 1.5 },
+    { "x": 72.7, "width": 4, "height": 1.5 }
+  ],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 57.7, "row": "low", "on": "platform" },
+    { "x": 63.7, "row": "low", "on": "platform" },
+    { "x": 74.7, "row": "low", "on": "platform" },
+    { "x": 110.7, "row": "high", "on": "step" },
+    { "x": 148.7, "row": "low", "on": "step" },
+    { "x": 153.2, "row": "high", "on": "step" },
+    { "x": 187.7, "row": "low" },
+    { "x": 188.9, "row": "low" },
+    { "x": 196.9, "row": "high" },
+    { "x": 198.1, "row": "high" },
+    { "x": 199.3, "row": "high" }
+  ],
+  "spikes": [
+    { "x": 21.2, "width": 1 },
+    { "x": 100.7, "width": 1 },
+    { "x": 162.2, "width": 1 }
+  ],
+  "challenges": [
+    { "kind": "bridge", "x": 30.2 },
+    { "kind": "count", "x": 89.7, "show": "tenframe" },
+    { "kind": "bridge", "x": 120.7 },
+    { "kind": "count", "x": 176.2, "show": "dots", "reverse": true }
+  ]
+}

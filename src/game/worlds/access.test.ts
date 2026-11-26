@@ -14,10 +14,17 @@ describe('puerta de los mundos', () => {
     expect(worldAccess(ARCOIRIS, createGameState(), undefined, OFF)).toBe('open');
   });
 
-  it('con el interruptor apagado, el río aún no existe para nadie', () => {
+  it('el río ya no depende del interruptor: está abierto también en el juego publicado', () => {
+    expect(RIO.gate?.flag).toBeUndefined();
+    expect(worldAccess(RIO, createGameState(), 6, OFF)).toBe('open');
+  });
+
+  it('un mundo con el interruptor apagado aún no existe para nadie', () => {
+    const building = { ...RIO, gate: { ...RIO.gate, flag: 'mundo-2-rio' as const } };
     const state = createGameState();
     completeLevel(state, 'arcoiris', 12, 3, 0);
-    for (const age of [3, 5, 6, 8, undefined]) expect(worldAccess(RIO, state, age, OFF)).toBe('soon');
+    for (const age of [3, 5, 6, 8, undefined]) expect(worldAccess(building, state, age, OFF)).toBe('soon');
+    expect(worldAccess(building, state, 6, ON)).toBe('open');
   });
 
   it('con 6 años o más, el río está abierto desde el principio', () => {

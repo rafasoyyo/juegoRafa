@@ -1,0 +1,40 @@
+{
+  "ambient": "puente",
+  "length": 226,
+  "steps": [
+    { "x": 152.4, "width": 4, "height": 1 },
+    { "x": 206.8, "width": 5, "height": 1 },
+    { "x": 211.8, "width": 4, "height": 2 }
+  ],
+  "platforms": [
+    { "x": 55.7, "width": 4, "height": 1.5 },
+    { "x": 66.7, "width": 4, "height": 1.5 },
+    { "x": 72.7, "width": 4, "height": 1.5 }
+  ],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 57.7, "row": "low", "on": "platform" },
+    { "x": 68.7, "row": "low", "on": "platform" },
+    { "x": 74.7, "row": "low", "on": "platform" },
+    { "x": 117.2, "row": "high" },
+    { "x": 118.4, "row": "high" },
+    { "x": 154.4, "row": "high", "on": "step" },
+    { "x": 196.9, "row": "low" },
+    { "x": 198.1, "row": "low" },
+    { "x": 199.3, "row": "low" },
+    { "x": 209.3, "row": "low", "on": "step" },
+    { "x": 213.8, "row": "high", "on": "step" }
+  ],
+  "spikes": [
+    { "x": 21.2, "width": 1 },
+    { "x": 107.7, "width": 2 },
+    { "x": 163.4, "width": 2 }
+  ],
+  "challenges": [
+    { "kind": "bridge", "x": 30.2 },
+    { "kind": "boat", "x": 89.7 },
+    { "kind": "bridge", "x": 126.9 },
+    { "kind": "boat", "x": 178.4 }
+  ]
+}

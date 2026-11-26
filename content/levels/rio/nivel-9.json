@@ -1,0 +1,40 @@
+{
+  "ambient": "huertas",
+  "length": 230,
+  "steps": [
+    { "x": 177.8, "width": 5, "height": 1 },
+    { "x": 182.8, "width": 4, "height": 2 },
+    { "x": 215.8, "width": 4, "height": 1 }
+  ],
+  "platforms": [
+    { "x": 83.9, "width": 4, "height": 1.5 },
+    { "x": 93.9, "width": 4, "height": 1.5 }
+  ],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 20.7, "row": "high" },
+    { "x": 21.9, "row": "high" },
+    { "x": 85.9, "row": "low", "on": "platform" },
+    { "x": 95.9, "row": "low", "on": "platform" },
+    { "x": 127.4, "row": "low" },
+    { "x": 128.6, "row": "low" },
+    { "x": 129.8, "row": "low" },
+    { "x": 180.3, "row": "low", "on": "step" },
+    { "x": 184.8, "row": "high", "on": "step" },
+    { "x": 217.8, "row": "high", "on": "step" }
+  ],
+  "spikes": [
+    { "x": 44.4, "width": 1 },
+    { "x": 51.4, "width": 1 },
+    { "x": 136.3, "width": 2 },
+    { "x": 169.8, "width": 2 }
+  ],
+  "challenges": [
+    { "kind": "count", "x": 34.4, "show": "tenframe" },
+    { "kind": "bridge", "x": 59.4 },
+    { "kind": "boat", "x": 109.9 },
+    { "kind": "bridge", "x": 145.3 },
+    { "kind": "boat", "x": 198.8 }
+  ]
+}
