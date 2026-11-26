@@ -46,8 +46,6 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: juegorafa-edu
           channelId: dev
-          # Cada despliegue renueva la caducidad; 30 días es el máximo.
-          expires: 30d
 
       - name: URL de la preview
         run: echo "Preview publicada en ${{ steps.firebase.outputs.details_url }}" >> "$GITHUB_STEP_SUMMARY"
