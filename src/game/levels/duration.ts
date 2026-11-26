@@ -9,7 +9,7 @@ import { flagTile } from './parse';
 import { RUN_SPEED, START_TILE, TILE, type LevelData } from './types';
 
 /** Segundos extra por cada elemento al jugar con calma: pararse, colocarse, saltar, subir y bajar. */
-export const CALM_SECONDS = { block: 2.5, platform: 1.5, step: 1, spikes: 1 } as const;
+export const CALM_SECONDS = { block: 2.5, platform: 1.5, step: 1, spikes: 1, challenge: 8 } as const;
 
 export interface Duration {
   /** Corriendo a tope sin pararse (en carrera la velocidad horizontal no cambia al saltar). */
@@ -25,7 +25,8 @@ export function estimateDuration(level: LevelData): Duration {
     CALM_SECONDS.block * level.blocks.length +
     CALM_SECONDS.platform * level.platforms.length +
     CALM_SECONDS.step * level.steps.length +
-    CALM_SECONDS.spikes * level.spikes.length;
+    CALM_SECONDS.spikes * level.spikes.length +
+    CALM_SECONDS.challenge * level.challenges.length;
   return { fastS, calmS };
 }
 
