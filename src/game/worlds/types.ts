@@ -33,6 +33,8 @@ export interface MapDecor {
   at: readonly [number, number];
   key: string;
   size: number;
+  /** Al tocarlo se abre el nivel 1 con el prólogo del mundo (la madriguera del mundo 1). */
+  prologue?: boolean;
 }
 
 /** Aspecto del mapa del mundo, en el artboard de diseño de `MapScene` (pantallas de 1180×820). */
@@ -93,6 +95,11 @@ export interface WorldDef extends WorldShape {
   course: CourseRules;
   /** Arcoíris del horizonte que crece de nivel en nivel (`horizon-rainbow.ts`). */
   horizonRainbow: boolean;
+  /**
+   * Prólogo al empezar el nivel 1 la primera vez (`story/prologue.ts`): Rufo sale de la madriguera y
+   * Lalo le señala el arcoíris. Sin él, el nivel 1 empieza sin más.
+   */
+  prologue?: boolean;
   map: WorldMap;
   selector: SelectorButton;
   gate?: WorldGate;

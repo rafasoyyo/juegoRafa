@@ -34,8 +34,10 @@ import {
 } from '../levels/spikes';
 import { BOAT_LAKE, RUN_SPEED, TILE, type WorldLevel, type WorldSpike } from '../levels/types';
 import { FRUIT_SIZE, FRUIT_VX, FRUIT_VY, loseCookie, pickFruitBlock, powerPhase, type PowerPhase } from '../power/power';
-import { activeAge } from '../profile/active';
+import { activeAge, saveActive } from '../profile/active';
 import { session } from '../state';
+import { Prologue } from '../story/prologue';
+import { markSeen, shouldPlayPrologue } from '../story/story';
 import { clampLevel, levelData, showWorld, worldDef } from '../worlds/registry';
 import type { WorldDef, WorldId } from '../worlds/types';
 import type { QuizData } from './QuizScene';
@@ -119,6 +121,8 @@ interface LevelData {
   level?: number;
   /** Se juega el castillo del mundo (tras su último nivel) en lugar de un nivel. */
   castle?: boolean;
+  /** Empieza con el prólogo aunque ya se haya visto (al tocar la madriguera del mapa). */
+  prologue?: boolean;
 }
 
 /**
@@ -198,6 +202,8 @@ export class LevelScene extends Phaser.Scene {
   private home!: RoundButton;
   private progress!: { container: Phaser.GameObjects.Container; fill: Phaser.GameObjects.Graphics; face: Phaser.GameObjects.Image; barW: number };
   private counter!: CookieCounter;
+  /** Se pidió el prólogo desde el mapa. */
+  private forcePrologue = false;
 
   constructor() {
     super('Level');
@@ -247,6 +253,7 @@ export class LevelScene extends Phaser.Scene {
     this.waterHoles = [];
     this.held = false;
     this.hudLalo = undefined;
+    this.forcePrologue = data?.prologue === true && !this.castle;
   }
 
   create(): void {
@@ -261,7 +268,9 @@ export class LevelScene extends Phaser.Scene {
     const spans = groundSpans(worldW, gaps);
     const pits = gaps.map((z) => ({ from: z.x, to: z.x + z.width }));
     const horizon = this.def.horizonRainbow ? { level: this.level, lastLevel: this.def.levelCount } : null;
-    addScenery(this, this.ambient, worldW, GROUND_TOP, horizon, this.scale.width, { spans, pits });
+    const scenery = addScenery(this, this.ambient, worldW, GROUND_TOP, horizon, this.scale.width, { spans, pits });
+    // En el nivel 1 de un mundo con prólogo, Rufo sale de su madriguera.
+    const burrow = this.def.prologue && this.level === 1 && !this.castle ? this.add.image(this.world.startX - 60, GROUND_TOP + 10, 'decor-burrow').setOrigin(0.5, 1).setScale(1.2).setDepth(3) : undefined;
     // Suelo por tramos entre los fosos y, en cada foso, un fondo a la altura de las puntas.
     const ground = spans.map((span) => this.staticZone(span.from, GROUND_TOP, span.to - span.from, 100));
     const pitFloors = pits.map((pit) => this.staticZone(pit.from, GROUND_TOP + PIT_TIP, pit.to - pit.from, 100 - PIT_TIP));
@@ -289,6 +298,32 @@ export class LevelScene extends Phaser.Scene {
     this.buildHud();
     this.layout(this.scale.width, this.scale.height);
     onResize(this, (w, h) => this.layout(w, h));
+    if (burrow && !this.castle && shouldPlayPrologue(session, this.def, this.level, this.forcePrologue)) this.playPrologue(burrow, scenery.rainbow);
+  }
+
+  /** Prólogo del mundo: el niño no mueve a Rufo hasta que acaba o lo salta con un toque. */
+  private playPrologue(burrow: Phaser.GameObjects.Image, rainbow?: Phaser.GameObjects.Image): void {
+    markSeen(session, 'prologo', this.def.id);
+    saveActive();
+    this.held = true;
+    const prologue = new Prologue(this, {
+      fox: this.fox,
+      hat: this.hat,
+      hatId: session.hat,
+      foxSize: FOX_SIZE,
+      burrowMouth: { x: burrow.x + 10, y: burrow.y - 40 },
+      lalo: new LaloFlyer(this, () => this.hudLalo),
+      rainbow,
+      hop: () => {
+        this.fox.setVelocityY(-JUMP_SPEED * 0.75);
+        audio.sfx('jump');
+      },
+      done: () => {
+        this.held = false;
+      },
+    });
+    this.input.on(Phaser.Input.Events.POINTER_DOWN, () => prologue.tap());
+    prologue.play();
   }
 
   override update(time: number, delta: number): void {

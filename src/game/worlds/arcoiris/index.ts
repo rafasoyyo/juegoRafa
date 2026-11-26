@@ -81,7 +81,7 @@ const MAP: WorldMap = {
   ],
   rainbow: { center: [1940, 395], radius: 300, band: 13 },
   decor: [
-    { at: [95, 640], key: 'decor-burrow', size: 190 },
+    { at: [95, 640], key: 'decor-burrow', size: 190, prologue: true },
     { at: [265, 420], key: 'tree', size: 0 },
     { at: [610, 420], key: 'tree', size: 0 },
     { at: [790, 330], key: 'decor-tree-autumn', size: 110 },
@@ -110,6 +110,7 @@ export const ARCOIRIS: WorldDef = {
   enemies: ENEMIES,
   course: COURSE,
   horizonRainbow: true,
+  prologue: true,
   map: MAP,
   selector: { color: 0xffe9e6, shadow: 0xf2c4bd, label: '123' },
 };

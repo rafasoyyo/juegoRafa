@@ -301,3 +301,17 @@ describe('progress-codec: medalla del castillo', () => {
     expect(back.worlds.get('rio')?.medal).toBe(false);
   });
 });
+
+describe('progress-codec: escenas vistas', () => {
+  it('ida y vuelta, y sin escenas no se guarda el campo', () => {
+    const s = createGameState();
+    expect(encodeProgress(s).seen).toBeUndefined();
+    s.seen.add('prologo:arcoiris');
+    const back = decodeProgress(JSON.parse(JSON.stringify(encodeProgress(s))));
+    expect([...back.seen]).toEqual(['prologo:arcoiris']);
+  });
+  it('lo guardado antes de las escenas no tiene ninguna, y lo dañado se ignora', () => {
+    expect(decodeProgress({ cookies: 3, ownedHats: ['cap'], hat: 'cap' }).seen.size).toBe(0);
+    expect([...decodeProgress({ seen: ['final:arcoiris', 7, '', null] }).seen]).toEqual(['final:arcoiris']);
+  });
+});
