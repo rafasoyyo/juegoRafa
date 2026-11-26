@@ -1,0 +1,51 @@
+# Despliegue de una preview en el canal «dev» de Firebase Hosting.
+# Se lanza automáticamente con cada push o merge a la rama dev (y a mano).
+# La URL del canal es fija y aparece en el resumen del job.
+name: Despliegue de preview (Firebase)
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+concurrency:
+  group: firebase-preview-dev
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    environment:
+      name: preview
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Pruebas
+        run: npm test
+
+      - name: Compilar
+        run: npm run build
+
+      - name: Publicar preview en Firebase Hosting
+        id: firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: juegorafa-edu
+          channelId: dev
+
+      - name: URL de la preview
+        run: echo "Preview publicada en ${{ steps.firebase.outputs.details_url }}" >> "$GITHUB_STEP_SUMMARY"
