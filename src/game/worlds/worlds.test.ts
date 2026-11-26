@@ -78,6 +78,11 @@ describe('registro de mundos', () => {
     ]);
   });
 
+  it('el nivel 2 del río (borrador) mezcla retos A con marco de diez y dos puentes', () => {
+    const challenges = worldDef('rio').levels[1]!.challenges;
+    expect(challenges.map((c) => c.kind)).toEqual(['count', 'bridge', 'count', 'bridge']);
+  });
+
   it('un mundo desconocido o sin dato da el primero', () => {
     expect(worldDef(undefined)).toBe(WORLDS[0]);
     expect(worldDef('no-existe')).toBe(WORLDS[0]);

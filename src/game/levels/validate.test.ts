@@ -201,3 +201,21 @@ describe('retos del recorrido', () => {
     expectError(withChallenge(61, (l) => l.challenges.push({ kind: 'count', x: 66, show: 'dots', reverse: false, demo: false })), 'challenges[1]', /se solapa/);
   });
 });
+
+describe('puentes', () => {
+  const withBridge = (x: number, extra: (l: LevelData) => void = () => undefined): LevelData =>
+    withChanges((l) => {
+      l.length = 100;
+      l.blocks.push({ x: 82, row: 'low' });
+      l.challenges.push({ kind: 'bridge', x, show: 'dots', reverse: false, demo: false });
+      extra(l);
+    });
+
+  it('un puente sobre suelo llano y libre es válido', () => {
+    expect(validateLevel(withBridge(54))).toEqual([]);
+  });
+
+  it('un puente con una plataforma encima falla', () => {
+    expectError(withBridge(54, (l) => l.platforms.push({ x: 60, width: 4, height: 1.5 })), 'challenges[0]', /platforms\[1\]/);
+  });
+});

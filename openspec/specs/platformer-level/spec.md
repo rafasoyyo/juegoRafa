@@ -189,3 +189,10 @@ del nivel con el icono de la galleta y un número.
 #### Scenario: Contador de galletas
 - **WHEN** se abre un nivel en un móvil horizontal
 - **THEN** arriba a la derecha se ve una galleta con pepitas de chocolate junto al número 0, sin ninguna palabra
+
+### Requirement: Hueco de agua del puente
+El hueco de un puente sin resolver SHALL comportarse como un foso sin pinchos: el zorro que cae en él SHALL rebotar fuera por el lado por el que entró, sin perder galletas ni parpadear. Una vez colocada la tabla, el hueco SHALL ser suelo firme.
+
+#### Scenario: Caer al agua
+- **WHEN** el zorro cae al hueco del puente
+- **THEN** rebota fuera hacia el tramo del que venía y el contador de galletas no cambia

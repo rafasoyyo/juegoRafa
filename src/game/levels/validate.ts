@@ -9,7 +9,7 @@
 
 import { flagTile, surfaces, surfacesUnder, toWorld } from './parse';
 import { jumpReach } from './spikes';
-import { CHALLENGE_ZONE, GROUND_TOP, RUN_SPEED, START_TILE, STEP_RISE, TILE, type LevelData } from './types';
+import { challengeZone, GROUND_TOP, RUN_SPEED, START_TILE, STEP_RISE, TILE, type LevelData } from './types';
 
 /** Constantes de las reglas (px salvo que se diga otra cosa). */
 export const RULES = {
@@ -190,7 +190,7 @@ export function validateLevel(level: LevelData, rules: Rules = RULES): string[] 
   }
 
   // Retos: sobre el suelo llano y sin nada más en su zona, dentro del recorrido y sin solaparse.
-  const challenges = level.challenges.map((c, i) => ({ name: `challenges[${i}]`, from: c.x + CHALLENGE_ZONE.from, to: c.x + CHALLENGE_ZONE.to }));
+  const challenges = level.challenges.map((c, i) => ({ name: `challenges[${i}]`, ...challengeZone(c) }));
   for (const c of challenges) {
     if (c.from < start + rules.startClear || c.to > flag - rules.flagClear) {
       err(c.name, `no cabe entre la salida y la bandera (necesita de ${n(c.from)} a ${n(c.to)} con ${rules.startClear} y ${rules.flagClear} baldosas libres)`);

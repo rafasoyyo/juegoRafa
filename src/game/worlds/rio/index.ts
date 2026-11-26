@@ -1,7 +1,7 @@
 /**
- * Mundo 2, «El río de los números» (`docs/MUNDO-2.md`). BORRADOR: solo el nivel 1, con un ambiente y
- * una prueba provisionales del mundo 1 y tres retos de la mecánica A, para poder entrar al río en
- * desarrollo. Los retos B y C (pasos 4 y 5), las pruebas (paso 7), los enemigos (paso 6) y los 12 recorridos con su mapa
+ * Mundo 2, «El río de los números» (`docs/MUNDO-2.md`). BORRADOR: niveles 1 y 2 con ambientes y prueba
+ * provisionales del mundo 1; el 1 con tres retos A y el 2 con retos A y B (puente), para probarlos en
+ * desarrollo. La barca (paso 5), las pruebas (paso 7), los enemigos (paso 6) y los 12 recorridos con su mapa
  * (paso 9) llegan con sus cambios. Está detrás del interruptor `mundo-2-rio`. TypeScript puro (sin Phaser).
  */
 
