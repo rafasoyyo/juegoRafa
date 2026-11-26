@@ -53,7 +53,8 @@ export type SfxName =
   | 'star'
   | 'goal'
   | 'gate'
-  | 'tick';
+  | 'tick'
+  | 'scale';
 export interface SfxOptions {
   /** Para `star`: 0, 1 o 2; cada una más aguda. Para `tick`: el número que se cuenta (1, 2…), cada uno más agudo. */
   index?: number;
@@ -169,6 +170,11 @@ export function recipe(name: SfxName, opts: SfxOptions = {}): Recipe {
           ...['G5', 'C6', 'E6', 'G6'].map((n, i) => tone(0.1 + i * 0.08, 0.24, 'triangle', hz(n), 0.24, 0.006)),
         ],
       };
+    case 'scale':
+      // Tabla del puente en su sitio: escala de Do que sube, una nota por tramo y la última más larga.
+      return {
+        layers: ['C5', 'D5', 'E5', 'F5', 'G5', 'A5', 'B5', 'C6'].map((n, i) => tone(i * 0.07, i === 7 ? 0.4 : 0.14, 'triangle', hz(n), 0.24, 0.006)),
+      };
     case 'tick': {
       // «Tic» de contar: corto, más agudo con cada número (una escala que sube).
       const k = Math.max(0, Math.min(20, Math.round(opts.index ?? 1) - 1));
@@ -213,4 +219,5 @@ export const SFX_NAMES: readonly SfxName[] = [
   'goal',
   'gate',
   'tick',
+  'scale',
 ];

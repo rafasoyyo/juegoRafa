@@ -1,0 +1,33 @@
+{
+  "ambient": "bosque",
+  "length": 168,
+  "steps": [
+    { "x": 42, "width": 4, "height": 1 },
+    { "x": 107, "width": 5, "height": 1 }
+  ],
+  "platforms": [
+    { "x": 76, "width": 4, "height": 1.5 },
+    { "x": 150, "width": 4, "height": 1.5 }
+  ],
+  "blocks": [
+    { "x": 14, "row": "low" },
+    { "x": 15.2, "row": "low" },
+    { "x": 39, "row": "low" },
+    { "x": 44, "row": "high", "on": "step" },
+    { "x": 78, "row": "low", "on": "platform" },
+    { "x": 84, "row": "low" },
+    { "x": 85.2, "row": "low" },
+    { "x": 109.5, "row": "low", "on": "step" },
+    { "x": 144, "row": "high" },
+    { "x": 145.2, "row": "high" },
+    { "x": 152, "row": "low", "on": "platform" },
+    { "x": 158, "row": "low" }
+  ],
+  "spikes": [],
+  "challenges": [
+    { "kind": "count", "x": 30, "show": "tenframe" },
+    { "kind": "bridge", "x": 52 },
+    { "kind": "count", "x": 99, "show": "tenframe" },
+    { "kind": "bridge", "x": 117 }
+  ]
+}

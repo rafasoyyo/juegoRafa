@@ -106,3 +106,10 @@ describe('sonidos de los retos', () => {
     expect(last).toBeGreaterThan(first);
   });
 });
+
+describe('escala del puente', () => {
+  it('cada nota es más aguda que la anterior', () => {
+    const fs = recipe('scale').layers.map((l) => (l as ToneLayer).freq as number);
+    for (let i = 1; i < fs.length; i++) expect(fs[i]).toBeGreaterThan(fs[i - 1]!);
+  });
+});

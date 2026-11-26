@@ -6,13 +6,12 @@
 
 import Phaser from 'phaser';
 import type { CountChallenge } from '../../learning/challenges/count-blocks';
-import { hitBlock, startChallenge, type ChallengeRun } from '../../learning/challenges/ladder';
 import { audio } from '../audio/audio-engine';
 import { COLORS } from '../config';
-import { BLOCK_SIZE, GROUND_TOP } from '../level-course';
-import { CHALLENGE_BLOCK_XS, CHALLENGE_GATE_X, CHALLENGE_SIGN_X, ROW_BASE, TILE, type ChallengeData } from '../levels/types';
+import { GROUND_TOP } from '../level-course';
+import { CHALLENGE_BLOCK_XS, CHALLENGE_GATE_X, CHALLENGE_SIGN_X, TILE, type ChallengeData } from '../levels/types';
+import { ChallengeView, CHALLENGE_DEPTH as DEPTH, type ChallengeHooks } from './challenge-view';
 import { drawFace, lightDot, resetDots, type FaceView } from './faces';
-import type { LaloFlyer } from './lalo-flyer';
 
 /** Compuerta: más alta que lo que llega un salto desde encima de un bloque (~420 px). */
 export const GATE_H = 450;
@@ -29,45 +28,26 @@ const SIGN_H = 190;
 /** Galletas que caen al abrirse la compuerta. */
 export const GATE_COOKIES = 3;
 const COUNT_STEP_MS = 420;
-const HIT_COOLDOWN_MS = 350;
 /** La demostración empieza cuando el zorro está a esta distancia del cartel, en baldosas. */
 const DEMO_TRIGGER_TILES = 7;
-const DEPTH = 4;
 
-export interface ChallengeHooks {
-  lalo: LaloFlyer;
-  /** Suma galletas al nivel (cae una lluvia desde `x`, `y`). */
-  reward(count: number, x: number, y: number): void;
-}
-
-interface BlockView {
-  zone: Phaser.GameObjects.Zone;
-  visual: Phaser.GameObjects.Container;
-}
-
-export class CountChallengeView {
-  readonly run: ChallengeRun;
-  readonly demo: boolean;
-  private readonly blocks: BlockView[] = [];
+export class CountChallengeView extends ChallengeView {
   private readonly sign: Phaser.GameObjects.Container;
   private readonly signFace: FaceView;
   private readonly gate: Phaser.GameObjects.Zone;
   private readonly board: Phaser.GameObjects.Graphics;
   private readonly signX: number;
-  private demoStarted = false;
-  private lastHitAt = -Infinity;
   private counting = false;
   private helpDots: Phaser.GameObjects.Arc[] = [];
 
   constructor(
-    private readonly scene: Phaser.Scene,
+    scene: Phaser.Scene,
     fox: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody,
-    private readonly data: ChallengeData & { index: number },
+    data: ChallengeData & { index: number },
     private readonly challenge: CountChallenge,
-    private readonly hooks: ChallengeHooks,
+    hooks: ChallengeHooks,
   ) {
-    this.run = startChallenge(challenge.correct);
-    this.demo = data.demo;
+    super(scene, fox, data.demo, challenge.correct, hooks);
     const x = data.x;
     this.signX = x + CHALLENGE_SIGN_X * TILE;
 
@@ -82,22 +62,10 @@ export class CountChallengeView {
     this.sign = scene.add.container(this.signX, SIGN_Y, [panel, this.signFace.container]).setDepth(DEPTH);
 
     // Bloques con cara, en la fila baja sobre el suelo.
-    const bottom = GROUND_TOP - ROW_BASE.low;
-    challenge.options.forEach((face, i) => {
-      const bx = x + (CHALLENGE_BLOCK_XS[i] ?? 0) * TILE;
-      const by = bottom - BLOCK_SIZE / 2;
-      const g = scene.add.graphics();
-      g.fillStyle(0xb9d9ef).fillRoundedRect(-BLOCK_SIZE / 2, -BLOCK_SIZE / 2 + 6, BLOCK_SIZE, BLOCK_SIZE, 18);
-      g.fillStyle(COLORS.white).fillRoundedRect(-BLOCK_SIZE / 2, -BLOCK_SIZE / 2, BLOCK_SIZE, BLOCK_SIZE, 18);
-      const f = drawFace(scene, face, BLOCK_SIZE * 0.8);
-      const visual = scene.add.container(bx, by, [g, f.container]).setDepth(DEPTH);
-      const zone = scene.add.zone(bx, by, BLOCK_SIZE, BLOCK_SIZE);
-      scene.physics.add.existing(zone, true);
-      scene.physics.add.collider(fox, zone, () => {
-        if (fox.body.touching.up) this.onHit(i);
-      });
-      this.blocks.push({ zone, visual });
-    });
+    this.addBlocks(
+      challenge.options,
+      CHALLENGE_BLOCK_XS.map((bx) => x + bx * TILE),
+    );
 
     // Compuerta del arroyo: dos postes de piedra y una tabla de madera que se levanta.
     const gx = x + CHALLENGE_GATE_X * TILE;
@@ -117,65 +85,21 @@ export class CountChallengeView {
     scene.physics.add.collider(fox, this.gate);
   }
 
-  /** Con el zorro en `foxX`: empieza la demostración al acercarse. */
-  update(foxX: number): void {
-    if (this.demo && !this.demoStarted && !this.run.solved && foxX >= this.signX - DEMO_TRIGGER_TILES * TILE) {
-      this.demoStarted = true;
-      // Lalo va al cartel, cuenta y señala el bloque correcto hasta que el niño lo golpee.
-      this.hooks.lalo.flyTo(this.signX + SIGN_W / 2 + 30, SIGN_Y - SIGN_H / 2, () => this.countUp(() => this.pointCorrect()));
-    }
+  protected override demoTriggerX(): number {
+    return this.signX - DEMO_TRIGGER_TILES * TILE;
   }
 
-  private correctBlock(): BlockView {
-    return this.blocks[this.challenge.correct]!;
+  /** Lalo va al cartel, cuenta y señala el bloque correcto hasta que el niño lo golpee. */
+  protected override startDemo(): void {
+    this.hooks.lalo.flyTo(this.signX + SIGN_W / 2 + 30, SIGN_Y - SIGN_H / 2, () => this.countUp(() => this.pointCorrect()));
   }
 
-  private pointCorrect(): void {
-    if (this.run.solved) return;
-    const b = this.correctBlock().visual;
-    this.hooks.lalo.point(b.x, b.y - BLOCK_SIZE / 2 - 14);
+  protected hintOne(): void {
+    this.scene.tweens.add({ targets: this.sign, y: SIGN_Y - 22, duration: 140, yoyo: true, repeat: 1, ease: 'Quad.easeOut' });
   }
 
-  private onHit(i: number): void {
-    const now = this.scene.time.now;
-    if (now - this.lastHitAt < HIT_COOLDOWN_MS) return;
-    this.lastHitAt = now;
-    const block = this.blocks[i];
-    if (!block) return;
-    const event = hitBlock(this.run, i);
-    if (event === 'ignored') return;
-    audio.sfx('block');
-    this.scene.tweens.add({ targets: block.visual, y: block.visual.y - 14, duration: 80, yoyo: true });
-    switch (event) {
-      case 'correct':
-        this.solve();
-        break;
-      case 'wobble':
-        audio.sfx('nope');
-        this.wobble(block.visual);
-        this.scene.tweens.add({ targets: this.sign, y: SIGN_Y - 22, duration: 140, yoyo: true, repeat: 1, ease: 'Quad.easeOut' });
-        break;
-      case 'count-up':
-        audio.sfx('nope');
-        this.wobble(block.visual);
-        this.countUp();
-        break;
-      case 'solved-by-lalo': {
-        audio.sfx('nope');
-        this.wobble(block.visual);
-        const b = this.correctBlock().visual;
-        this.hooks.lalo.point(b.x, b.y - BLOCK_SIZE / 2 - 14);
-        this.scene.time.delayedCall(1400, () => {
-          this.scene.tweens.add({ targets: b, y: b.y - 14, duration: 80, yoyo: true });
-          this.solve();
-        });
-        break;
-      }
-    }
-  }
-
-  private wobble(target: Phaser.GameObjects.Container): void {
-    this.scene.tweens.add({ targets: target, angle: { from: -9, to: 9 }, duration: 70, yoyo: true, repeat: 2, onComplete: () => target.setAngle(0) });
+  protected hintTwo(): void {
+    this.countUp();
   }
 
   /**
@@ -221,16 +145,12 @@ export class CountChallengeView {
     return this.helpDots;
   }
 
-  /** Resuelto: la compuerta se levanta, caen galletas y el resto de bloques se apaga. */
-  private solve(): void {
+  /** Resuelto: la compuerta se levanta y caen galletas. */
+  protected solve(): void {
     audio.sfx('gate');
-    this.blocks.forEach((b, i) => {
-      if (i !== this.challenge.correct) b.visual.setAlpha(0.45);
-    });
     const body = this.gate.body as Phaser.Physics.Arcade.StaticBody;
     body.enable = false;
     this.scene.tweens.add({ targets: this.board, y: -GATE_H + 40, duration: 700, ease: 'Back.easeIn' });
     this.hooks.reward(GATE_COOKIES, this.gate.x, GROUND_TOP - 280);
-    if (this.hooks.lalo.flying) this.scene.time.delayedCall(500, () => this.hooks.lalo.home());
   }
 }

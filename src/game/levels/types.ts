@@ -63,15 +63,16 @@ export interface SpikeData {
   width: number;
 }
 
-/** Mecánicas de reto del recorrido (`docs/MUNDO-2.md`). De momento, la A: «Bloques que cuentan». */
-export const CHALLENGE_KINDS = ['count'] as const;
+/** Mecánicas de reto del recorrido (`docs/MUNDO-2.md`): A, «Bloques que cuentan», y B, «El puente de los números». */
+export const CHALLENGE_KINDS = ['count', 'bridge'] as const;
 export type ChallengeKind = (typeof CHALLENGE_KINDS)[number];
 export const QUANTITY_SHOWS = ['dots', 'tenframe'] as const;
 export type QuantityShowId = (typeof QUANTITY_SHOWS)[number];
 
 /**
- * Reto del recorrido: `x` es el centro del bloque central, en baldosas. Ocupa de `x + CHALLENGE_ZONE.from`
- * (cartel) a `x + CHALLENGE_ZONE.to` (compuerta), siempre sobre el suelo.
+ * Reto del recorrido, siempre sobre el suelo. En `count`, `x` es el centro del bloque central y ocupa de
+ * `x + CHALLENGE_ZONE.from` (cartel) a `x + CHALLENGE_ZONE.to` (compuerta). En `bridge`, `x` es el borde
+ * izquierdo del puente. Su zona la da `challengeZone`.
  */
 export interface ChallengeData {
   kind: ChallengeKind;
@@ -89,6 +90,20 @@ export const CHALLENGE_ZONE = { from: -6, to: 4 } as const;
 export const CHALLENGE_SIGN_X = -4.5;
 export const CHALLENGE_BLOCK_XS = [-1.5, 0, 1.5] as const;
 export const CHALLENGE_GATE_X = 3;
+
+/** Puente: tramos de 3,5 baldosas (más de lo que alcanza un salto, también desde un bloque). */
+export const BRIDGE_SECTION = 3.5;
+export const BRIDGE_SECTIONS = 5;
+/** Margen de suelo llano a cada lado del puente, en baldosas. */
+export const BRIDGE_MARGIN = 1;
+/** Centros de los bloques del puente respecto al borde izquierdo del hueco, en baldosas. */
+export const BRIDGE_BLOCK_XS = [-4.5, -3, -1.5] as const;
+
+/** Tramo que ocupa un reto, en baldosas. */
+export function challengeZone(c: { kind: ChallengeKind; x: number }): { from: number; to: number } {
+  if (c.kind === 'bridge') return { from: c.x - BRIDGE_MARGIN, to: c.x + BRIDGE_SECTIONS * BRIDGE_SECTION + BRIDGE_MARGIN };
+  return { from: c.x + CHALLENGE_ZONE.from, to: c.x + CHALLENGE_ZONE.to };
+}
 
 /** Un nivel tal como está en el JSON (en baldosas), con su nombre para los mensajes de error. */
 export interface LevelData {

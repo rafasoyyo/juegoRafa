@@ -9,7 +9,7 @@
  */
 
 import { BLOCK_SIZE } from '../level-course';
-import { CHALLENGE_ZONE, TILE, type WorldLevel } from '../levels/types';
+import { challengeZone, TILE, type WorldLevel } from '../levels/types';
 import { BEE_DRIFT } from './enemy-motion';
 
 export type EnemyKind = 'hedgehog' | 'bee';
@@ -38,7 +38,10 @@ export function courseFor(world: WorldLevel): Course {
       ...world.platforms.map((p) => ({ x: p.x + p.width / 2, width: p.width })),
       ...world.spikes.map((z) => ({ x: z.x + z.width / 2, width: z.width })),
       // Los retos se piensan con calma: ningún enemigo en su zona.
-      ...world.challenges.map((c) => ({ x: c.x + ((CHALLENGE_ZONE.from + CHALLENGE_ZONE.to) / 2) * TILE, width: (CHALLENGE_ZONE.to - CHALLENGE_ZONE.from) * TILE })),
+      ...world.challenges.map((c) => {
+        const zone = challengeZone({ kind: c.kind, x: c.x / TILE });
+        return { x: ((zone.from + zone.to) / 2) * TILE, width: (zone.to - zone.from) * TILE };
+      }),
     ],
   };
 }
