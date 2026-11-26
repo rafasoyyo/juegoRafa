@@ -1,11 +1,14 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
+import { FLAGS } from '../flags';
+import { activeAge } from '../profile/active';
 import { currentLevel, levelStatus, session } from '../state';
 import { drawFox, drawLalo } from '../ui/characters';
 import { digits, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
 import { cookieCounter, fixToCamera } from '../ui/widgets';
+import { worldAccess, type WorldAccess } from '../worlds/access';
 import { showWorld, shownWorld, UPCOMING, WORLDS, worldDef } from '../worlds/registry';
 import type { SelectorButton, WorldDef, WorldId } from '../worlds/types';
 
@@ -42,7 +45,9 @@ export class MapScene extends Phaser.Scene {
   }
 
   init(data: MapData): void {
-    this.def = data?.world ? worldDef(data.world) : shownWorld();
+    const asked = data?.world ? worldDef(data.world) : shownWorld();
+    // Un mundo que el perfil no puede abrir (p. ej. tras cambiar de perfil) deja paso al primero.
+    this.def = this.access(asked) === 'open' ? asked : WORLDS[0]!;
     showWorld(this.def.id);
   }
 
@@ -88,6 +93,10 @@ export class MapScene extends Phaser.Scene {
     const x = this.cameras.main.scrollX;
     this.arrows.left.setVisible(x > 2);
     this.arrows.right.setVisible(x < this.maxScroll - 2);
+  }
+
+  private access(def: WorldDef): WorldAccess {
+    return worldAccess(def, session, activeAge(), FLAGS);
   }
 
   private scrollTo(x: number): void {
@@ -182,6 +191,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   private drawPath(points: Phaser.Math.Vector2[]): void {
+    if (points.length < 2) return;
     const spline = new Phaser.Curves.Spline(points);
     const g = this.add.graphics();
     g.lineStyle(30, COLORS.path);
@@ -291,9 +301,9 @@ export class MapScene extends Phaser.Scene {
     const parts: Phaser.GameObjects.GameObject[] = [g];
 
     // Los mundos del registro, en su orden, y después los huecos de los que aún no existen.
-    const worlds: (SelectorButton & { id?: WorldId; active?: boolean })[] = [
-      ...WORLDS.map((w) => ({ ...w.selector, id: w.id, active: w.id === this.def.id })),
-      ...UPCOMING,
+    const worlds: (SelectorButton & { id?: WorldId; active?: boolean; access: WorldAccess })[] = [
+      ...WORLDS.map((w) => ({ ...w.selector, id: w.id, active: w.id === this.def.id, access: this.access(w) })),
+      ...UPCOMING.map((b) => ({ ...b, access: 'soon' as const })),
     ];
     worlds.forEach((w, i) => {
       const x = width / 2 - panelW / 2 + pad + bw / 2 + i * (bw + gap);
@@ -311,11 +321,17 @@ export class MapScene extends Phaser.Scene {
         iconSize: w.iconSize,
         onTap: () => {
           if (w.active) return;
-          if (w.id) goTo(this, 'Map', { world: w.id });
+          if (w.id && w.access === 'open') goTo(this, 'Map', { world: w.id });
           else btn.shake();
         },
       });
-      if (!w.active && !w.id && w.label) btn.face.setAlpha(0.7);
+      if (w.access !== 'open') btn.face.setAlpha(0.7);
+      if (w.access === 'locked') {
+        // Candado pequeño en la esquina: se abrirá más adelante.
+        const lock = this.add.circle(bw / 2 - 18, -bh / 2 + 18, 22, COLORS.white);
+        const icon = this.add.image(bw / 2 - 18, -bh / 2 + 17, 'icon-lock').setDisplaySize(28, 28);
+        btn.add([lock, icon]);
+      }
       parts.push(btn);
     });
     return parts;

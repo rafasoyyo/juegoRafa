@@ -6,19 +6,19 @@
 
 import type { LevelData } from '../levels/types';
 import { ARCOIRIS } from './arcoiris';
+import { RIO } from './rio';
 import type { SelectorButton, WorldDef, WorldId } from './types';
 
 /** Mundos jugables, en el orden del selector. El primero es el que se abre por defecto. */
-export const WORLDS: readonly WorldDef[] = [ARCOIRIS];
+export const WORLDS: readonly WorldDef[] = [ARCOIRIS, RIO];
 
 /** Mundo en el que estaba el progreso guardado antes de que hubiera varios mundos. */
 export const LEGACY_WORLD: WorldId = ARCOIRIS.id;
 
 /** Botones del selector de los mundos que aún no existen: tiemblan al tocarlos. */
 export const UPCOMING: readonly SelectorButton[] = [
-  { color: 0xf1ecfb, shadow: 0xd9cfe0, label: 'Aa' },
   { color: 0xe4f4e8, shadow: 0xbfe0c6, icon: 'icon-shapes', iconSize: 88 },
-  { color: 0xe8edf3, shadow: 0xc9d3de, icon: 'icon-lock', iconSize: 42 },
+  { color: 0xf1ecfb, shadow: 0xd9cfe0, label: 'Aa' },
 ];
 
 /** Definición del mundo `id`; si no existe, el primero. */
