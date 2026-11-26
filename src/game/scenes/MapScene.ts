@@ -159,6 +159,16 @@ export class MapScene extends Phaser.Scene {
       const p = at(d.at);
       const img = this.add.image(p.x, p.y, d.key).setOrigin(0.5, 1);
       if (d.size > 0) img.setScale(d.size / Math.max(img.width, img.height));
+      if (d.prologue) {
+        // La madriguera: tocarla abre el nivel 1 con el prólogo (arrastrar desde ella no abre nada).
+        const zone = this.add.zone(img.x, img.y - img.displayHeight / 2, Math.max(120, img.displayWidth), Math.max(120, img.displayHeight));
+        zone.setInteractive({ useHandCursor: true });
+        zone.on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => {
+          if (this.drag?.dragging || this.animating.length > 0) return;
+          audio.sfx('tap');
+          goTo(this, 'Level', { world: this.def.id, level: 1, prologue: true });
+        });
+      }
     }
     for (const c of map.clouds) this.add.image(width * c.x, c.y, 'cloud').setScale(c.scale);
     const arc: Arc | undefined = map.rainbow && {

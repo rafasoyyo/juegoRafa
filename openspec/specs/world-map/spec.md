@@ -291,3 +291,14 @@ Un toque en la pantalla durante la animación del gajo nuevo SHALL acabarla al i
 #### Scenario: Saltar la animación
 - **WHEN** el niño toca la pantalla mientras se pinta el gajo nuevo
 - **THEN** el gajo queda pintado, el mapa muestra el zorro sobre el nivel actual y no se abre ningún nivel
+
+### Requirement: La madriguera repite el prólogo
+En el mapa del mundo de los números, tocar la madriguera SHALL abrir el nivel 1 empezando por el prólogo, aunque ya se haya visto. Arrastrar el mapa empezando sobre la madriguera SHALL NOT abrir nada.
+
+#### Scenario: Volver a verlo
+- **WHEN** el niño toca la madriguera del mapa
+- **THEN** se abre el nivel 1 con el prólogo
+
+#### Scenario: Arrastrar
+- **WHEN** el niño apoya el dedo en la madriguera y arrastra el mapa
+- **THEN** el mapa se desplaza y no se abre el nivel

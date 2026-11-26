@@ -46,6 +46,8 @@ export interface GameState {
   cookies: number;
   ownedHats: Set<HatId>;
   hat: HatId;
+  /** Escenas de historia ya vistas (p. ej. `prologo:arcoiris`): solo una marca por escena. */
+  seen: Set<string>;
 }
 
 export function createWorldProgress(): WorldProgress {
@@ -53,7 +55,7 @@ export function createWorldProgress(): WorldProgress {
 }
 
 export function createGameState(): GameState {
-  return { worlds: new Map(), cookies: 0, ownedHats: new Set<HatId>(['cap', 'none']), hat: 'cap' };
+  return { worlds: new Map(), cookies: 0, ownedHats: new Set<HatId>(['cap', 'none']), hat: 'cap', seen: new Set() };
 }
 
 /** Progreso del mundo `world`; si aún no tiene, se crea vacío y se guarda en el estado. */

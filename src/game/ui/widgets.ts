@@ -151,6 +151,7 @@ const DECOR_ALPHA = 0.72;
  * escenario de siempre (nubes, dos capas de colinas y suelo con los colores de la paleta). El suelo va
  * por tramos (`spans`) y entre ellos, los fosos de los pinchos (`pits`): primero los fosos y después
  * los tramos, con la esquina redondeada del lado del foso. Sin tramos, un solo suelo de todo el ancho.
+ * Devuelve el arcoíris del horizonte, si lo hay (el prólogo lo hace destellar).
  */
 export function addScenery(
   scene: Phaser.Scene,
@@ -160,13 +161,14 @@ export function addScenery(
   horizon: { level: number; lastLevel: number } | null,
   viewW: number,
   ground: { spans: readonly Span[]; pits: readonly Span[] } = { spans: [{ from: 0, to: worldW }], pits: [] },
-): void {
+): { rainbow?: Phaser.GameObjects.Image } {
   addSky(scene, skyKey(ambient.id));
 
   // Arcoíris del horizonte: la capa más lejana, detrás del sol, la luna, las nubes y las colinas.
+  let arc: Phaser.GameObjects.Image | undefined;
   if (horizon) {
     const rainbow = horizonRainbow(horizon.level, horizon.lastLevel, ambient, viewW, worldW);
-    const arc = scene.add.image(rainbow.x, rainbow.bottom, 'decor-rainbow').setOrigin(0.5, 1);
+    arc = scene.add.image(rainbow.x, rainbow.bottom, 'decor-rainbow').setOrigin(0.5, 1);
     arc.setDisplaySize(rainbow.width, (rainbow.width * arc.height) / arc.width).setScrollFactor(rainbow.scrollFactor, 1).setAlpha(rainbow.alpha);
   }
 
@@ -259,6 +261,7 @@ export function addScenery(
     const round = { left: ground.pits.some((p) => p.to === span.from), right: ground.pits.some((p) => p.from === span.to) };
     drawGround(scene, span.from, span.to - span.from, groundTop, 36, ambient, round);
   }
+  return arc ? { rainbow: arc } : {};
 }
 
 /** Altura (`y`) de la cima de una capa de colinas de `drawHills` en `x`. */
