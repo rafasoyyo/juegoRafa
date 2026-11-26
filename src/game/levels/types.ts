@@ -63,6 +63,33 @@ export interface SpikeData {
   width: number;
 }
 
+/** Mecánicas de reto del recorrido (`docs/MUNDO-2.md`). De momento, la A: «Bloques que cuentan». */
+export const CHALLENGE_KINDS = ['count'] as const;
+export type ChallengeKind = (typeof CHALLENGE_KINDS)[number];
+export const QUANTITY_SHOWS = ['dots', 'tenframe'] as const;
+export type QuantityShowId = (typeof QUANTITY_SHOWS)[number];
+
+/**
+ * Reto del recorrido: `x` es el centro del bloque central, en baldosas. Ocupa de `x + CHALLENGE_ZONE.from`
+ * (cartel) a `x + CHALLENGE_ZONE.to` (compuerta), siempre sobre el suelo.
+ */
+export interface ChallengeData {
+  kind: ChallengeKind;
+  x: number;
+  /** Cómo se muestra la cantidad (los pequeños siempre ven puntos y los mayores, marcos). */
+  show: QuantityShowId;
+  /** Al revés: el cartel lleva la cifra y los bloques, la cantidad. */
+  reverse: boolean;
+  /** Lalo hace la demostración en este reto; no cuenta para las estrellas. */
+  demo: boolean;
+}
+
+/** Geometría de un reto respecto a su `x`, en baldosas. */
+export const CHALLENGE_ZONE = { from: -6, to: 4 } as const;
+export const CHALLENGE_SIGN_X = -4.5;
+export const CHALLENGE_BLOCK_XS = [-1.5, 0, 1.5] as const;
+export const CHALLENGE_GATE_X = 3;
+
 /** Un nivel tal como está en el JSON (en baldosas), con su nombre para los mensajes de error. */
 export interface LevelData {
   id: string;
@@ -74,6 +101,8 @@ export interface LevelData {
   blocks: BlockData[];
   /** Zonas de pinchos (opcional en el JSON: si falta, no hay ninguna). */
   spikes: SpikeData[];
+  /** Retos del recorrido (opcional en el JSON). */
+  challenges: ChallengeData[];
 }
 
 /** Escalón en el mundo: `x` es el borde izquierdo, `height` px sobre el suelo y `top` la `y` de su cara superior. */
@@ -124,6 +153,8 @@ export interface WorldLevel {
   platforms: WorldPlatform[];
   blocks: WorldBlock[];
   spikes: WorldSpike[];
+  /** Retos con `x` (centro del bloque central) en px. */
+  challenges: (ChallengeData & { index: number })[];
 }
 
 /** `y` del mundo de algo que está `height` px sobre el suelo. */

@@ -1,7 +1,7 @@
 /**
- * Mundo 2, «El río de los números» (`docs/MUNDO-2.md`). BORRADOR: solo el nivel 1, con un ambiente,
- * una prueba y un recorrido provisionales del mundo 1, para poder entrar al río en desarrollo. Los
- * retos (pasos 3 a 5), las pruebas (paso 7), los enemigos (paso 6) y los 12 recorridos con su mapa
+ * Mundo 2, «El río de los números» (`docs/MUNDO-2.md`). BORRADOR: solo el nivel 1, con un ambiente y
+ * una prueba provisionales del mundo 1 y tres retos de la mecánica A, para poder entrar al río en
+ * desarrollo. Los retos B y C (pasos 4 y 5), las pruebas (paso 7), los enemigos (paso 6) y los 12 recorridos con su mapa
  * (paso 9) llegan con sus cambios. Está detrás del interruptor `mundo-2-rio`. TypeScript puro (sin Phaser).
  */
 
@@ -84,4 +84,6 @@ export const RIO: WorldDef = {
   selector: { color: 0xe3f2fd, shadow: 0xb9d9ef, icon: 'icon-ten-frame', iconSize: 104 },
   // Abierto con 6 años o más; con menos, al llegar al nivel 12 del mundo 1.
   gate: { flag: 'mundo-2-rio', openAge: 6, after: { world: 'arcoiris', level: 12 } },
+  // Las estrellas cuentan los retos del recorrido acertados a la primera.
+  stars: 'challenges',
 };

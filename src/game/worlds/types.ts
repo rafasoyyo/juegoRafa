@@ -78,4 +78,9 @@ export interface WorldDef extends WorldShape {
   map: WorldMap;
   selector: SelectorButton;
   gate?: WorldGate;
+  /**
+   * Cómo se ganan las estrellas: por bloques «?» golpeados (mundo 1) o por retos del recorrido
+   * acertados a la primera (mundo 2, `docs/MUNDO-2.md`).
+   */
+  stars: 'blocks' | 'challenges';
 }

@@ -16,6 +16,7 @@ const VALID: LevelData = {
     { x: 46, row: 'high' },
   ],
   spikes: [],
+  challenges: [],
 };
 
 function withChanges(change: (level: LevelData) => void): LevelData {
@@ -169,5 +170,34 @@ describe('validateLevel: zonas de pinchos', () => {
   it('cada error nombra el nivel y la zona', () => {
     const errors = validateLevel({ ...withSpikes((l) => (l.spikes[0]!.x = 12)), id: 'nivel-9' });
     expect(errors.some((e) => e.startsWith('nivel-9: spikes[0] '))).toBe(true);
+  });
+});
+
+describe('retos del recorrido', () => {
+  /** Nivel largo con un reto en el tramo llano de 55 a 65. */
+  const withChallenge = (x: number, extra: (l: LevelData) => void = () => undefined): LevelData =>
+    withChanges((l) => {
+      l.length = 90;
+      l.blocks.push({ x: 70, row: 'low' });
+      l.challenges.push({ kind: 'count', x, show: 'dots', reverse: false, demo: false });
+      extra(l);
+    });
+
+  it('un reto sobre suelo llano y libre es válido', () => {
+    expect(validateLevel(withChallenge(61))).toEqual([]);
+  });
+
+  it('un reto con un bloque, un escalón o pinchos en su zona falla', () => {
+    expectError(withChallenge(50), 'challenges[0]', /blocks\[3\]/);
+    expectError(withChallenge(61, (l) => l.steps.push({ x: 63, width: 2, height: 1 })), 'challenges[0]', /steps\[1\]/);
+    expectError(withChallenge(61, (l) => l.spikes.push({ x: 56, width: 1 })), 'challenges[0]', /spikes\[0\]/);
+  });
+
+  it('un reto fuera del recorrido o pegado a la bandera falla', () => {
+    expectError(withChallenge(80), 'challenges[0]', /bandera/);
+  });
+
+  it('dos retos que se solapan fallan', () => {
+    expectError(withChallenge(61, (l) => l.challenges.push({ kind: 'count', x: 66, show: 'dots', reverse: false, demo: false })), 'challenges[1]', /se solapa/);
   });
 });

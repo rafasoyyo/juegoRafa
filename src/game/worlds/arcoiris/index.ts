@@ -84,4 +84,5 @@ export const ARCOIRIS: WorldDef = {
   horizonRainbow: true,
   map: MAP,
   selector: { color: 0xffe9e6, shadow: 0xf2c4bd, label: '123' },
+  stars: 'blocks',
 };

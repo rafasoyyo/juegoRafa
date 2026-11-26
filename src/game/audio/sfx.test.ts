@@ -92,3 +92,17 @@ describe('recetas de efectos', () => {
     }
   });
 });
+
+describe('sonidos de los retos', () => {
+  it('cada «tic» de contar es más agudo que el anterior', () => {
+    const f = (i: number): number => recipeFrequencies(recipe('tick', { index: i }))[0]!;
+    for (let i = 2; i <= 10; i++) expect(f(i)).toBeGreaterThan(f(i - 1));
+  });
+
+  it('la compuerta acaba más aguda que empieza', () => {
+    const tones = recipe('gate').layers.filter((l): l is ToneLayer => l.kind === 'tone');
+    const first = tones[1]!.freq as number;
+    const last = tones[tones.length - 1]!.freq as number;
+    expect(last).toBeGreaterThan(first);
+  });
+});

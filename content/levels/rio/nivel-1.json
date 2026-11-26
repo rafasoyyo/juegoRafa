@@ -1,173 +1,38 @@
 {
   "ambient": "montana",
-  "length": 180,
+  "length": 160,
   "steps": [
-    {
-      "x": 22.4,
-      "width": 4,
-      "height": 1
-    },
-    {
-      "x": 26.4,
-      "width": 4,
-      "height": 2
-    },
-    {
-      "x": 30.4,
-      "width": 4,
-      "height": 1
-    },
-    {
-      "x": 78.2,
-      "width": 4,
-      "height": 1
-    },
-    {
-      "x": 82.2,
-      "width": 5,
-      "height": 2
-    },
-    {
-      "x": 113,
-      "width": 5,
-      "height": 1
-    },
-    {
-      "x": 151.6,
-      "width": 5,
-      "height": 1
-    }
+    { "x": 20, "width": 4, "height": 1 },
+    { "x": 56, "width": 5, "height": 1 },
+    { "x": 61, "width": 4, "height": 2 },
+    { "x": 98, "width": 4, "height": 1 }
   ],
   "platforms": [
-    {
-      "x": 40.6,
-      "width": 4,
-      "height": 1.5
-    },
-    {
-      "x": 61,
-      "width": 4,
-      "height": 1.5
-    },
-    {
-      "x": 68,
-      "width": 4,
-      "height": 1.5
-    },
-    {
-      "x": 101.8,
-      "width": 5,
-      "height": 1.25
-    },
-    {
-      "x": 134.4,
-      "width": 4,
-      "height": 1.5
-    },
-    {
-      "x": 141.4,
-      "width": 4,
-      "height": 1.5
-    },
-    {
-      "x": 159.6,
-      "width": 4,
-      "height": 1.5
-    }
+    { "x": 42, "width": 4, "height": 1.5 },
+    { "x": 90, "width": 4, "height": 1.5 },
+    { "x": 130, "width": 4, "height": 1.5 }
   ],
   "blocks": [
-    {
-      "x": 14.5,
-      "row": "low"
-    },
-    {
-      "x": 15.7,
-      "row": "low"
-    },
-    {
-      "x": 28.4,
-      "row": "high",
-      "on": "step"
-    },
-    {
-      "x": 42.6,
-      "row": "low",
-      "on": "platform"
-    },
-    {
-      "x": 53.1,
-      "row": "low"
-    },
-    {
-      "x": 54.3,
-      "row": "low"
-    },
-    {
-      "x": 63,
-      "row": "high",
-      "on": "platform"
-    },
-    {
-      "x": 70,
-      "row": "low",
-      "on": "platform"
-    },
-    {
-      "x": 84.7,
-      "row": "low",
-      "on": "step"
-    },
-    {
-      "x": 93.9,
-      "row": "high"
-    },
-    {
-      "x": 95.1,
-      "row": "high"
-    },
-    {
-      "x": 103.3,
-      "row": "low",
-      "on": "platform"
-    },
-    {
-      "x": 105.3,
-      "row": "low",
-      "on": "platform"
-    },
-    {
-      "x": 115.5,
-      "row": "low",
-      "on": "step"
-    },
-    {
-      "x": 126.5,
-      "row": "low"
-    },
-    {
-      "x": 127.7,
-      "row": "low"
-    },
-    {
-      "x": 136.4,
-      "row": "low",
-      "on": "platform"
-    },
-    {
-      "x": 143.4,
-      "row": "low",
-      "on": "platform"
-    },
-    {
-      "x": 154.1,
-      "row": "low",
-      "on": "step"
-    },
-    {
-      "x": 161.6,
-      "row": "low",
-      "on": "platform"
-    }
+    { "x": 14, "row": "low" },
+    { "x": 15.2, "row": "low" },
+    { "x": 22, "row": "high", "on": "step" },
+    { "x": 44, "row": "low", "on": "platform" },
+    { "x": 50, "row": "low" },
+    { "x": 51.2, "row": "low" },
+    { "x": 63, "row": "high", "on": "step" },
+    { "x": 84, "row": "high" },
+    { "x": 85.2, "row": "high" },
+    { "x": 92, "row": "low", "on": "platform" },
+    { "x": 100, "row": "low", "on": "step" },
+    { "x": 124, "row": "low" },
+    { "x": 125.2, "row": "low" },
+    { "x": 132, "row": "low", "on": "platform" },
+    { "x": 140, "row": "high" }
   ],
-  "spikes": []
+  "spikes": [],
+  "challenges": [
+    { "kind": "count", "x": 34, "show": "dots", "demo": true },
+    { "kind": "count", "x": 76, "show": "dots" },
+    { "kind": "count", "x": 114, "show": "dots" }
+  ]
 }
