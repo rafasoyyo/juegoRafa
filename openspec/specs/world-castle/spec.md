@@ -41,3 +41,14 @@ El castillo del río SHALL tener 5 retos: uno de cada mecánica del recorrido (c
 #### Scenario: Retos del castillo del río
 - **WHEN** se juega el castillo del río
 - **THEN** se cruzan un reto de contar, un puente y una barca, y en la bandera hay dos preguntas de pruebas del río distintas
+
+### Requirement: Castillo del arcoíris
+El castillo del mundo 1 SHALL ser un recorrido corto por las nubes, sin retos, con 5 preguntas en la bandera: una de contar, una de comparar, una de serie, una de repartir y una de balanza.
+
+#### Scenario: Preguntas del castillo del arcoíris
+- **WHEN** se juega el castillo del arcoíris y se llega a la bandera
+- **THEN** se hacen 5 preguntas, una de cada una de esas pruebas, con cinco marcas de progreso
+
+#### Scenario: Medalla del arcoíris
+- **WHEN** el niño termina el castillo del arcoíris, aunque Lalo resuelva todas las preguntas
+- **THEN** gana la medalla del arcoíris
