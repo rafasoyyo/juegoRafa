@@ -6,7 +6,7 @@ Este documento manda sobre las specs de `openspec/specs/` en lo que toca al tema
 
 ## La idea
 
-Desde la colina donde vive, Rufo ve un arcoíris muy lejos y sale a buscarlo con Lalo. Cada nivel le acerca un poco más, y en el último corre por las nubes, bajo el arco. El contenido del mundo 1 no cambia (los mismos 12 ambientes, pruebas, estrellas y pinchos), pero gana una meta que un niño de 4 años ve sin leer: el arcoíris siempre está delante.
+Desde su madriguera en la colina, junto al prado, Rufo ve un arcoíris muy lejos y sale a buscarlo con Lalo. Cada nivel le acerca un poco más, y en el último corre por las nubes, bajo el arco. El contenido del mundo 1 no cambia (los mismos 12 ambientes, pruebas, estrellas y pinchos), pero gana una meta que un niño de 4 años ve sin leer: el arcoíris siempre está delante.
 
 ## Qué no cambia
 
@@ -21,13 +21,13 @@ Desde la colina donde vive, Rufo ve un arcoíris muy lejos y sale a buscarlo con
 1. **Nombre**: «El camino del arcoíris», en lugar de «Colina de los números». La colina se queda como punto de partida.
 2. **Prólogo**: se ve una sola vez por perfil. Se puede volver a ver tocando la madriguera en el mapa.
 3. **Gajo de un nivel pendiente**: se pinta igualmente. Si terminar el recorrido ya abre el siguiente nivel, quitarle el color sería como un castigo. El nodo sigue en amarillo para el adulto.
-4. **Final en dos tiempos**: primero, la lluvia sobre la montaña. El manantial que abre el río llega cuando exista el progreso por mundos del plan del mundo 2.
+4. **Final en dos tiempos**: primero, la lluvia sobre la montaña. El manantial que abre el río llega cuando el río esté abierto en el juego (paso 9 del plan del mundo 2, `mundo-2-rio`).
 
 ## La historia en dos partes
 
 | Parte | Niveles | Qué pasa |
 |---|---|---|
-| Un día fuera de casa | 1 a 6, sin pinchos | Rufo sale por la mañana de su madriguera en el prado, cruza las flores, el bosque y el otoño, ve ponerse el sol y llega a la noche bajo las estrellas. |
+| Un día fuera de casa | 1 a 6, sin pinchos | Rufo sale por la mañana de su madriguera en la colina, cruza el prado, las flores, el bosque y el otoño, ve ponerse el sol y llega a la noche bajo las estrellas. |
 | El gran viaje | 7 a 12, con pinchos | Amanece en la playa y Rufo se aleja de casa por la selva, la montaña, la nieve y el desierto, hasta subir a las nubes. La subida de dificultad se explica porque está lejos de casa. |
 
 ## Las piezas visuales
@@ -82,17 +82,17 @@ Se salta tocando la pantalla. El perfil guarda que ya lo vio, sin más datos del
 
 ## El final
 
-Se ve una vez por perfil, al volver al mapa después de terminar el nivel 12 por primera vez, y se salta tocando.
+Se ve una vez por perfil, al volver al mapa después de terminar el nivel 12 por primera vez y antes de que se abra el castillo, y se salta tocando.
 
 1. Se pinta el gajo 12 y Rufo salta de alegría en la nube.
 2. La nube de la cima llueve sobre la montaña nevada.
-3. Una gota baja al manantial, nace el río y el botón del río deja de temblar. Para los menores de 6 años, ese es el momento en que se abre el mundo 2, así que el niño ve por qué se abre.
+3. Una gota baja al manantial y nace el río. Para los menores de 6 años, además, el botón del río deja de temblar: ese es el momento en que se abre el mundo 2, así que el niño ve por qué se abre. Con 6 años o más el río ya estaba abierto, así que ven la lluvia y el manantial sin la animación del botón.
 
-Mientras no exista el progreso por mundos, el final se queda en el paso 2.
+Mientras el río no esté abierto en el juego publicado (paso 9 del plan del mundo 2, `mundo-2-rio`), el final se queda en el paso 2.
 
 ## El castillo y la medalla
 
-- El castillo del mundo 1 está sobre la nube donde el arcoíris toca el suelo, después del nivel 12.
+- El castillo del mundo 1 está sobre una nube, al pie del arcoíris, como parada propia del mapa después del nivel 12, igual que el del mundo 2.
 - Tiene 5 preguntas de las pruebas del mundo 1 (por ejemplo contar, comparar, serie, repartir y balanza), con la misma escalera de fallos.
 - Da siempre la **medalla del arcoíris**, que aparece en el botón 123 del selector.
 - Se monta con la pieza reutilizable del castillo del plan del mundo 2, así que va después de ella.
@@ -116,7 +116,7 @@ Un cambio de OpenSpec por pieza, cada uno con su ciclo: `openspec-propose` → `
 | 2 | `mapa-del-arcoiris` | Arco de 12 gajos, madriguera, camino que sube y animación del gajo nuevo. `MapScene` (`NODES`, `DECOR`, arco) y función pura de gajos pintados según el progreso. | `world-map` | Prueba: perfil nuevo con 0 gajos; con todo, 12; un nivel pendiente cuenta. Animación a 844×390. El selector no tapa nodos ni gajos. |
 | ★ | Prueba con niños | Preguntar «¿adónde va Rufo?». Si el niño señala el arcoíris sin ayuda, el prólogo puede ser más corto. | — | Notas de la prueba. |
 | 3 | `prologo-del-arcoiris` | La escena del prólogo, que se ve una vez por perfil y se repite tocando la madriguera. | `mascot-guide`, `child-profile`, `world-map` | Perfil nuevo: se ve una vez y se salta tocando. Perfil antiguo: no se ve. Revisión a 844×390. |
-| 4 | `final-del-arcoiris` | La lluvia sobre la montaña. El manantial que abre el río llega con `progreso-por-mundos` del mundo 2. | `world-map`, `level-complete`, `mascot-guide` | Perfil de 5 años que termina el nivel 12: ve el final y el río se abre. No se repite. |
-| 5 | `castillo-del-arcoiris` | Castillo del mundo 1 con la pieza de `castillo-y-medalla` del mundo 2: 5 retos y la medalla del arcoíris. | `world-castle`, `world-map` | El castillo siempre da medalla y la medalla se ve en el selector. |
+| 4 | `final-del-arcoiris` | La lluvia sobre la montaña. Va después de `progreso-por-mundos` del mundo 2; el manantial que abre el río se ve cuando el río se abre con `mundo-2-rio`. | `world-map`, `level-complete`, `mascot-guide` | Perfil de 5 años que termina el nivel 12: ve el final y el río se abre. Perfil de 6 años: ve la lluvia y el manantial sin la animación del botón. No se repite. |
+| 5 | `castillo-del-arcoiris` | Castillo del mundo 1 con la pieza de `castillo-y-medalla` del mundo 2, como parada propia tras el nivel 12: 5 retos y la medalla del arcoíris. | `world-castle`, `world-map` | El castillo siempre da medalla y la medalla se ve en el selector. |
 
 Para empezar cada paso: `openspec-propose` con el nombre del cambio y una frase como «sigue docs/MUNDO-1.md, sección El mapa del arcoíris», para que la propuesta parta de lo aprobado.
