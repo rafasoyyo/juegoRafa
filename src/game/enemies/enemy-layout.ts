@@ -65,8 +65,14 @@ export interface BeeSpawn {
 
 export type EnemySpawn = HedgehogSpawn | BeeSpawn;
 
-/** Enemigos en los niveles 1 a 12. */
-export const ENEMIES_PER_LEVEL: readonly number[] = [2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10];
+/** Enemigos de un mundo (los fija su definición en `src/game/worlds/`). */
+export interface EnemyRules {
+  /** Enemigos de cada nivel (`perLevel[0]` es el nivel 1). */
+  perLevel: readonly number[];
+  /** Nivel desde el que puede salir la abeja. */
+  beeFromLevel: number;
+}
+
 /** Margen sin enemigos tras la salida. */
 export const START_CLEAR = 600;
 /** Margen sin enemigos antes de la bandera. */
@@ -79,14 +85,13 @@ export const MIN_STRETCH = 200;
 export const PATROL_MAX = 320;
 /** Lo que se descuenta del tramo para que el cuerpo del enemigo no salga de él (medio cuerpo por lado). */
 export const BODY_INSET = 50;
-/** Nivel desde el que puede salir la abeja. */
-export const BEE_FROM_LEVEL = 2;
 
 export type Rng = () => number;
 
-export function enemyCount(level: number): number {
-  const i = Math.min(Math.max(Math.round(level), 1), ENEMIES_PER_LEVEL.length) - 1;
-  return ENEMIES_PER_LEVEL[i] ?? 0;
+/** Enemigos del nivel `level`; fuera de rango, los del más cercano. */
+export function enemyCount(rules: EnemyRules, level: number): number {
+  const i = Math.min(Math.max(Math.round(level), 1), rules.perLevel.length) - 1;
+  return rules.perLevel[i] ?? 0;
 }
 
 /** Tramos libres del recorrido, ordenados de izquierda a derecha. */
@@ -109,13 +114,14 @@ export function freeStretches(course: Course): Stretch[] {
 }
 
 /**
- * Elige al azar los enemigos del nivel: tramos sin repetir, tipo (solo erizo en el nivel 1),
- * posición y punto de partida. Si hay menos tramos que enemigos, devuelve los que caben.
+ * Elige al azar los enemigos del nivel según las reglas del mundo: tramos sin repetir, tipo (solo
+ * erizo antes de `beeFromLevel`), posición y punto de partida. Si hay menos tramos que enemigos,
+ * devuelve los que caben.
  */
-export function layoutEnemies(level: number, course: Course, rng: Rng = Math.random): EnemySpawn[] {
+export function layoutEnemies(rules: EnemyRules, level: number, course: Course, rng: Rng = Math.random): EnemySpawn[] {
   const stretches = freeStretches(course);
   // Fisher-Yates parcial: los primeros `count` tramos quedan elegidos al azar.
-  const count = Math.min(enemyCount(level), stretches.length);
+  const count = Math.min(enemyCount(rules, level), stretches.length);
   for (let i = 0; i < count; i++) {
     const j = i + Math.floor(rng() * (stretches.length - i));
     [stretches[i], stretches[j]] = [stretches[j]!, stretches[i]!];
@@ -123,7 +129,7 @@ export function layoutEnemies(level: number, course: Course, rng: Rng = Math.ran
   const chosen = stretches.slice(0, count).sort((a, b) => a.from - b.from);
 
   return chosen.map((stretch) => {
-    const bee = level >= BEE_FROM_LEVEL && rng() < 0.5;
+    const bee = level >= rules.beeFromLevel && rng() < 0.5;
     const lo = stretch.from + BODY_INSET;
     const hi = stretch.to - BODY_INSET;
     if (bee) {

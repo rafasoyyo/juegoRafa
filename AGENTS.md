@@ -29,9 +29,10 @@ Antes de dar un cambio por terminado: `npm test` y `npm run build` deben pasar. 
 ## Estructura
 
 - `src/main.ts`: configuración de Phaser y lista de escenas.
-- `src/game/`: motor. `scenes/` (Boot, Title, Profiles, NewProfile, Map, Level, Quiz, LevelComplete, Wardrobe), `ui/`, `audio/` (sintetizado, sin archivos), `enemies/`, `levels/` (parseo, validación, ambientes, pinchos), `power/` (fresa), `profile/` (perfiles y progreso en `localStorage`), `state.ts`, `config.ts`.
+- `src/game/`: motor. `scenes/` (Boot, Title, Profiles, NewProfile, Map, Level, Quiz, LevelComplete, Wardrobe), `ui/`, `audio/` (sintetizado, sin archivos), `enemies/`, `levels/` (parseo, validación, ambientes, pinchos), `power/` (fresa), `profile/` (perfiles y progreso en `localStorage`), `worlds/` (definición de cada mundo y registro), `state.ts`, `config.ts`.
 - `src/learning/`: lógica pedagógica pura. `quiz/` tiene un archivo por tipo de prueba (`count`, `compare`, `series`, `shapes`, `share`, `order`, `cable-car`, `tracks`, `balance`, `mirror`…), el catálogo, la adaptación por edad y los generadores con semilla (`rng.ts`). `scoring.ts` calcula estrellas.
-- `content/levels/nivel-N.json`: los 12 recorridos (ambiente, longitud, bloques, escalones, plataformas, pinchos). Se validan con `src/game/levels/validate.ts`.
+- `content/levels/<mundo>/nivel-N.json`: los recorridos de cada mundo (ambiente, longitud, bloques, escalones, plataformas, pinchos); el mundo 1 está en `arcoiris/`. Se validan con `src/game/levels/validate.ts` y las tablas de su mundo (`src/game/worlds/worlds.test.ts`).
+- `src/game/worlds/`: cada mundo en su carpeta (`arcoiris/index.ts`) con sus niveles, prueba de la bandera por nivel, enemigos, reglas de diseño, mapa y botón del selector; `registry.ts` los ordena. Un nivel se identifica por mundo y número, y el progreso se guarda por mundo.
 - `public/`: SVG, fuentes e iconos. `scripts/make-icons.mjs` genera los iconos.
 - `openspec/`: specs vigentes (`specs/`), cambios en curso y archivados (`changes/`).
 
@@ -42,6 +43,7 @@ Antes de dar un cambio por terminado: `npm test` y `npm run build` deben pasar. 
 - Alto lógico fijo de 720 px; el ancho se adapta entre 4:3 y 21:9 (`fitWidth`). Controles táctiles de al menos 96 px.
 - Estilo vectorial plano y redondeado, sin contornos negros. Paleta en `openspec/specs/visual-style/spec.md`. Tipografía Baloo 2 local.
 - Contenido como datos: un nivel o reto nuevo se añade en JSON o en un generador de `learning/`, sin tocar el motor.
+- Mundos independientes: un mundo nuevo es una carpeta `content/levels/<id>/`, una definición `src/game/worlds/<id>/index.ts` y una línea en `worlds/registry.ts` (quitando su hueco de `UPCOMING`). Nada del motor debe preguntar en qué mundo está: lo que cambie de un mundo a otro va en su `WorldDef`.
 - Los generadores de pruebas reciben una semilla para que las pruebas sean deterministas.
 - No metas dependencias nuevas sin necesidad: el juego debe seguir cargando ligero en tablets antiguas.
 

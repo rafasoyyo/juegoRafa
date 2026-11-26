@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS } from '../levels/catalog';
 import { toWorld } from '../levels/parse';
+import { ARCOIRIS, ENEMIES } from '../worlds/arcoiris';
 import {
   BLOCK_CLEAR,
   courseFor,
-  ENEMIES_PER_LEVEL,
   FLAG_CLEAR,
   freeStretches,
   layoutEnemies,
@@ -27,7 +26,8 @@ function seeded(seed: number): () => number {
 }
 
 /** Recorridos reales de los niveles 1 a 12 (`COURSES[0]` es el nivel 1). */
-const WORLDS = LEVELS.map(toWorld);
+const WORLDS = ARCOIRIS.levels.map(toWorld);
+const ENEMIES_PER_LEVEL = ENEMIES.perLevel;
 const COURSES: Course[] = WORLDS.map(courseFor);
 const course = (level: number): Course => COURSES[level - 1]!;
 const SEEDS = Array.from({ length: 200 }, (_, i) => i + 1);
@@ -43,7 +43,7 @@ function reach(e: EnemySpawn): { from: number; to: number } {
 describe('layoutEnemies', () => {
   it('nivel 1: exactamente dos enemigos y son erizos', () => {
     for (const seed of SEEDS) {
-      const enemies = layoutEnemies(1, course(1), seeded(seed));
+      const enemies = layoutEnemies(ENEMIES, 1, course(1), seeded(seed));
       expect(enemies).toHaveLength(2);
       expect(enemies.every((e) => e.kind === 'hedgehog')).toBe(true);
     }
@@ -53,7 +53,7 @@ describe('layoutEnemies', () => {
     expect(ENEMIES_PER_LEVEL).toEqual([2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10]);
     for (const level of LEVEL_NUMBERS) {
       expect(freeStretches(course(level)).length, `nivel ${level}`).toBeGreaterThanOrEqual(ENEMIES_PER_LEVEL[level - 1]!);
-      for (const seed of SEEDS) expect(layoutEnemies(level, course(level), seeded(seed))).toHaveLength(ENEMIES_PER_LEVEL[level - 1]!);
+      for (const seed of SEEDS) expect(layoutEnemies(ENEMIES, level, course(level), seeded(seed))).toHaveLength(ENEMIES_PER_LEVEL[level - 1]!);
     }
   });
 
@@ -61,7 +61,7 @@ describe('layoutEnemies', () => {
     for (const level of LEVEL_NUMBERS) {
       const c = course(level);
       for (const seed of SEEDS) {
-        for (const e of layoutEnemies(level, c, seeded(seed))) {
+        for (const e of layoutEnemies(ENEMIES, level, c, seeded(seed))) {
           const r = reach(e);
           expect(r.from - HALF_BODY).toBeGreaterThanOrEqual(c.startX + START_CLEAR);
           expect(r.to + HALF_BODY).toBeLessThanOrEqual(c.flagX - FLAG_CLEAR);
@@ -81,7 +81,7 @@ describe('layoutEnemies', () => {
       const world = WORLDS[level - 1]!;
       const zones = [...world.steps, ...world.platforms].map((z) => ({ from: z.x - BLOCK_CLEAR, to: z.x + z.width + BLOCK_CLEAR }));
       for (const seed of SEEDS) {
-        for (const e of layoutEnemies(level, course(level), seeded(seed))) {
+        for (const e of layoutEnemies(ENEMIES, level, course(level), seeded(seed))) {
           const r = reach(e);
           for (const z of zones) {
             const clear = r.to + HALF_BODY <= z.from || r.from - HALF_BODY >= z.to;
@@ -98,7 +98,7 @@ describe('layoutEnemies', () => {
       expect(world.spikes.length, `nivel ${level}`).toBeGreaterThan(0);
       const zones = world.spikes.map((z) => ({ from: z.x - BLOCK_CLEAR, to: z.x + z.width + BLOCK_CLEAR }));
       for (const seed of SEEDS) {
-        for (const e of layoutEnemies(level, course(level), seeded(seed))) {
+        for (const e of layoutEnemies(ENEMIES, level, course(level), seeded(seed))) {
           const r = reach(e);
           for (const z of zones) {
             const clear = r.to + HALF_BODY <= z.from || r.from - HALF_BODY >= z.to;
@@ -131,7 +131,7 @@ describe('layoutEnemies', () => {
 
   it('nunca pone dos enemigos en el mismo tramo libre', () => {
     for (const seed of SEEDS) {
-      const enemies = layoutEnemies(6, course(6), seeded(seed));
+      const enemies = layoutEnemies(ENEMIES, 6, course(6), seeded(seed));
       const froms = enemies.map((e) => e.stretch.from);
       expect(new Set(froms).size).toBe(enemies.length);
     }
@@ -139,7 +139,7 @@ describe('layoutEnemies', () => {
 
   it('con semillas distintas cambian las posiciones o los tipos', () => {
     const signature = (seed: number): string =>
-      layoutEnemies(4, course(4), seeded(seed))
+      layoutEnemies(ENEMIES, 4, course(4), seeded(seed))
         .map((e) => `${e.kind}@${Math.round(reach(e).from)}`)
         .join('|');
     const distinct = new Set(SEEDS.map(signature));
@@ -148,7 +148,7 @@ describe('layoutEnemies', () => {
 
   it('desde el nivel 2 aparecen abejas con alguna semilla', () => {
     for (const level of LEVEL_NUMBERS.slice(1)) {
-      const kinds = SEEDS.flatMap((seed) => layoutEnemies(level, course(level), seeded(seed)).map((e) => e.kind));
+      const kinds = SEEDS.flatMap((seed) => layoutEnemies(ENEMIES, level, course(level), seeded(seed)).map((e) => e.kind));
       expect(kinds).toContain('bee');
       expect(kinds).toContain('hedgehog');
     }
@@ -157,9 +157,9 @@ describe('layoutEnemies', () => {
   it('si hay menos tramos que enemigos devuelve los que caben, sin error', () => {
     const crowded: Course = { startX: 0, flagX: 2000, keepClear: [{ x: 1000, width: 84 }] };
     expect(freeStretches(crowded)).toHaveLength(2);
-    expect(layoutEnemies(6, crowded, seeded(7))).toHaveLength(2);
+    expect(layoutEnemies(ENEMIES, 6, crowded, seeded(7))).toHaveLength(2);
     const noRoom: Course = { startX: 0, flagX: 1100, keepClear: [] };
-    expect(layoutEnemies(6, noRoom, seeded(7))).toEqual([]);
+    expect(layoutEnemies(ENEMIES, 6, noRoom, seeded(7))).toEqual([]);
   });
 
   it('un escalón o una plataforma parten un tramo libre igual que un bloque', () => {
