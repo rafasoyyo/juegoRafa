@@ -7,7 +7,6 @@
 
 import type { QuizKind } from '../../learning/quiz';
 import type { CastleDef } from '../castle/castle';
-import type { FlagId } from '../flags';
 import type { EnemyRules } from '../enemies/enemy-layout';
 import type { DurationLimits } from '../levels/duration';
 import type { LevelData } from '../levels/types';
@@ -81,12 +80,13 @@ export interface SelectorButton {
 }
 
 /**
- * Cuándo se abre un mundo desde el selector. Sin puerta, siempre. Con interruptor apagado, nunca
- * (se ve como un mundo que aún no existe). Si no, con la edad `openAge` o más, o al llegar (hecho o
+ * Cuándo se abre un mundo desde el selector. Sin puerta, siempre. Con `devOnly`, solo con `npm run dev`:
+ * en el juego publicado se ve como un mundo que aún no existe (es el interruptor del mundo en
+ * construcción, en su propia definición). Si no, con la edad `openAge` o más, o al llegar (hecho o
  * pendiente) al nivel `after.level` del mundo `after.world`.
  */
 export interface WorldGate {
-  flag?: FlagId;
+  devOnly?: boolean;
   openAge?: number;
   after?: { world: WorldId; level: number };
 }

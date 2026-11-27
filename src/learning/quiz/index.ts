@@ -40,81 +40,51 @@ import { tenFrameQuiz } from './ten-frame';
 import { tracksQuiz } from './tracks';
 import type { AgeBand, Question, QuizContext, QuizKind } from './types';
 
+/**
+ * Generador de cada tipo de prueba de la bandera (spec `world-isolation`: una entrada por tipo). Si a un
+ * tipo de `QUIZ_KINDS` le falta la suya, la compilación falla.
+ */
+export const QUIZ_GENERATORS: Readonly<Record<QuizKind, (band: AgeBand, rng: Rng, ctx: QuizContext) => Question[]>> = {
+  count: (band, rng) => countQuiz(band, rng),
+  compare: (band, rng) => compareQuiz(band, rng),
+  series: (band, rng) => seriesQuiz(band, rng),
+  shapes: (band, rng) => shapesQuiz(band, rng),
+  'name-letters': (band, rng, ctx) => nameLettersQuiz(band, rng, ctx.alias),
+  recall: (band, rng, ctx) => recallQuiz(band, rng, ctx),
+  share: (band, rng) => shareQuiz(band, rng),
+  order: (band, rng) => orderQuiz(band, rng),
+  'cable-car': (band, rng) => cableCarQuiz(band, rng),
+  tracks: (band, rng) => tracksQuiz(band, rng),
+  balance: (band, rng) => balanceQuiz(band, rng),
+  mirror: (band, rng) => mirrorQuiz(band, rng),
+  fingers: (band, rng) => fingersQuiz(band, rng),
+  'ten-frame': (band, rng) => tenFrameQuiz(band, rng),
+  memory: (band, rng) => memoryQuiz(band, rng),
+  neighbor: (band, rng) => neighborQuiz(band, rng),
+  'number-line': (band, rng) => numberLineQuiz(band, rng),
+  biggest: (band, rng) => biggestQuiz(band, rng),
+  'ten-friends': (band, rng) => tenFriendsQuiz(band, rng),
+  train: (band, rng) => trainQuiz(band, rng),
+  socks: (band, rng) => socksQuiz(band, rng),
+  'frog-jumps': (band, rng) => frogJumpsQuiz(band, rng),
+  boats: (band, rng) => boatsQuiz(band, rng),
+  'river-review': (band, rng) => riverReviewQuiz(band, rng),
+  'dino-shadows': (band, rng) => dinoShadowsQuiz(band, rng),
+  'shape-things': (band, rng) => shapeThingsQuiz(band, rng),
+  'stego-plates': (band, rng) => stegoPlatesQuiz(band, rng),
+  'turned-shapes': (band, rng) => turnedShapesQuiz(band, rng),
+  nest: (band, rng) => nestQuiz(band, rng),
+  'odd-egg': (band, rng) => oddEggQuiz(band, rng),
+  fossil: (band, rng) => fossilQuiz(band, rng),
+  'skin-mosaic': (band, rng) => skinMosaicQuiz(band, rng),
+  'growing-neck': (band, rng) => growingNeckQuiz(band, rng),
+  'roll-or-not': (band, rng) => rollOrNotQuiz(band, rng),
+  'hidden-triangles': (band, rng) => hiddenTrianglesQuiz(band, rng),
+  'island-review': (band, rng) => islandReviewQuiz(band, rng),
+};
+
 export function generateQuiz(kind: QuizKind, band: AgeBand, rng: Rng, ctx: QuizContext): Question[] {
-  switch (kind) {
-    case 'count':
-      return countQuiz(band, rng);
-    case 'compare':
-      return compareQuiz(band, rng);
-    case 'series':
-      return seriesQuiz(band, rng);
-    case 'shapes':
-      return shapesQuiz(band, rng);
-    case 'name-letters':
-      return nameLettersQuiz(band, rng, ctx.alias);
-    case 'recall':
-      return recallQuiz(band, rng, ctx);
-    case 'share':
-      return shareQuiz(band, rng);
-    case 'order':
-      return orderQuiz(band, rng);
-    case 'cable-car':
-      return cableCarQuiz(band, rng);
-    case 'tracks':
-      return tracksQuiz(band, rng);
-    case 'balance':
-      return balanceQuiz(band, rng);
-    case 'mirror':
-      return mirrorQuiz(band, rng);
-    case 'fingers':
-      return fingersQuiz(band, rng);
-    case 'ten-frame':
-      return tenFrameQuiz(band, rng);
-    case 'memory':
-      return memoryQuiz(band, rng);
-    case 'neighbor':
-      return neighborQuiz(band, rng);
-    case 'number-line':
-      return numberLineQuiz(band, rng);
-    case 'biggest':
-      return biggestQuiz(band, rng);
-    case 'ten-friends':
-      return tenFriendsQuiz(band, rng);
-    case 'train':
-      return trainQuiz(band, rng);
-    case 'socks':
-      return socksQuiz(band, rng);
-    case 'frog-jumps':
-      return frogJumpsQuiz(band, rng);
-    case 'boats':
-      return boatsQuiz(band, rng);
-    case 'river-review':
-      return riverReviewQuiz(band, rng);
-    case 'dino-shadows':
-      return dinoShadowsQuiz(band, rng);
-    case 'shape-things':
-      return shapeThingsQuiz(band, rng);
-    case 'stego-plates':
-      return stegoPlatesQuiz(band, rng);
-    case 'turned-shapes':
-      return turnedShapesQuiz(band, rng);
-    case 'nest':
-      return nestQuiz(band, rng);
-    case 'odd-egg':
-      return oddEggQuiz(band, rng);
-    case 'fossil':
-      return fossilQuiz(band, rng);
-    case 'skin-mosaic':
-      return skinMosaicQuiz(band, rng);
-    case 'growing-neck':
-      return growingNeckQuiz(band, rng);
-    case 'roll-or-not':
-      return rollOrNotQuiz(band, rng);
-    case 'hidden-triangles':
-      return hiddenTrianglesQuiz(band, rng);
-    case 'island-review':
-      return islandReviewQuiz(band, rng);
-  }
+  return QUIZ_GENERATORS[kind](band, rng, ctx);
 }
 
 export { ageBand } from './age';

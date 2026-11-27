@@ -13,37 +13,29 @@ import { TracksView } from './tracks-view';
 import { TrainView } from './train-view';
 import type { QuizView, ViewHost } from './view';
 
-/** La vista de las pruebas nuevas; `null` para las seis antiguas, que `QuizScene` dibuja ella misma. */
+/**
+ * Vista propia de cada tipo de prueba que la tiene (spec `world-isolation`: una entrada por tipo). Las que
+ * no están aquí las dibuja `QuizScene` con sus piezas comunes.
+ */
+const QUIZ_VIEWS: Readonly<Partial<Record<QuizKind, (host: ViewHost) => QuizView>>> = {
+  share: (host) => new ShareView(host),
+  order: (host) => new OrderView(host),
+  boats: (host) => new OrderView(host),
+  'cable-car': (host) => new CableCarView(host),
+  tracks: (host) => new TracksView(host),
+  balance: (host) => new BalanceView(host),
+  mirror: (host) => new MirrorView(host),
+  fingers: (host) => new FingersView(host),
+  'ten-frame': (host) => new TenFrameView(host),
+  'ten-friends': (host) => new TenFrameView(host),
+  train: (host) => new TrainView(host),
+  socks: (host) => new SocksView(host),
+  memory: (host) => new MemoryView(host),
+  'number-line': (host) => new NumberLineView(host),
+  'frog-jumps': (host) => new NumberLineView(host),
+};
+
+/** La vista propia del tipo de prueba; `null` si `QuizScene` la dibuja ella misma. */
 export function createView(kind: QuizKind, host: ViewHost): QuizView | null {
-  switch (kind) {
-    case 'share':
-      return new ShareView(host);
-    case 'order':
-    case 'boats':
-      return new OrderView(host);
-    case 'cable-car':
-      return new CableCarView(host);
-    case 'tracks':
-      return new TracksView(host);
-    case 'balance':
-      return new BalanceView(host);
-    case 'mirror':
-      return new MirrorView(host);
-    case 'fingers':
-      return new FingersView(host);
-    case 'ten-frame':
-    case 'ten-friends':
-      return new TenFrameView(host);
-    case 'train':
-      return new TrainView(host);
-    case 'socks':
-      return new SocksView(host);
-    case 'memory':
-      return new MemoryView(host);
-    case 'number-line':
-    case 'frog-jumps':
-      return new NumberLineView(host);
-    default:
-      return null;
-  }
+  return QUIZ_VIEWS[kind]?.(host) ?? null;
 }

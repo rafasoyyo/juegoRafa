@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import type { Flags } from '../flags';
 import { completeLevel, createGameState, worldProgress, type GameState } from '../state';
 import { opensAfter, worldAccess } from './access';
 import { ARCOIRIS } from './arcoiris';
@@ -11,8 +10,9 @@ function legacyPending(s: GameState, world: string, level: number): void {
   worldProgress(s, world).pending.add(level);
 }
 
-const ON: Flags = { 'mundo-2-rio': true, 'mundo-3-isla': true };
-const OFF: Flags = { 'mundo-2-rio': false, 'mundo-3-isla': false };
+/** Con `npm run dev` y en el juego publicado. */
+const ON = true;
+const OFF = false;
 
 describe('puerta de los mundos', () => {
   it('el mundo 1 no tiene puerta: siempre abierto', () => {
@@ -21,12 +21,12 @@ describe('puerta de los mundos', () => {
   });
 
   it('el río ya no depende del interruptor: está abierto también en el juego publicado', () => {
-    expect(RIO.gate?.flag).toBeUndefined();
+    expect(RIO.gate?.devOnly).toBeUndefined();
     expect(worldAccess(RIO, createGameState(), 6, OFF)).toBe('open');
   });
 
-  it('un mundo con el interruptor apagado aún no existe para nadie', () => {
-    const building = { ...RIO, gate: { ...RIO.gate, flag: 'mundo-2-rio' as const } };
+  it('un mundo solo de desarrollo aún no existe para nadie en el juego publicado', () => {
+    const building = { ...RIO, gate: { ...RIO.gate, devOnly: true } };
     const state = createGameState();
     completeLevel(state, 'arcoiris', 12, 3, 0);
     for (const age of [3, 5, 6, 8, undefined]) expect(worldAccess(building, state, age, OFF)).toBe('soon');
@@ -72,7 +72,7 @@ describe('mundos que abre el final de otro', () => {
   it('ni el final de otro mundo, ni un mundo sin puerta, ni uno tras un interruptor apagado', () => {
     expect(opensAfter(RIO, RIO.id, 5, ON)).toBe(false);
     expect(opensAfter(ARCOIRIS, ARCOIRIS.id, 5, ON)).toBe(false);
-    expect(opensAfter({ ...RIO, gate: { ...RIO.gate, flag: 'mundo-2-rio' } }, ARCOIRIS.id, 5, OFF)).toBe(false);
+    expect(opensAfter({ ...RIO, gate: { ...RIO.gate, devOnly: true } }, ARCOIRIS.id, 5, OFF)).toBe(false);
   });
 
   it('la isla, sin interruptor: abierta con 7 años o al llegar al nivel 12 del río, también en el juego publicado', () => {

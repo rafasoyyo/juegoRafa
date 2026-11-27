@@ -144,12 +144,35 @@ export function geyserStoneX(i: number): number {
   return GEYSER_FIRST + i * GEYSER_STEP;
 }
 
+/** Lo que la validación y la duración necesitan de cada tipo de reto, en baldosas y segundos. */
+export interface ChallengeShape {
+  /** Tramo que ocupa el reto cuyo `x` es `x`. */
+  zone(x: number): { from: number; to: number };
+  /** Segundos extra que cuesta resolverlo con calma. */
+  calmSeconds: number;
+}
+
+const COUNT_ZONE = (x: number): { from: number; to: number } => ({ from: x + CHALLENGE_ZONE.from, to: x + CHALLENGE_ZONE.to });
+const BRIDGE_ZONE = (x: number): { from: number; to: number } => ({ from: x - BRIDGE_MARGIN, to: x + BRIDGE_SECTIONS * BRIDGE_SECTION + BRIDGE_MARGIN });
+const BOAT_ZONE = (x: number): { from: number; to: number } => ({ from: x - BOAT_DOCK, to: x + BOAT_LAKE + BOAT_MARGIN });
+
+/**
+ * Registro puro de los tipos de reto: una entrada por tipo (spec `world-isolation`). La mecánica de juego
+ * de cada tipo (plan, huecos y vista) está en `src/game/challenges/registry.ts`.
+ */
+export const CHALLENGE_SHAPES: Readonly<Record<ChallengeKind, ChallengeShape>> = {
+  count: { zone: COUNT_ZONE, calmSeconds: 8 },
+  bridge: { zone: BRIDGE_ZONE, calmSeconds: 10 },
+  boat: { zone: BOAT_ZONE, calmSeconds: 12 },
+  footprints: { zone: BRIDGE_ZONE, calmSeconds: 10 },
+  door: { zone: (x) => ({ from: COUNT_ZONE(x).from, to: COUNT_ZONE(x).to + DOOR_EXTRA }), calmSeconds: 9 },
+  brachio: { zone: BOAT_ZONE, calmSeconds: 13 },
+  geyser: { zone: (x) => ({ from: x - GEYSER_BEFORE, to: x + GEYSER_LAKE + GEYSER_AFTER }), calmSeconds: 10 },
+};
+
 /** Tramo que ocupa un reto, en baldosas. */
 export function challengeZone(c: { kind: ChallengeKind; x: number }): { from: number; to: number } {
-  if (c.kind === 'boat' || c.kind === 'brachio') return { from: c.x - BOAT_DOCK, to: c.x + BOAT_LAKE + BOAT_MARGIN };
-  if (c.kind === 'geyser') return { from: c.x - GEYSER_BEFORE, to: c.x + GEYSER_LAKE + GEYSER_AFTER };
-  if (c.kind === 'bridge' || c.kind === 'footprints') return { from: c.x - BRIDGE_MARGIN, to: c.x + BRIDGE_SECTIONS * BRIDGE_SECTION + BRIDGE_MARGIN };
-  return { from: c.x + CHALLENGE_ZONE.from, to: c.x + CHALLENGE_ZONE.to + (c.kind === 'door' ? DOOR_EXTRA : 0) };
+  return CHALLENGE_SHAPES[c.kind].zone(c.x);
 }
 
 /** Un nivel tal como está en el JSON (en baldosas), con su nombre para los mensajes de error. */

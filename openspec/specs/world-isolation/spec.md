@@ -1,10 +1,10 @@
-# Spec Delta
+# world-isolation Specification
 
 ## Purpose
 
 Fijar las reglas que permiten desarrollar y modificar cada mundo, y cada mecánica que trae, en paralelo y sin tocar el código de los demás mundos, y cómo se comprueban.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Cada mundo en su carpeta
 Todo lo propio de un mundo (sus recorridos, su definición, sus reglas de diseño, su mapa, su apertura, su castillo y su historia) SHALL vivir en su carpeta de contenido y en su carpeta de definición. Dar de alta un mundo SHALL requerir, fuera de esas carpetas, solo una entrada en el registro de mundos. Cambiar un mundo SHALL NOT requerir editar las carpetas de otros mundos.
@@ -18,7 +18,7 @@ Todo lo propio de un mundo (sus recorridos, su definición, sus reglas de diseñ
 - **THEN** ningún archivo de otro mundo cambia y los demás mundos se juegan igual
 
 ### Requirement: El motor no distingue mundos
-Fuera de la carpeta de un mundo, ningún código SHALL nombrar su identificador ni importar su carpeta, salvo el registro de mundos. Lo que cambie de un mundo a otro SHALL ser un dato o una opción de su definición, con un nombre que describa qué hace (por ejemplo, «arcoíris del horizonte» o «río en el mapa»), no a qué mundo pertenece.
+Fuera de las carpetas de los mundos y del registro de mundos, ningún código SHALL nombrar el identificador de un mundo ni importar su carpeta. Una definición MAY nombrar otro mundo solo como dato (por ejemplo, el mundo tras el que se abre). Lo que cambie de un mundo a otro SHALL ser un dato o una opción de su definición, con un nombre que describa qué hace (por ejemplo, «arcoíris del horizonte» o «río en el mapa»), no a qué mundo pertenece.
 
 #### Scenario: Pieza propia de un mundo
 - **WHEN** un mundo necesita algo que los demás no tienen (un adorno del mapa, un final, un castillo)
@@ -58,7 +58,7 @@ El progreso de cada mundo SHALL guardarse aparte. Añadir, cambiar o quitar un m
 - **THEN** ese progreso sigue guardado y los demás mundos no cambian
 
 ### Requirement: Comprobación automática
-`npm test` SHALL fallar si fuera de la carpeta de un mundo aparece su identificador o se importa su carpeta (salvo el registro de mundos), o si una escena compara tipos de reto, de enemigo o de prueba uno a uno. Todos los mundos registrados SHALL pasar las mismas comprobaciones de contenido con las reglas de su propia definición.
+`npm test` SHALL fallar si fuera de las carpetas de los mundos y del registro aparece el identificador de un mundo o se importa su carpeta, o si una escena compara tipos de reto, de enemigo o de prueba uno a uno. Todos los mundos registrados SHALL pasar las mismas comprobaciones de contenido con las reglas de su propia definición.
 
 #### Scenario: Atajo en el motor
 - **WHEN** alguien escribe en una escena una comparación con el identificador de un mundo o con un tipo de reto concreto
