@@ -1,0 +1,31 @@
+{
+  "ambient": "manantial",
+  "length": 161,
+  "steps": [],
+  "platforms": [],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 24.7, "row": "high" },
+    { "x": 25.9, "row": "high" },
+    { "x": 56.9, "row": "low" },
+    { "x": 58.1, "row": "low" },
+    { "x": 59.3, "row": "low" },
+    { "x": 70.3, "row": "high" },
+    { "x": 71.5, "row": "high" },
+    { "x": 72.7, "row": "high" },
+    { "x": 103.7, "row": "low" },
+    { "x": 104.9, "row": "low" },
+    { "x": 115.9, "row": "high" },
+    { "x": 117.1, "row": "high" },
+    { "x": 148.1, "row": "low" },
+    { "x": 149.3, "row": "low" },
+    { "x": 150.5, "row": "low" }
+  ],
+  "spikes": [],
+  "challenges": [
+    { "kind": "count", "x": 42.4, "show": "dots", "demo": true },
+    { "kind": "count", "x": 89.2, "show": "dots" },
+    { "kind": "count", "x": 133.6, "show": "dots" }
+  ]
+}

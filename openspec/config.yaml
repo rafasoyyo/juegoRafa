@@ -17,7 +17,7 @@ context: |
 
   - **Móvil y táctil primero**, horizontal. Escritorio es solo para desarrollar (teclado).
   - **Sin texto que el niño deba leer**: toda consigna es voz + dibujo. Idiomas de voz: español e inglés.
-  - **Sin vidas ni «game over»**; un fallo = rebote suave + pista. Estrellas de 1 a 3, nunca 0.
+  - **Sin vidas ni «game over»**; un fallo = rebote suave + pista. Estrellas de 0 a 3 por objetivos (galletas y prueba de la bandera); con 0 se vuelve a empezar la fase, sin pantalla de derrota.
   - **Sin assets, personajes, nombres, logos ni música de terceros con copyright** (Nintendo incluida:
     nada de Mario ni goombas). Personaje propio (Rufo el zorro, con Lalo el búho como guía); arte propio o CC0 con licencia anotada.
   - **Se publica y es para menores**: sin publicidad, sin analítica con identificadores personales,
@@ -34,7 +34,7 @@ context: |
   ## Estructura
 
   `src/game/` (Phaser: scenes, ui, audio, enemies, levels, power, profile, state) ·
-  `src/learning/` (pruebas de la bandera en `quiz/`, puntuación) · `content/levels/` (12 niveles en JSON) ·
+  `src/learning/` (pruebas de la bandera en `quiz/`, puntuación) · `content/levels/<mundo>/` (niveles en JSON por mundo; definiciones en `src/game/worlds/`) ·
   `public/` (assets SVG, fuentes, iconos; licencias en `public/assets/LICENSES.md`).
   `src/data/` (repositorios Firebase) aún no existe: llegará con la fase 3.
 
@@ -50,7 +50,8 @@ context: |
   (`localStorage`), audio sintetizado. Pendiente: Auth y Firestore (fase 3), panel de padres (fase 5),
   voz grabada y mundos 2 a 4 (fase 6). Detalle en la hoja de ruta de `docs/PROPUESTA.md`.
   En marcha, con boceto aprobado y plan por pasos: el tema del mundo 1, «El camino del arcoíris»
-  (`docs/MUNDO-1.md`), y el mundo 2, «El río de los números» (`docs/MUNDO-2.md`). Esos documentos mandan
+  (`docs/MUNDO-1.md`), el mundo 2, «El río de los números» (`docs/MUNDO-2.md`), y el mundo 3, «La isla de
+  los dinosaurios» (`docs/MUNDO-3.md`). Esos documentos mandan
   sobre las specs en lo suyo; cada `openspec-propose` de esos planes parte de ellos.
 
 rules:

@@ -54,8 +54,14 @@ Licencia: la del repositorio.
 | `svg/icon-no-hat.svg` | lienzo de diseño |
 | `svg/icon-play-white.svg` | derivado: triángulo de jugar |
 | `svg/icon-replay.svg` | lienzo de diseño |
+| `svg/icon-replay-white.svg` | derivado: `icon-replay` en blanco y más grueso |
 | `svg/icon-shapes.svg` | lienzo de diseño |
 | `svg/icon-speaker.svg` | lienzo de diseño |
+| `svg/frog.svg` | propio: rana saltarina (enemigo del río), en la paleta y el estilo del lienzo |
+| `svg/crab.svg` | propio: cangrejo que anda de lado (enemigo del río), en la paleta y el estilo del lienzo |
+| `svg/castle.svg` | propio: castillo del final de cada mundo (mapa, recorrido y prueba), en la paleta y el estilo del lienzo |
+| `svg/medal.svg` | propio: medalla que da el castillo (fin del castillo y selector de mundos), en la paleta y el estilo del lienzo |
+| `svg/icon-ten-frame.svg` | propio: marco de diez (2×5 casillas con 7 fichas), icono del mundo del río, en la paleta del lienzo |
 | `svg/icon-speaker-off.svg` | derivado de `icon-speaker.svg`: mismo altavoz con un aspa en lugar de las ondas (silencio) |
 | `svg/lalo-blink.svg` | derivado de Lalo del lienzo (ojos cerrados) |
 | `svg/lalo.svg` | lienzo de diseño |
@@ -79,6 +85,7 @@ Licencia: la del repositorio.
 | `decor-sun` | `src/game/scenes/BootScene.ts` | propio: sol bajo del atardecer |
 | `decor-moon` | `src/game/scenes/BootScene.ts` | propio: luna de la noche |
 | `decor-star` | `src/game/scenes/BootScene.ts` | propio: estrella redondeada de la noche |
+| `decor-burrow` | `src/game/scenes/BootScene.ts` | propio: madriguera de Rufo en la colina, al principio del mapa del arcoíris |
 | `decor-palm` | `src/game/scenes/BootScene.ts` | propio: palmera de la playa |
 | `decor-leaf`, `decor-vine` | `src/game/scenes/BootScene.ts` | propio: hoja grande y liana de la selva |
 | `decor-peak` | `src/game/scenes/BootScene.ts` | propio: pico nevado de la montaña |

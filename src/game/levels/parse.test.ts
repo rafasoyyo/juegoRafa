@@ -23,7 +23,18 @@ function variant(): Record<string, unknown> & typeof VALID {
 describe('parseLevel', () => {
   it('lee un JSON válido', () => {
     const level = parseLevel('nivel-x', VALID);
-    expect(level).toEqual({ id: 'nivel-x', ...VALID, spikes: [] });
+    expect(level).toEqual({ id: 'nivel-x', ...VALID, spikes: [], challenges: [] });
+  });
+
+  it('lee los retos con sus valores por defecto y rechaza los mal formados', () => {
+    const withChallenges = { ...variant(), challenges: [{ kind: 'count', x: 30, demo: true }, { kind: 'count', x: 50, show: 'tenframe', reverse: true }] };
+    expect(parseLevel('nivel-x', withChallenges).challenges).toEqual([
+      { kind: 'count', x: 30, show: 'dots', reverse: false, demo: true },
+      { kind: 'count', x: 50, show: 'tenframe', reverse: true, demo: false },
+    ]);
+    expect(() => parseLevel('nivel-9', { ...variant(), challenges: [{ kind: 'puente', x: 3 }] })).toThrow(/nivel-9: challenges\[0\]\.kind/);
+    expect(() => parseLevel('nivel-9', { ...variant(), challenges: [{ kind: 'count', x: 3, show: 'dedos' }] })).toThrow(/challenges\[0\]\.show/);
+    expect(() => parseLevel('nivel-9', { ...variant(), challenges: [{ kind: 'count', x: 3, demo: 'sí' }] })).toThrow(/challenges\[0\]\.demo/);
   });
 
   it('un nivel sin «spikes» no tiene pinchos; con zonas, las lee', () => {

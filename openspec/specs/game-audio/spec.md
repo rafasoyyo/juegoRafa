@@ -171,3 +171,35 @@ reproducir audio, el juego SHALL funcionar igual, en silencio y sin errores.
 #### Scenario: Sin conexión
 - **WHEN** se abre la PWA instalada sin conexión
 - **THEN** la música y los efectos suenan igual que con conexión
+
+### Requirement: Sonidos de los retos
+Acertar un reto SHALL sonar con el bloque y una compuerta que se abre (notas que suben). Un fallo SHALL sonar con el efecto suave de error, sin nada que asuste. Al contar en la pista, cada punto que se enciende SHALL sonar con un «tic» un poco más agudo que el anterior. Todos respetan el silencio.
+
+#### Scenario: Pista contando
+- **WHEN** tras el segundo fallo se encienden 4 puntos del cartel
+- **THEN** suenan 4 tics, cada uno más agudo que el anterior
+
+### Requirement: Escala del puente
+Al colocarse la tabla del puente SHALL sonar una escala de notas que sube, distinta de la compuerta, respetando el silencio.
+
+#### Scenario: Tabla colocada
+- **WHEN** la tabla del puente llega al hueco
+- **THEN** suena una escala de notas que sube
+
+### Requirement: Bocina de la barca
+Al llenarse la barca SHALL sonar una bocina corta y grave, distinta de la compuerta y de la escala, respetando el silencio.
+
+#### Scenario: Barca llena
+- **WHEN** el último patito se sienta en la barca
+- **THEN** suena la bocina
+
+### Requirement: Nota de cada banda del arcoíris
+Al pintarse cada una de las 6 bandas de un gajo del arcoíris del mapa SHALL sonar una nota corta de campana, cada banda más aguda que la anterior, de modo que el gajo completo suene como una escala de 6 notas que sube, respetando el silencio.
+
+#### Scenario: Gajo nuevo con sonido
+- **WHEN** se pinta un gajo nuevo en el mapa con el sonido activado
+- **THEN** suenan 6 notas que suben, una con cada banda
+
+#### Scenario: Gajo nuevo en silencio
+- **WHEN** se pinta un gajo nuevo con el juego silenciado
+- **THEN** el gajo se pinta igual y no suena nada

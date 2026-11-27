@@ -1,13 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { enemyCount } from '../enemies/enemy-layout';
-import { LEVEL_COUNT } from '../state';
-import { LEVELS } from './catalog';
-import { durationLimits, estimateDuration } from './duration';
-import type { LevelData } from './types';
-import { blockLimits, NARROW_SPIKES_UNTIL, SPIKES_PER_LEVEL, validateLevel } from './validate';
+import { enemyCount } from '../../enemies/enemy-layout';
+import type { LevelData } from '../../levels/types';
+import { ARCOIRIS, COURSE, ENEMIES } from '.';
 
-/** Número de nivel (1..12) de cada recorrido. */
-const numbered = LEVELS.map((l, i) => [l.id, i + 1, l] as const);
+const LEVELS = ARCOIRIS.levels;
 
 /** Cantidades que miden la dificultad de un nivel. */
 function axes(level: LevelData, n: number): Record<string, number> {
@@ -16,46 +12,51 @@ function axes(level: LevelData, n: number): Record<string, number> {
     bloques: level.blocks.length,
     escalones: level.steps.length,
     plataformas: level.platforms.length,
-    enemigos: enemyCount(n),
+    enemigos: enemyCount(ENEMIES, n),
     pinchos: level.spikes.length,
   };
 }
 
-describe('catálogo de niveles', () => {
-  it('hay un recorrido por cada nivel del mapa', () => {
-    expect(LEVEL_COUNT).toBe(12);
-    expect(LEVELS).toHaveLength(LEVEL_COUNT);
-    expect(LEVELS.map((l) => l.id)).toEqual(Array.from({ length: 12 }, (_, i) => `nivel-${i + 1}`));
-  });
-
-  it.each(numbered)('%s cumple todas las reglas de diseño', (_id, _n, level) => {
-    expect(validateLevel(level)).toEqual([]);
-  });
-
-  it.each(numbered)('%s dura lo que le toca a tope y con calma', (_id, n, level) => {
-    const { fastS, calmS } = estimateDuration(level);
-    const limits = durationLimits(n);
-    expect(fastS).toBeGreaterThanOrEqual(limits.minFastS);
-    expect(calmS).toBeGreaterThanOrEqual(limits.minCalmS);
-    expect(calmS).toBeLessThanOrEqual(limits.maxCalmS);
+describe('mundo 1, el camino del arcoíris', () => {
+  it('tiene 12 niveles', () => {
+    expect(ARCOIRIS.id).toBe('arcoiris');
+    expect(ARCOIRIS.levelCount).toBe(12);
+    expect(LEVELS).toHaveLength(12);
   });
 
   it('bloques: 12–20 en los niveles 1 a 6, 20–25 en los 7 a 12 y ninguno menos que el anterior', () => {
+    for (let n = 1; n <= 6; n++) expect(COURSE.blockLimits(n)).toEqual({ min: 12, max: 20 });
+    for (let n = 7; n <= 12; n++) expect(COURSE.blockLimits(n)).toEqual({ min: 20, max: 25 });
     const counts = LEVELS.map((l) => l.blocks.length);
-    for (const [i, count] of counts.entries()) {
-      const { min, max } = blockLimits(i + 1);
-      expect(count, LEVELS[i]!.id).toBeGreaterThanOrEqual(min);
-      expect(count, LEVELS[i]!.id).toBeLessThanOrEqual(max);
-      if (i > 0) expect(count, LEVELS[i]!.id).toBeGreaterThanOrEqual(counts[i - 1]!);
-    }
+    for (let i = 1; i < counts.length; i++) expect(counts[i], LEVELS[i]!.id).toBeGreaterThanOrEqual(counts[i - 1]!);
   });
 
   it('pinchos: ninguno en los niveles 1 a 6; 2, 3, 3, 4, 5 y 6 zonas en los 7 a 12, de 1 baldosa en el 7 y el 8', () => {
-    expect(LEVELS.map((l) => l.spikes.length)).toEqual(SPIKES_PER_LEVEL);
-    expect(SPIKES_PER_LEVEL).toEqual([0, 0, 0, 0, 0, 0, 2, 3, 3, 4, 5, 6]);
-    for (const [i, level] of LEVELS.entries()) {
-      if (i + 1 <= NARROW_SPIKES_UNTIL) for (const z of level.spikes) expect(z.width, level.id).toBe(1);
-    }
+    expect(COURSE.spikesPerLevel).toEqual([0, 0, 0, 0, 0, 0, 2, 3, 3, 4, 5, 6]);
+    expect(COURSE.narrowSpikesUntil).toBe(8);
+    expect(LEVELS.map((l) => l.spikes.length)).toEqual(COURSE.spikesPerLevel);
+  });
+
+  it('duración: 60–120 s y 30 s en los niveles 1 a 6; 90–150 s y 35 s en los 7 a 12', () => {
+    for (let level = 1; level <= 6; level++) expect(COURSE.durationLimits(level)).toEqual({ minFastS: 30, minCalmS: 60, maxCalmS: 120 });
+    for (let level = 7; level <= 12; level++) expect(COURSE.durationLimits(level)).toEqual({ minFastS: 35, minCalmS: 90, maxCalmS: 150 });
+  });
+
+  it('enemigos: 2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9 y 10; la abeja desde el nivel 2', () => {
+    expect(ENEMIES.perLevel).toEqual([2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10]);
+    expect(ENEMIES.kinds).toEqual([
+      { kind: 'bee', fromLevel: 2 },
+      { kind: 'hedgehog', fromLevel: 1 },
+    ]);
+  });
+
+  it('pruebas de la bandera: una distinta en cada nivel', () => {
+    const kinds = Array.from({ length: 12 }, (_, i) => ARCOIRIS.quizFor(i + 1));
+    expect(kinds).toEqual(['count', 'compare', 'series', 'shapes', 'name-letters', 'recall', 'share', 'order', 'cable-car', 'tracks', 'balance', 'mirror']);
+  });
+
+  it('lleva el arcoíris del horizonte', () => {
+    expect(ARCOIRIS.horizonRainbow).toBe(true);
   });
 
   it('no hay dos niveles con la misma disposición ni el mismo ambiente', () => {

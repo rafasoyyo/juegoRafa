@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS } from '../levels/catalog';
 import { toWorld } from '../levels/parse';
+import { challengeZone, TILE } from '../levels/types';
+import { ARCOIRIS, ENEMIES } from '../worlds/arcoiris';
+import { ENEMIES as RIO_ENEMIES, RIO } from '../worlds/rio';
 import {
   BLOCK_CLEAR,
   courseFor,
-  ENEMIES_PER_LEVEL,
   FLAG_CLEAR,
   freeStretches,
   layoutEnemies,
@@ -12,7 +13,7 @@ import {
   type Course,
   type EnemySpawn,
 } from './enemy-layout';
-import { BEE_DRIFT } from './enemy-motion';
+import { BEE_DRIFT, CRAB_PATROL_MAX } from './enemy-motion';
 
 /** Generador con semilla (mulberry32) para repetir los repartos. */
 function seeded(seed: number): () => number {
@@ -27,7 +28,8 @@ function seeded(seed: number): () => number {
 }
 
 /** Recorridos reales de los niveles 1 a 12 (`COURSES[0]` es el nivel 1). */
-const WORLDS = LEVELS.map(toWorld);
+const WORLDS = ARCOIRIS.levels.map(toWorld);
+const ENEMIES_PER_LEVEL = ENEMIES.perLevel;
 const COURSES: Course[] = WORLDS.map(courseFor);
 const course = (level: number): Course => COURSES[level - 1]!;
 const SEEDS = Array.from({ length: 200 }, (_, i) => i + 1);
@@ -37,13 +39,15 @@ const HALF_BODY = 50;
 
 /** Intervalo horizontal que puede ocupar el centro del enemigo en algún momento. */
 function reach(e: EnemySpawn): { from: number; to: number } {
-  return e.kind === 'hedgehog' ? { from: e.minX, to: e.maxX } : { from: e.x - BEE_DRIFT, to: e.x + BEE_DRIFT };
+  if (e.kind === 'hedgehog' || e.kind === 'crab') return { from: e.minX, to: e.maxX };
+  if (e.kind === 'frog') return { from: e.x, to: e.x };
+  return { from: e.x - BEE_DRIFT, to: e.x + BEE_DRIFT };
 }
 
 describe('layoutEnemies', () => {
   it('nivel 1: exactamente dos enemigos y son erizos', () => {
     for (const seed of SEEDS) {
-      const enemies = layoutEnemies(1, course(1), seeded(seed));
+      const enemies = layoutEnemies(ENEMIES, 1, course(1), seeded(seed));
       expect(enemies).toHaveLength(2);
       expect(enemies.every((e) => e.kind === 'hedgehog')).toBe(true);
     }
@@ -53,7 +57,7 @@ describe('layoutEnemies', () => {
     expect(ENEMIES_PER_LEVEL).toEqual([2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10]);
     for (const level of LEVEL_NUMBERS) {
       expect(freeStretches(course(level)).length, `nivel ${level}`).toBeGreaterThanOrEqual(ENEMIES_PER_LEVEL[level - 1]!);
-      for (const seed of SEEDS) expect(layoutEnemies(level, course(level), seeded(seed))).toHaveLength(ENEMIES_PER_LEVEL[level - 1]!);
+      for (const seed of SEEDS) expect(layoutEnemies(ENEMIES, level, course(level), seeded(seed))).toHaveLength(ENEMIES_PER_LEVEL[level - 1]!);
     }
   });
 
@@ -61,7 +65,7 @@ describe('layoutEnemies', () => {
     for (const level of LEVEL_NUMBERS) {
       const c = course(level);
       for (const seed of SEEDS) {
-        for (const e of layoutEnemies(level, c, seeded(seed))) {
+        for (const e of layoutEnemies(ENEMIES, level, c, seeded(seed))) {
           const r = reach(e);
           expect(r.from - HALF_BODY).toBeGreaterThanOrEqual(c.startX + START_CLEAR);
           expect(r.to + HALF_BODY).toBeLessThanOrEqual(c.flagX - FLAG_CLEAR);
@@ -81,7 +85,7 @@ describe('layoutEnemies', () => {
       const world = WORLDS[level - 1]!;
       const zones = [...world.steps, ...world.platforms].map((z) => ({ from: z.x - BLOCK_CLEAR, to: z.x + z.width + BLOCK_CLEAR }));
       for (const seed of SEEDS) {
-        for (const e of layoutEnemies(level, course(level), seeded(seed))) {
+        for (const e of layoutEnemies(ENEMIES, level, course(level), seeded(seed))) {
           const r = reach(e);
           for (const z of zones) {
             const clear = r.to + HALF_BODY <= z.from || r.from - HALF_BODY >= z.to;
@@ -98,7 +102,7 @@ describe('layoutEnemies', () => {
       expect(world.spikes.length, `nivel ${level}`).toBeGreaterThan(0);
       const zones = world.spikes.map((z) => ({ from: z.x - BLOCK_CLEAR, to: z.x + z.width + BLOCK_CLEAR }));
       for (const seed of SEEDS) {
-        for (const e of layoutEnemies(level, course(level), seeded(seed))) {
+        for (const e of layoutEnemies(ENEMIES, level, course(level), seeded(seed))) {
           const r = reach(e);
           for (const z of zones) {
             const clear = r.to + HALF_BODY <= z.from || r.from - HALF_BODY >= z.to;
@@ -131,7 +135,7 @@ describe('layoutEnemies', () => {
 
   it('nunca pone dos enemigos en el mismo tramo libre', () => {
     for (const seed of SEEDS) {
-      const enemies = layoutEnemies(6, course(6), seeded(seed));
+      const enemies = layoutEnemies(ENEMIES, 6, course(6), seeded(seed));
       const froms = enemies.map((e) => e.stretch.from);
       expect(new Set(froms).size).toBe(enemies.length);
     }
@@ -139,7 +143,7 @@ describe('layoutEnemies', () => {
 
   it('con semillas distintas cambian las posiciones o los tipos', () => {
     const signature = (seed: number): string =>
-      layoutEnemies(4, course(4), seeded(seed))
+      layoutEnemies(ENEMIES, 4, course(4), seeded(seed))
         .map((e) => `${e.kind}@${Math.round(reach(e).from)}`)
         .join('|');
     const distinct = new Set(SEEDS.map(signature));
@@ -148,7 +152,7 @@ describe('layoutEnemies', () => {
 
   it('desde el nivel 2 aparecen abejas con alguna semilla', () => {
     for (const level of LEVEL_NUMBERS.slice(1)) {
-      const kinds = SEEDS.flatMap((seed) => layoutEnemies(level, course(level), seeded(seed)).map((e) => e.kind));
+      const kinds = SEEDS.flatMap((seed) => layoutEnemies(ENEMIES, level, course(level), seeded(seed)).map((e) => e.kind));
       expect(kinds).toContain('bee');
       expect(kinds).toContain('hedgehog');
     }
@@ -157,9 +161,9 @@ describe('layoutEnemies', () => {
   it('si hay menos tramos que enemigos devuelve los que caben, sin error', () => {
     const crowded: Course = { startX: 0, flagX: 2000, keepClear: [{ x: 1000, width: 84 }] };
     expect(freeStretches(crowded)).toHaveLength(2);
-    expect(layoutEnemies(6, crowded, seeded(7))).toHaveLength(2);
+    expect(layoutEnemies(ENEMIES, 6, crowded, seeded(7))).toHaveLength(2);
     const noRoom: Course = { startX: 0, flagX: 1100, keepClear: [] };
-    expect(layoutEnemies(6, noRoom, seeded(7))).toEqual([]);
+    expect(layoutEnemies(ENEMIES, 6, noRoom, seeded(7))).toEqual([]);
   });
 
   it('un escalón o una plataforma parten un tramo libre igual que un bloque', () => {
@@ -169,5 +173,45 @@ describe('layoutEnemies', () => {
     const [left, right] = freeStretches(withStep);
     expect(left!.to).toBe(1500 - 210 - BLOCK_CLEAR);
     expect(right!.from).toBe(1500 + 210 + BLOCK_CLEAR);
+  });
+});
+
+describe('enemigos del río', () => {
+  const open: Course = { startX: 0, flagX: 12000, keepClear: Array.from({ length: 12 }, (_, i) => ({ x: 1200 + i * 850, width: 84 })) };
+  const kindsAt = (level: number): Set<string> =>
+    new Set(SEEDS.flatMap((seed) => layoutEnemies(RIO_ENEMIES, level, open, seeded(seed)).map((e) => e.kind)));
+
+  it('la rana sale desde el nivel 3 y el cangrejo desde el 7, junto al erizo y la abeja', () => {
+    expect([...kindsAt(2)].sort()).toEqual(['bee', 'hedgehog']);
+    expect([...kindsAt(3)].sort()).toEqual(['bee', 'frog', 'hedgehog']);
+    expect([...kindsAt(7)].sort()).toEqual(['bee', 'crab', 'frog', 'hedgehog']);
+  });
+
+  it('el cangrejo anda menos trecho que el erizo y la rana salta en un punto de su tramo', () => {
+    for (const seed of SEEDS) {
+      for (const e of layoutEnemies(RIO_ENEMIES, 7, open, seeded(seed))) {
+        if (e.kind === 'crab') expect(e.maxX - e.minX).toBeLessThanOrEqual(CRAB_PATROL_MAX);
+        if (e.kind === 'frog') {
+          expect(e.x).toBeGreaterThanOrEqual(e.stretch.from + HALF_BODY);
+          expect(e.x).toBeLessThanOrEqual(e.stretch.to - HALF_BODY);
+        }
+      }
+    }
+  });
+
+  it('nunca junto a un reto: los niveles del río no ponen enemigos en la zona de un reto ni a menos de su margen', () => {
+    RIO.levels.forEach((level, i) => {
+      const world = toWorld(level);
+      const zones = world.challenges.map((c) => challengeZone({ kind: c.kind, x: c.x / TILE }));
+      for (const seed of SEEDS) {
+        for (const e of layoutEnemies(RIO_ENEMIES, i + 1, courseFor(world), seeded(seed))) {
+          const r = reach(e);
+          for (const z of zones) {
+            const near = r.to > z.from * TILE - BLOCK_CLEAR && r.from < z.to * TILE + BLOCK_CLEAR;
+            expect(near, `nivel ${i + 1}, ${e.kind}`).toBe(false);
+          }
+        }
+      }
+    });
   });
 });

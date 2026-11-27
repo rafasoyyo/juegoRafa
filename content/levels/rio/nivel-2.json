@@ -1,0 +1,34 @@
+{
+  "ambient": "arroyo",
+  "length": 163,
+  "steps": [
+    { "x": 50.4, "width": 4, "height": 1 },
+    { "x": 62.4, "width": 5, "height": 1 },
+    { "x": 67.4, "width": 4, "height": 2 },
+    { "x": 137.0, "width": 4, "height": 1 },
+    { "x": 149.0, "width": 4, "height": 1 }
+  ],
+  "platforms": [],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 22.7, "row": "high" },
+    { "x": 23.9, "row": "high" },
+    { "x": 52.4, "row": "high", "on": "step" },
+    { "x": 64.9, "row": "low", "on": "step" },
+    { "x": 69.4, "row": "high", "on": "step" },
+    { "x": 97.9, "row": "low" },
+    { "x": 99.1, "row": "low" },
+    { "x": 100.3, "row": "low" },
+    { "x": 109.3, "row": "high" },
+    { "x": 110.5, "row": "high" },
+    { "x": 139.0, "row": "high", "on": "step" },
+    { "x": 151.0, "row": "high", "on": "step" }
+  ],
+  "spikes": [],
+  "challenges": [
+    { "kind": "count", "x": 38.4, "show": "tenframe" },
+    { "kind": "count", "x": 85.4, "show": "tenframe" },
+    { "kind": "count", "x": 125.0, "show": "tenframe" }
+  ]
+}

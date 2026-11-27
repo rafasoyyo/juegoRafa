@@ -1,10 +1,19 @@
 /**
- * Estado del juego en memoria: progreso del mundo, galletas y gorros.
+ * Estado del juego en memoria: progreso de cada mundo, galletas y gorros.
  * TypeScript puro (sin Phaser) para poder probarlo y, en la fase 3, guardarlo en Firestore.
+ *
+ * Un nivel se identifica por su mundo y su número dentro de él (1..`levelCount`). Las galletas y los
+ * gorros son del perfil, compartidos por todos los mundos.
  */
 
-/** Niveles del mundo de los números. */
-export const LEVEL_COUNT = 12;
+/** Identificador de un mundo (p. ej. `arcoiris`); los mundos se registran en `src/game/worlds/`. */
+export type WorldId = string;
+
+/** Lo que el progreso necesita saber de un mundo: su id y cuántos niveles tiene. */
+export interface WorldShape {
+  id: WorldId;
+  levelCount: number;
+}
 
 export const HATS = ['cap', 'wool', 'party', 'helmet', 'crown', 'none'] as const;
 export type HatId = (typeof HATS)[number];
@@ -21,70 +30,119 @@ export const HAT_PRICES: Readonly<Record<HatId, number>> = {
 
 export type LevelStatus = 'done' | 'pending' | 'current' | 'locked';
 
-export interface GameState {
+/** Progreso de un mundo. */
+export interface WorldProgress {
   /** Mejor puntuación en estrellas de cada nivel completado (1..3). Un nivel está hecho si está aquí. */
   stars: Map<number, number>;
   /** Niveles jugados hasta la bandera sin superar su prueba. Nunca contiene un nivel hecho. */
   pending: Set<number>;
+  /** Medalla del castillo del mundo: se gana al terminar el castillo y no se pierde. */
+  medal: boolean;
+}
+
+export interface GameState {
+  /** Progreso de cada mundo jugado; un mundo sin entrada no se ha empezado. */
+  worlds: Map<WorldId, WorldProgress>;
   cookies: number;
   ownedHats: Set<HatId>;
   hat: HatId;
+  /** Escenas de historia ya vistas (p. ej. `prologo:arcoiris`): solo una marca por escena. */
+  seen: Set<string>;
+}
+
+export function createWorldProgress(): WorldProgress {
+  return { stars: new Map(), pending: new Set(), medal: false };
 }
 
 export function createGameState(): GameState {
-  return { stars: new Map(), pending: new Set(), cookies: 0, ownedHats: new Set<HatId>(['cap', 'none']), hat: 'cap' };
+  return { worlds: new Map(), cookies: 0, ownedHats: new Set<HatId>(['cap', 'none']), hat: 'cap', seen: new Set() };
+}
+
+/** Progreso del mundo `world`; si aún no tiene, se crea vacío y se guarda en el estado. */
+export function worldProgress(state: GameState, world: WorldId): WorldProgress {
+  let progress = state.worlds.get(world);
+  if (!progress) {
+    progress = createWorldProgress();
+    state.worlds.set(world, progress);
+  }
+  return progress;
+}
+
+/** Progreso de un mundo para leerlo, sin crearlo si aún no existe. */
+function read(state: GameState, world: WorldId): WorldProgress {
+  return state.worlds.get(world) ?? createWorldProgress();
 }
 
 /** Un nivel está jugado si está hecho o pendiente. */
-function reached(state: GameState, level: number): boolean {
-  return state.stars.has(level) || state.pending.has(level);
+function reached(progress: WorldProgress, level: number): boolean {
+  return progress.stars.has(level) || progress.pending.has(level);
 }
 
 /**
- * Nivel en el que se pone el zorro: el primero sin jugar; si todos se han jugado, el primer pendiente;
- * `null` si están todos hechos.
+ * Nivel del mundo en el que se pone el zorro: el primero sin jugar; si todos se han jugado, el primer
+ * pendiente; `null` si están todos hechos.
  */
-export function currentLevel(state: GameState): number | null {
-  for (let level = 1; level <= LEVEL_COUNT; level++) {
-    if (!reached(state, level)) return level;
+export function currentLevel(state: GameState, world: WorldShape): number | null {
+  const progress = read(state, world.id);
+  for (let level = 1; level <= world.levelCount; level++) {
+    if (!reached(progress, level)) return level;
   }
-  for (let level = 1; level <= LEVEL_COUNT; level++) {
-    if (state.pending.has(level)) return level;
+  for (let level = 1; level <= world.levelCount; level++) {
+    if (progress.pending.has(level)) return level;
   }
   return null;
 }
 
-/** El nivel 1 siempre está desbloqueado; los demás, si el anterior está hecho o pendiente. */
-export function isUnlocked(state: GameState, level: number): boolean {
-  if (level < 1 || level > LEVEL_COUNT) return false;
-  return level === 1 || reached(state, level - 1);
+/** El nivel 1 de cada mundo siempre está desbloqueado; los demás, si el anterior está hecho o pendiente. */
+export function isUnlocked(state: GameState, world: WorldShape, level: number): boolean {
+  if (level < 1 || level > world.levelCount) return false;
+  return level === 1 || reached(read(state, world.id), level - 1);
 }
 
-export function levelStatus(state: GameState, level: number): LevelStatus {
-  if (state.stars.has(level)) return 'done';
-  if (currentLevel(state) === level) return 'current';
-  if (state.pending.has(level)) return 'pending';
-  return isUnlocked(state, level) ? 'current' : 'locked';
+export function levelStatus(state: GameState, world: WorldShape, level: number): LevelStatus {
+  const progress = read(state, world.id);
+  if (progress.stars.has(level)) return 'done';
+  if (currentLevel(state, world) === level) return 'current';
+  if (progress.pending.has(level)) return 'pending';
+  return isUnlocked(state, world, level) ? 'current' : 'locked';
 }
 
-export function canPlay(state: GameState, level: number): boolean {
-  return levelStatus(state, level) !== 'locked';
+export function canPlay(state: GameState, world: WorldShape, level: number): boolean {
+  return levelStatus(state, world, level) !== 'locked';
+}
+
+/**
+ * Estado del castillo de un mundo: cerrado hasta jugar (hecho o pendiente) el último nivel; abierto
+ * hasta ganar la medalla y, después, hecho (se puede volver a jugar).
+ */
+export type CastleStatus = 'locked' | 'open' | 'done';
+
+export function castleStatus(state: GameState, world: WorldShape): CastleStatus {
+  const progress = read(state, world.id);
+  if (progress.medal) return 'done';
+  return reached(progress, world.levelCount) ? 'open' : 'locked';
+}
+
+/** Castillo terminado: siempre da la medalla del mundo (sin estrellas) y suma las galletas. */
+export function winMedal(state: GameState, world: WorldId, cookies: number): void {
+  worldProgress(state, world).medal = true;
+  state.cookies += Math.max(0, Math.floor(cookies));
 }
 
 /** Guarda la mejor puntuación en estrellas, suma las galletas y deja el nivel hecho (ya no pendiente). */
-export function completeLevel(state: GameState, level: number, stars: number, cookies: number): void {
+export function completeLevel(state: GameState, world: WorldId, level: number, stars: number, cookies: number): void {
+  const progress = worldProgress(state, world);
   const clamped = Math.max(1, Math.min(3, Math.round(stars)));
-  state.stars.set(level, Math.max(state.stars.get(level) ?? 0, clamped));
-  state.pending.delete(level);
+  progress.stars.set(level, Math.max(progress.stars.get(level) ?? 0, clamped));
+  progress.pending.delete(level);
   state.cookies += Math.max(0, Math.floor(cookies));
 }
 
 /**
- * Prueba de la bandera no superada: suma las galletas y deja el nivel pendiente, salvo que ya estuviera
- * hecho (repetir un nivel hecho y fallar no lo deshace). El siguiente nivel queda desbloqueado.
+ * Fase terminada sin ninguna estrella: solo se suman las galletas. El nivel no queda hecho ni pendiente
+ * y no desbloquea el siguiente; si ya estaba hecho, conserva su mejor resultado.
  */
-export function markPending(state: GameState, level: number, cookies: number): void {
-  if (!state.stars.has(level)) state.pending.add(level);
+export function finishWithoutStars(state: GameState, cookies: number): void {
   state.cookies += Math.max(0, Math.floor(cookies));
 }
 

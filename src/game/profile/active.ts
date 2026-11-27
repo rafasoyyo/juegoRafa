@@ -63,11 +63,11 @@ export function savedProfilesWithHat(): (ProfileInfo & { hat: HatId })[] {
 }
 
 function fill(progress: GameState): void {
-  session.stars = progress.stars;
-  session.pending = progress.pending;
+  session.worlds = progress.worlds;
   session.cookies = progress.cookies;
   session.ownedHats = progress.ownedHats;
   session.hat = progress.hat;
+  session.seen = progress.seen;
 }
 
 /** Elige un perfil guardado y carga su progreso. Devuelve `false` si ya no se puede leer. */

@@ -3,7 +3,9 @@ import { COLORS } from '../config';
 import { AMBIENTS, INK, pitWall, PIT_WALL_MIX } from './ambients';
 import { RAINBOW_ALPHA } from './horizon-rainbow';
 import { STEEL } from './spikes';
-import { LEVELS } from './catalog';
+import { ARCOIRIS } from '../worlds/arcoiris';
+
+const LEVELS = ARCOIRIS.levels;
 import { AMBIENT_IDS } from './types';
 
 const hex = (css: string): number => parseInt(css.slice(1), 16);
@@ -35,8 +37,8 @@ const MIN_DELTA_E = 30;
 const FOX = 0xf28c28;
 
 describe('ambientes', () => {
-  it('existen los 12 ambientes y cada uno se llama como su clave', () => {
-    expect(AMBIENT_IDS).toHaveLength(12);
+  it('existen los 24 ambientes (12 por mundo) y cada uno se llama como su clave', () => {
+    expect(AMBIENT_IDS).toHaveLength(24);
     expect(Object.keys(AMBIENTS).sort()).toEqual([...AMBIENT_IDS].sort());
     for (const id of AMBIENT_IDS) expect(AMBIENTS[id].id).toBe(id);
   });
@@ -58,12 +60,14 @@ describe('ambientes', () => {
     expect(prado.decor).toBe('clouds');
   });
 
-  it('cada ambiente tiene otro cielo, otras colinas y otra decoración', () => {
+  it('cada ambiente tiene otro cielo, otras colinas y otro suelo; en cada mundo, otra decoración', () => {
     const all = Object.values(AMBIENTS);
     expect(new Set(all.map((a) => JSON.stringify(a.sky))).size).toBe(all.length);
     expect(new Set(all.map((a) => a.hill)).size).toBe(all.length);
     expect(new Set(all.map((a) => a.grass)).size).toBe(all.length);
-    expect(new Set(all.map((a) => a.decor)).size).toBe(all.length);
+    // Los 12 primeros son los del mundo 1; los 12 siguientes, los del río.
+    const worlds = [AMBIENT_IDS.slice(0, 12), AMBIENT_IDS.slice(12)];
+    expect(new Set(worlds[0]!.map((id) => AMBIENTS[id].decor)).size).toBe(12);
   });
 
   it('las paradas del cielo van de 0 a 1 en orden', () => {

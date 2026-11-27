@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { AMBIENTS } from './ambients';
-import { LEVELS } from './catalog';
+import { ARCOIRIS } from '../worlds/arcoiris';
 import { horizonRainbow } from './horizon-rainbow';
 import { TILE } from './types';
+
+const LEVELS = ARCOIRIS.levels;
 
 /** Anchos lógicos de la vista: 4:3 (mínimo), un móvil de 844×390 y 21:9 (máximo). */
 const VIEWS = [960, 1558, 1680] as const;
@@ -10,7 +12,7 @@ const VIEWS = [960, 1558, 1680] as const;
 /** Arcoíris del nivel `n` (1..12) con su ambiente y su longitud reales. */
 function rainbowOf(n: number, viewW: number) {
   const level = LEVELS[n - 1]!;
-  return horizonRainbow(n, AMBIENTS[level.ambient], viewW, level.length * TILE);
+  return horizonRainbow(n, 12, AMBIENTS[level.ambient], viewW, level.length * TILE);
 }
 
 const NUMBERS = LEVELS.map((_, i) => i + 1);
@@ -30,7 +32,7 @@ describe('arcoíris del horizonte', () => {
   });
 
   it('de noche es más tenue que al atardecer y en la playa, y nunca pasa de 0,8', () => {
-    const alpha = (id: keyof typeof AMBIENTS): number => horizonRainbow(1, AMBIENTS[id], 1558, 14000).alpha;
+    const alpha = (id: keyof typeof AMBIENTS): number => horizonRainbow(1, 12, AMBIENTS[id], 1558, 14000).alpha;
     expect(alpha('noche')).toBeLessThan(alpha('atardecer'));
     expect(alpha('noche')).toBeLessThan(alpha('playa'));
     for (const n of NUMBERS) expect(rainbowOf(n, 1558).alpha, `nivel ${n}`).toBeLessThanOrEqual(0.8);
@@ -56,11 +58,11 @@ describe('arcoíris del horizonte', () => {
 
   it('fuera de rango, el nivel se acota a 1..12', () => {
     const prado = AMBIENTS.prado;
-    expect(horizonRainbow(0, prado, 1558, 14000)).toEqual(horizonRainbow(1, prado, 1558, 14000));
-    expect(horizonRainbow(13, prado, 1558, 14000)).toEqual(horizonRainbow(12, prado, 1558, 14000));
+    expect(horizonRainbow(0, 12, prado, 1558, 14000)).toEqual(horizonRainbow(1, 12, prado, 1558, 14000));
+    expect(horizonRainbow(13, 12, prado, 1558, 14000)).toEqual(horizonRainbow(12, 12, prado, 1558, 14000));
   });
 
   it('si el mundo no es más ancho que la vista, el arco no se desplaza', () => {
-    expect(horizonRainbow(1, AMBIENTS.prado, 1558, 1000).scrollFactor).toBe(0);
+    expect(horizonRainbow(1, 12, AMBIENTS.prado, 1558, 1000).scrollFactor).toBe(0);
   });
 });

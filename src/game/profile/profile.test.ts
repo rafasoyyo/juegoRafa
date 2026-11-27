@@ -1,9 +1,19 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buyHat, completeLevel, createGameState, currentLevel, levelStatus, markPending, session } from '../state';
+import { buyHat, completeLevel, createGameState, currentLevel, levelStatus, session, winMedal, worldProgress, type GameState } from '../state';
+import { ARCOIRIS } from '../worlds/arcoiris';
 import { activateProfile, activeAge, activeAlias, activeProfileId, DEFAULT_ALIAS, saveActive, savedProfiles, startProfile, useStore } from './active';
 import { cleanAlias, isValidProfile, profileId } from './profile-id';
 import { decodeProgress, encodeProgress } from './progress-codec';
 import { createProfile, listProfiles, loadProgress, saveProgress, type KeyValueStore } from './profile-store';
+
+/** Pendiente de un perfil antiguo (antes de las estrellas por objetivos ya no se crean). */
+function legacyPending(s: GameState, world: string, level: number): void {
+  worldProgress(s, world).pending.add(level);
+}
+
+/** El mundo 1: el progreso guardado antes de los mundos es suyo. */
+const W = ARCOIRIS;
+const prog = (s: GameState) => worldProgress(s, W.id);
 
 class FakeStore implements KeyValueStore {
   data = new Map<string, string>();
@@ -45,11 +55,11 @@ describe('id del perfil', () => {
 describe('progress-codec', () => {
   it('ida y vuelta', () => {
     const s = createGameState();
-    completeLevel(s, 1, 2, 15);
+    completeLevel(s, W.id, 1, 2, 15);
     s.cookies = 30;
     buyHat(s, 'wool');
     const back = decodeProgress(JSON.parse(JSON.stringify(encodeProgress(s))));
-    expect(back.stars.get(1)).toBe(2);
+    expect(prog(back).stars.get(1)).toBe(2);
     expect(back.cookies).toBe(20);
     expect(back.hat).toBe('wool');
     expect(back.ownedHats.has('wool')).toBe(true);
@@ -57,7 +67,7 @@ describe('progress-codec', () => {
   it('ignora datos dañados', () => {
     expect(decodeProgress(null).cookies).toBe(0);
     const s = decodeProgress({ stars: [[1, 9], [99, 2], 'x', [2, 'a']], cookies: -5, ownedHats: ['crown', 'zzz'], hat: 'zzz' });
-    expect([...s.stars]).toEqual([[1, 3]]);
+    expect([...prog(s).stars]).toEqual([[1, 3]]);
     expect(s.cookies).toBe(0);
     expect(s.ownedHats.has('crown')).toBe(true);
     expect(s.hat).toBe('cap');
@@ -70,34 +80,75 @@ describe('progress-codec', () => {
 describe('progress-codec: niveles pendientes', () => {
   it('ida y vuelta con pendientes', () => {
     const s = createGameState();
-    completeLevel(s, 1, 2, 3);
-    markPending(s, 2, 1);
+    completeLevel(s, W.id, 1, 2, 3);
+    legacyPending(s, W.id, 2);
+    s.cookies += 1;
     const back = decodeProgress(JSON.parse(JSON.stringify(encodeProgress(s))));
-    expect([...back.pending]).toEqual([2]);
-    expect(back.stars.get(1)).toBe(2);
+    expect([...prog(back).pending]).toEqual([2]);
+    expect(prog(back).stars.get(1)).toBe(2);
     expect(back.cookies).toBe(4);
   });
 
   it('un registro antiguo sin pending conserva sus niveles hechos', () => {
     const back = decodeProgress({ stars: [[1, 3], [2, 2]], cookies: 7, ownedHats: ['cap'], hat: 'cap' });
-    expect(back.pending.size).toBe(0);
-    expect(back.stars.get(1)).toBe(3);
-    expect(back.stars.get(2)).toBe(2);
+    expect(prog(back).pending.size).toBe(0);
+    expect(prog(back).stars.get(1)).toBe(3);
+    expect(prog(back).stars.get(2)).toBe(2);
   });
 
   it('un registro guardado con el mundo de 6 niveles, los 6 hechos, sigue valiendo: el 7 es el actual', () => {
     const saved = { stars: [[1, 3], [2, 2], [3, 3], [4, 1], [5, 2], [6, 3]], pending: [], cookies: 40, ownedHats: ['cap', 'none'], hat: 'cap' };
     const back = decodeProgress(saved);
-    expect([...back.stars.entries()]).toEqual(saved.stars);
-    expect(currentLevel(back)).toBe(7);
-    expect(levelStatus(back, 7)).toBe('current');
-    for (let l = 8; l <= 12; l++) expect(levelStatus(back, l)).toBe('locked');
+    expect([...prog(back).stars.entries()]).toEqual(saved.stars);
+    expect(currentLevel(back, W)).toBe(7);
+    expect(levelStatus(back, W, 7)).toBe('current');
+    for (let l = 8; l <= 12; l++) expect(levelStatus(back, W, l)).toBe('locked');
   });
 
   it('ignora pendientes dañados, fuera de rango o ya hechos', () => {
     const back = decodeProgress({ stars: [[1, 3]], pending: [1, 0, 13, 2.5, 'x', null, 3], cookies: 0 });
-    expect([...back.pending]).toEqual([3]);
-    expect(decodeProgress({ stars: [], pending: 'basura' }).pending.size).toBe(0);
+    expect([...prog(back).pending]).toEqual([3]);
+    expect(prog(decodeProgress({ stars: [], pending: 'basura' })).pending.size).toBe(0);
+  });
+});
+
+describe('progress-codec: mundos', () => {
+  it('guarda cada mundo bajo su id, sin el formato antiguo', () => {
+    const s = createGameState();
+    completeLevel(s, W.id, 1, 2, 0);
+    legacyPending(s, W.id, 2);
+    const saved = JSON.parse(JSON.stringify(encodeProgress(s)));
+    expect(saved.worlds).toEqual({ arcoiris: { stars: [[1, 2]], pending: [2] } });
+    expect(saved.stars).toBeUndefined();
+    expect(saved.pending).toBeUndefined();
+  });
+
+  it('un perfil de antes de los mundos pasa entero al mundo 1 y sigue igual al volver a guardarlo', () => {
+    const old = { stars: [[1, 3], [2, 2]], pending: [3], cookies: 9, ownedHats: ['cap', 'none', 'wool'], hat: 'wool' };
+    const back = decodeProgress(old);
+    expect([...prog(back).stars]).toEqual([[1, 3], [2, 2]]);
+    expect([...prog(back).pending]).toEqual([3]);
+    expect(currentLevel(back, W)).toBe(4);
+    expect(back.cookies).toBe(9);
+    expect(back.hat).toBe('wool');
+    const again = decodeProgress(JSON.parse(JSON.stringify(encodeProgress(back))));
+    expect([...prog(again).stars]).toEqual([[1, 3], [2, 2]]);
+    expect([...prog(again).pending]).toEqual([3]);
+  });
+
+  it('valida los niveles con el tamaño de cada mundo', () => {
+    const otro = { id: 'otro', levelCount: 3 };
+    const back = decodeProgress({ worlds: { otro: { stars: [[1, 2], [4, 3]], pending: [3, 4] }, arcoiris: { stars: [[12, 1]], pending: [] } } }, [W, otro]);
+    expect([...worldProgress(back, 'otro').stars]).toEqual([[1, 2]]);
+    expect([...worldProgress(back, 'otro').pending]).toEqual([3]);
+    expect([...prog(back).stars]).toEqual([[12, 1]]);
+  });
+
+  it('conserva el progreso de un mundo que no está registrado en esta versión', () => {
+    const back = decodeProgress({ worlds: { futuro: { stars: [[1, 2]], pending: [2] }, roto: 'x' } });
+    expect([...worldProgress(back, 'futuro').stars]).toEqual([[1, 2]]);
+    expect(back.worlds.has('roto')).toBe(false);
+    expect(encodeProgress(back).worlds?.futuro).toEqual({ stars: [[1, 2]], pending: [2] });
   });
 });
 
@@ -106,19 +157,19 @@ describe('profile-store', () => {
     const st = new FakeStore();
     const a = createProfile(st, 'LUCIA', 5, 1)!;
     const s = a.progress;
-    completeLevel(s, 1, 3, 4);
+    completeLevel(s, W.id, 1, 3, 4);
     saveProgress(st, a.info.id, s, 2);
     const again = createProfile(st, 'lucia', 5, 3)!;
-    expect(again.progress.stars.get(1)).toBe(3);
+    expect(prog(again.progress).stars.get(1)).toBe(3);
     expect(listProfiles(st)).toHaveLength(1);
   });
   it('misma alias con otra edad es otro perfil, sin mezclar progreso', () => {
     const st = new FakeStore();
     const a = createProfile(st, 'LUCIA', 5, 1)!;
-    completeLevel(a.progress, 1, 3, 0);
+    completeLevel(a.progress, W.id, 1, 3, 0);
     saveProgress(st, a.info.id, a.progress, 2);
     const b = createProfile(st, 'LUCIA', 6, 3)!;
-    expect(b.progress.stars.size).toBe(0);
+    expect(prog(b.progress).stars.size).toBe(0);
     expect(listProfiles(st).map((p) => p.id)).toEqual(['lucia-6', 'lucia-5']);
   });
   it('ignora registros dañados y de otra versión, y conserva los demás', () => {
@@ -148,23 +199,23 @@ describe('perfil activo', () => {
 
   it('cargar otro perfil no mezcla el progreso', () => {
     startProfile('ANA', 4);
-    completeLevel(session, 1, 3, 12);
+    completeLevel(session, W.id, 1, 3, 12);
     saveActive();
     startProfile('BEA', 5);
-    expect(session.stars.size).toBe(0);
+    expect(prog(session).stars.size).toBe(0);
     expect(session.cookies).toBe(0);
     expect(activateProfile('ana-4')).toBe(true);
-    expect(session.stars.get(1)).toBe(3);
+    expect(prog(session).stars.get(1)).toBe(3);
     expect(session.cookies).toBe(12);
     expect(savedProfiles()).toHaveLength(2);
   });
 
   it('el mismo alias y edad recuperan el progreso', () => {
     startProfile('ANA', 4);
-    completeLevel(session, 1, 2, 0);
+    completeLevel(session, W.id, 1, 2, 0);
     saveActive();
     startProfile('ana', 4);
-    expect(session.stars.get(1)).toBe(2);
+    expect(prog(session).stars.get(1)).toBe(2);
   });
 
   it('conserva gorro y galletas', () => {
@@ -188,12 +239,13 @@ describe('perfil activo', () => {
 
   it('el pendiente se guarda y se recupera', () => {
     startProfile('ANA', 4);
-    markPending(session, 1, 2);
+    legacyPending(session, W.id, 1);
+    session.cookies += 2;
     saveActive();
     startProfile('BEA', 5);
-    expect(session.pending.size).toBe(0);
+    expect(prog(session).pending.size).toBe(0);
     activateProfile('ana-4');
-    expect(session.pending.has(1)).toBe(true);
+    expect(prog(session).pending.has(1)).toBe(true);
     expect(session.cookies).toBe(2);
   });
 
@@ -228,5 +280,38 @@ describe('paso pendiente', () => {
     expect(guideStep('', 5)).toBe('alias');
     expect(guideStep('A', 0)).toBe('age');
     expect(guideStep('ANA', 5)).toBe('accept');
+  });
+});
+
+describe('progress-codec: medalla del castillo', () => {
+  it('ida y vuelta con la medalla; sin medalla no se guarda el campo', () => {
+    const s = createGameState();
+    completeLevel(s, 'arcoiris', 1, 2, 0);
+    winMedal(s, 'rio', 0);
+    const saved = encodeProgress(s);
+    expect(saved.worlds?.rio).toEqual({ stars: [], pending: [], medal: true });
+    expect(saved.worlds?.arcoiris).toEqual({ stars: [[1, 2]], pending: [] });
+    const back = decodeProgress(JSON.parse(JSON.stringify(saved)));
+    expect(back.worlds.get('rio')?.medal).toBe(true);
+    expect(back.worlds.get('arcoiris')?.medal).toBe(false);
+  });
+
+  it('una medalla dañada no cuenta', () => {
+    const back = decodeProgress({ worlds: { rio: { stars: [[1, 2]], pending: [], medal: 'si' } } });
+    expect(back.worlds.get('rio')?.medal).toBe(false);
+  });
+});
+
+describe('progress-codec: escenas vistas', () => {
+  it('ida y vuelta, y sin escenas no se guarda el campo', () => {
+    const s = createGameState();
+    expect(encodeProgress(s).seen).toBeUndefined();
+    s.seen.add('prologo:arcoiris');
+    const back = decodeProgress(JSON.parse(JSON.stringify(encodeProgress(s))));
+    expect([...back.seen]).toEqual(['prologo:arcoiris']);
+  });
+  it('lo guardado antes de las escenas no tiene ninguna, y lo dañado se ignora', () => {
+    expect(decodeProgress({ cookies: 3, ownedHats: ['cap'], hat: 'cap' }).seen.size).toBe(0);
+    expect([...decodeProgress({ seen: ['final:arcoiris', 7, '', null] }).seen]).toEqual(['final:arcoiris']);
   });
 });

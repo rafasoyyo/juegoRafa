@@ -148,5 +148,21 @@ export abstract class ViewBase {
   }
 }
 
-export type ViewKind = Extract<QuizKind, 'share' | 'order' | 'cable-car' | 'tracks' | 'balance' | 'mirror'>;
-export const VIEW_KINDS: readonly QuizKind[] = ['share', 'order', 'cable-car', 'tracks', 'balance', 'mirror'];
+export const VIEW_KINDS: readonly QuizKind[] = [
+  'share',
+  'order',
+  'cable-car',
+  'tracks',
+  'balance',
+  'mirror',
+  'fingers',
+  'ten-frame',
+  'memory',
+  'number-line',
+  'ten-friends',
+  'train',
+  'socks',
+  'frog-jumps',
+  'boats',
+];
+export type ViewKind = (typeof VIEW_KINDS)[number];

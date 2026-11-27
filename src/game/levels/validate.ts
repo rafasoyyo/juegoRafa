@@ -9,7 +9,7 @@
 
 import { flagTile, surfaces, surfacesUnder, toWorld } from './parse';
 import { jumpReach } from './spikes';
-import { GROUND_TOP, RUN_SPEED, START_TILE, STEP_RISE, TILE, type LevelData } from './types';
+import { challengeZone, GROUND_TOP, RUN_SPEED, START_TILE, STEP_RISE, TILE, type LevelData } from './types';
 
 /** Constantes de las reglas (px salvo que se diga otra cosa). */
 export const RULES = {
@@ -52,16 +52,6 @@ export const RULES = {
 };
 
 export type Rules = typeof RULES;
-
-/** Bloques «?» del nivel `level` (se comprueban en `catalog.test.ts`): 12–20 en los niveles 1 a 6 y 20–25 en los 7 a 12. */
-export function blockLimits(level: number): { min: number; max: number } {
-  return level <= 6 ? { min: 12, max: 20 } : { min: 20, max: 25 };
-}
-
-/** Zonas de pinchos de los niveles 1 a 12 (los 1 a 6 no tienen). */
-export const SPIKES_PER_LEVEL: readonly number[] = [0, 0, 0, 0, 0, 0, 2, 3, 3, 4, 5, 6];
-/** Hasta este nivel las zonas miden solo 1 baldosa. */
-export const NARROW_SPIKES_UNTIL = 8;
 
 interface Span {
   name: string;
@@ -199,10 +189,22 @@ export function validateLevel(level: LevelData, rules: Rules = RULES): string[] 
     if (gap < rules.spikeGap) err(byX[k]!.name, `deja ${n(gap)} baldosas con ${byX[k - 1]!.name} (mínimo ${rules.spikeGap})`);
   }
 
-  // Densidad: nunca más de `maxEmpty` baldosas sin ningún elemento (los pinchos cuentan).
+  // Retos: sobre el suelo llano y sin nada más en su zona, dentro del recorrido y sin solaparse.
+  const challenges = level.challenges.map((c, i) => ({ name: `challenges[${i}]`, ...challengeZone(c) }));
+  for (const c of challenges) {
+    if (c.from < start + rules.startClear || c.to > flag - rules.flagClear) {
+      err(c.name, `no cabe entre la salida y la bandera (necesita de ${n(c.from)} a ${n(c.to)} con ${rules.startClear} y ${rules.flagClear} baldosas libres)`);
+    }
+    for (const o of [...spans, ...spikes]) {
+      if (c.from < o.to && o.from < c.to) err(c.name, `tiene ${o.name} en su zona (debe ser suelo llano y libre)`);
+    }
+  }
+  overlapping(challenges);
+
+  // Densidad: nunca más de `maxEmpty` baldosas sin ningún elemento (los pinchos y los retos cuentan).
   let cursor = start;
   let prev = 'la salida';
-  for (const s of [...spans, ...spikes].sort((a, b) => a.from - b.from)) {
+  for (const s of [...spans, ...spikes, ...challenges].sort((a, b) => a.from - b.from)) {
     if (s.from - cursor > rules.maxEmpty) err(s.name, `queda a ${n(s.from - cursor)} baldosas vacías de ${prev} (máximo ${n(rules.maxEmpty)})`);
     if (s.to > cursor) {
       cursor = s.to;

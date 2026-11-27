@@ -92,3 +92,42 @@ describe('recetas de efectos', () => {
     }
   });
 });
+
+describe('sonidos de los retos', () => {
+  it('cada «tic» de contar es más agudo que el anterior', () => {
+    const f = (i: number): number => recipeFrequencies(recipe('tick', { index: i }))[0]!;
+    for (let i = 2; i <= 10; i++) expect(f(i)).toBeGreaterThan(f(i - 1));
+  });
+
+  it('la compuerta acaba más aguda que empieza', () => {
+    const tones = recipe('gate').layers.filter((l): l is ToneLayer => l.kind === 'tone');
+    const first = tones[1]!.freq as number;
+    const last = tones[tones.length - 1]!.freq as number;
+    expect(last).toBeGreaterThan(first);
+  });
+});
+
+describe('escala del puente', () => {
+  it('cada nota es más aguda que la anterior', () => {
+    const fs = recipe('scale').layers.map((l) => (l as ToneLayer).freq as number);
+    for (let i = 1; i < fs.length; i++) expect(fs[i]).toBeGreaterThan(fs[i - 1]!);
+  });
+});
+
+describe('bocina de la barca', () => {
+  it('es grave y distinta de la compuerta y de la escala', () => {
+    const fs = recipeFrequencies(recipe('horn'));
+    expect(Math.max(...fs)).toBeLessThan(400);
+    expect(recipe('horn')).not.toEqual(recipe('gate'));
+    expect(recipe('horn')).not.toEqual(recipe('scale'));
+  });
+});
+
+describe('bandas del arcoíris del mapa', () => {
+  it('las 6 bandas suben de fuera adentro y no son la escala del puente', () => {
+    const f = (index: number): number => (recipe('band', { index }).layers[0] as ToneLayer).freq as number;
+    for (let i = 1; i < 6; i++) expect(f(i)).toBeGreaterThan(f(i - 1));
+    expect(recipe('band')).not.toEqual(recipe('scale'));
+    expect(recipeDuration(recipe('band'))).toBeLessThan(0.5);
+  });
+});

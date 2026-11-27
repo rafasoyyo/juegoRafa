@@ -74,15 +74,19 @@ Si el navegador ya tiene perfiles guardados, tras la pantalla de inicio el juego
 - **THEN** aparecen los dos en la lista y elegir uno no cambia ni mezcla el progreso del otro
 
 ### Requirement: Guardado automático del progreso
-El juego SHALL guardar en el navegador, bajo el id del perfil activo, las estrellas de cada nivel, los niveles pendientes (los que se jugaron sin superar su prueba), las galletas, los gorros comprados y el gorro puesto, sin que el niño pulse nada: al terminar la prueba de un nivel, al completar un nivel y al comprar o ponerse un gorro. Un perfil nuevo SHALL empezar sin niveles hechos ni pendientes, con 0 galletas y el gorro inicial. El progreso guardado antes de existir las pruebas SHALL conservarse: sus niveles hechos siguen hechos.
+El juego SHALL guardar en el navegador, bajo el id del perfil activo, las estrellas de cada nivel, los niveles pendientes de perfiles antiguos, las galletas, los gorros comprados y el gorro puesto, sin que el niño pulse nada: al terminar la prueba de un nivel, al completar un nivel y al comprar o ponerse un gorro. Terminar un nivel con 0 estrellas SHALL guardar solo las galletas. Un perfil nuevo SHALL empezar sin niveles hechos ni pendientes, con 0 galletas y el gorro inicial. El progreso guardado antes de existir las pruebas SHALL conservarse: sus niveles hechos siguen hechos, y los pendientes guardados SHALL seguir pendientes.
 
 #### Scenario: Cerrar y volver
 - **WHEN** el niño completa el nivel 1 con 2 estrellas, cierra la pestaña y vuelve a abrir el juego con su perfil
 - **THEN** el nivel 1 aparece hecho con 2 estrellas y el 2 es el actual
 
-#### Scenario: Pendiente guardado
-- **WHEN** el niño no supera la prueba del nivel 1, cierra la pestaña y vuelve con su perfil
-- **THEN** el nivel 1 aparece pendiente, el 2 es el actual y las galletas de ese nivel siguen sumadas
+#### Scenario: Cero estrellas guardado
+- **WHEN** el niño termina el nivel 1 con 0 estrellas tras recoger 2 galletas, cierra la pestaña y vuelve con su perfil
+- **THEN** el nivel 1 sigue siendo el actual, el 2 está bloqueado y las 2 galletas siguen sumadas
+
+#### Scenario: Pendiente antiguo
+- **WHEN** se abre un perfil guardado con el nivel 1 pendiente
+- **THEN** el nivel 1 aparece pendiente y el 2 está desbloqueado
 
 #### Scenario: Progreso anterior a las pruebas
 - **WHEN** un perfil guardado antes de este cambio tenía los niveles 1 y 2 hechos
@@ -110,3 +114,33 @@ Los datos del perfil SHALL guardarse únicamente en el almacenamiento local del 
 #### Scenario: Sin tráfico de red
 - **WHEN** el niño crea un perfil y juega
 - **THEN** el navegador no hace ninguna petición de red con el alias, la edad ni el progreso
+
+### Requirement: Progreso guardado por mundo
+El progreso de los niveles (estrellas y pendientes) SHALL guardarse por mundo, mientras que las galletas y los gorros SHALL ser del perfil y compartirse entre mundos. El progreso de un perfil guardado antes de haber varios mundos SHALL pasar entero al mundo de los números, con sus estrellas, sus pendientes y sus galletas. El progreso de un mundo que la aplicación no conoce SHALL conservarse al guardar.
+
+#### Scenario: Perfil guardado con un solo mundo
+- **WHEN** se abre un perfil guardado antes de este cambio con los niveles 1 y 2 hechos con 3 y 2 estrellas, el 3 pendiente y 14 galletas
+- **THEN** en el mundo de los números los niveles 1 y 2 siguen hechos con 3 y 2 estrellas, el 3 pendiente, y el perfil tiene 14 galletas
+
+#### Scenario: Galletas compartidas
+- **WHEN** el niño gana 5 galletas en el río
+- **THEN** el contador del mapa de los números también las suma
+
+#### Scenario: Mundo desconocido
+- **WHEN** se abre con una versión anterior de la aplicación un perfil que tiene progreso en un mundo que esa versión no conoce, y se guarda
+- **THEN** el progreso de ese mundo sigue guardado
+
+### Requirement: Escenas de historia vistas
+El perfil SHALL guardar qué escenas de historia ha visto (el prólogo de un mundo), solo como una marca por escena, sin más datos del niño, y una escena vista SHALL NOT volver a aparecer sola. Un perfil guardado antes de este cambio con progreso en el mundo de los números SHALL contar el prólogo como visto.
+
+#### Scenario: Una vez por perfil
+- **WHEN** un perfil que ya vio el prólogo vuelve a entrar en el nivel 1
+- **THEN** no se ve el prólogo
+
+#### Scenario: Perfil antiguo
+- **WHEN** un perfil guardado con el nivel 1 hecho entra en el nivel 1
+- **THEN** no se ve el prólogo
+
+#### Scenario: Recarga
+- **WHEN** un perfil ve el prólogo, se recarga la aplicación y vuelve a entrar en el nivel 1
+- **THEN** no se ve el prólogo

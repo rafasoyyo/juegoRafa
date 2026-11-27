@@ -146,27 +146,31 @@ const DECOR_SCROLL = 0.52;
 const DECOR_ALPHA = 0.72;
 
 /**
- * Escenario completo del nivel `level` con su ambiente, de atrás adelante: cielo, arcoíris del horizonte
- * (según `horizonRainbow`, con la vista de `viewW`), sol o luna y estrellas, nubes, colinas lejanas, decoración, colinas cercanas y suelo. Con el prado queda igual que el
+ * Escenario completo de un nivel con su ambiente, de atrás adelante: cielo, arcoíris del horizonte
+ * (si el mundo lo lleva, `horizon`: según `horizonRainbow`, con la vista de `viewW`), sol o luna y estrellas, nubes, colinas lejanas, decoración, colinas cercanas y suelo. Con el prado queda igual que el
  * escenario de siempre (nubes, dos capas de colinas y suelo con los colores de la paleta). El suelo va
  * por tramos (`spans`) y entre ellos, los fosos de los pinchos (`pits`): primero los fosos y después
  * los tramos, con la esquina redondeada del lado del foso. Sin tramos, un solo suelo de todo el ancho.
+ * Devuelve el arcoíris del horizonte, si lo hay (el prólogo lo hace destellar).
  */
 export function addScenery(
   scene: Phaser.Scene,
   ambient: Ambient,
   worldW: number,
   groundTop: number,
-  level: number,
+  horizon: { level: number; lastLevel: number } | null,
   viewW: number,
   ground: { spans: readonly Span[]; pits: readonly Span[] } = { spans: [{ from: 0, to: worldW }], pits: [] },
-): void {
+): { rainbow?: Phaser.GameObjects.Image } {
   addSky(scene, skyKey(ambient.id));
 
   // Arcoíris del horizonte: la capa más lejana, detrás del sol, la luna, las nubes y las colinas.
-  const rainbow = horizonRainbow(level, ambient, viewW, worldW);
-  const arc = scene.add.image(rainbow.x, rainbow.bottom, 'decor-rainbow').setOrigin(0.5, 1);
-  arc.setDisplaySize(rainbow.width, (rainbow.width * arc.height) / arc.width).setScrollFactor(rainbow.scrollFactor, 1).setAlpha(rainbow.alpha);
+  let arc: Phaser.GameObjects.Image | undefined;
+  if (horizon) {
+    const rainbow = horizonRainbow(horizon.level, horizon.lastLevel, ambient, viewW, worldW);
+    arc = scene.add.image(rainbow.x, rainbow.bottom, 'decor-rainbow').setOrigin(0.5, 1);
+    arc.setDisplaySize(rainbow.width, (rainbow.width * arc.height) / arc.width).setScrollFactor(rainbow.scrollFactor, 1).setAlpha(rainbow.alpha);
+  }
 
   if (ambient.decor === 'sunset') {
     scene.add.image(MAX_W * 0.62, groundTop - 90, 'decor-sun').setScrollFactor(0.03, 1);
@@ -257,6 +261,7 @@ export function addScenery(
     const round = { left: ground.pits.some((p) => p.to === span.from), right: ground.pits.some((p) => p.from === span.to) };
     drawGround(scene, span.from, span.to - span.from, groundTop, 36, ambient, round);
   }
+  return arc ? { rainbow: arc } : {};
 }
 
 /** Altura (`y`) de la cima de una capa de colinas de `drawHills` en `x`. */

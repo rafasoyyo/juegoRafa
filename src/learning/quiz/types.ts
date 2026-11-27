@@ -18,6 +18,19 @@ export const QUIZ_KINDS = [
   'tracks',
   'balance',
   'mirror',
+  // Mundo 2, el río de los números (`docs/MUNDO-2.md`).
+  'fingers',
+  'ten-frame',
+  'memory',
+  'neighbor',
+  'number-line',
+  'biggest',
+  'ten-friends',
+  'train',
+  'socks',
+  'frog-jumps',
+  'boats',
+  'river-review',
 ] as const;
 export type QuizKind = (typeof QUIZ_KINDS)[number];
 
@@ -73,7 +86,11 @@ export type Visual =
   /** Platillo de la balanza. */
   | { type: 'pan'; side: 'left' | 'right' }
   | { type: 'landmark'; id: LandmarkId }
-  | { type: 'weight'; id: WeightId };
+  | { type: 'weight'; id: WeightId }
+  /** Calcetín del color `color` (índice de la paleta de calcetines) con su dibujo `pattern`. */
+  | { type: 'sock'; color: number; pattern: number }
+  /** Respuesta de pares y nones: todos con pareja o sobra uno. */
+  | { type: 'pairs'; odd: boolean };
 
 /**
  * Cómo se dibuja la parte de arriba de la pregunta:
@@ -109,7 +126,20 @@ export type SceneData =
   | { kind: 'balance'; mode: 'gap'; left: number; right: number }
   | { kind: 'balance'; mode: 'equiv'; cookies: number; berries: number }
   | { kind: 'mirror'; mode: 'picture'; picture: PictureId }
-  | { kind: 'mirror'; mode: 'grid'; rows: number; cols: number; painted: GridCell[] };
+  | { kind: 'mirror'; mode: 'grid'; rows: number; cols: number; painted: GridCell[] }
+  /** Manos con dedos levantados (uno por mano, de 0 a 5). */
+  | { kind: 'fingers'; hands: number[] }
+  /** Marco de 5 o de 10 con `filled` fichas; se pregunta cuántas hay o cuántas faltan para llenarlo. */
+  | { kind: 'ten-frame'; cells: 5 | 10 | 20; filled: number; ask: 'count' | 'missing'; whole?: boolean }
+  /** Cartas que se ven `showMs` y se dan la vuelta; la de la consigna (`items[0]`) es su pareja. */
+  | { kind: 'memory'; showMs: number }
+  /** Recta de `from` a `to` de `step` en `step`, con algunos números a la vista (`labels`). */
+  | { kind: 'number-line'; from: number; to: number; step: number; labels: number[]; target: number; jumps?: { start: number; size: number; count: number } }
+  /** Tren de `wagons` vagones tras la locomotora; hay que tocar el que va en el puesto `target` (1 = el primero). */
+  | { kind: 'train'; wagons: number; target: number; objects: ObjectId[] }
+  /** Calcetines: pares y nones (`socks` colores en fila) o buscar la pareja de `model`. */
+  | { kind: 'socks'; mode: 'parity'; socks: number[] }
+  | { kind: 'socks'; mode: 'match'; model: number };
 
 export interface Prompt {
   layout: PromptLayout;
@@ -161,7 +191,9 @@ export type HintKind =
   | 'ghost-walk'
   | 'heft'
   | 'swap-fruit'
-  | 'fold';
+  | 'fold'
+  | 'peek'
+  | 'hop';
 
 export interface Question {
   kind: QuizKind;
@@ -230,6 +262,10 @@ export function visualKey(v: Visual): string {
       return `landmark:${v.id}`;
     case 'weight':
       return `weight:${v.id}`;
+    case 'sock':
+      return `sock:${v.color}:${v.pattern}`;
+    case 'pairs':
+      return `pairs:${v.odd ? 'odd' : 'even'}`;
   }
 }
 
