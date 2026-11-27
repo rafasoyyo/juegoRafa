@@ -1,9 +1,9 @@
 /**
  * Mundo 3, «La isla de los dinosaurios» (`docs/MUNDO-3.md`). BORRADOR: solo el nivel 1, con el reto A
- * («El camino de huellas»), un ambiente provisional de playa negra y la prueba y los enemigos del mundo 1,
- * para poder probarlo en desarrollo. Los retos B, C y D (pasos 2 a 4), los enemigos (paso 5), las pruebas
- * (paso 6), el huevo (paso 7), el castillo (paso 8) y los 12 recorridos con su mapa (paso 9) llegan con
- * sus cambios. Está detrás del interruptor `mundo-3-isla`. TypeScript puro (sin Phaser).
+ * («El camino de huellas») y un ambiente provisional de playa negra, ya con sus enemigos y sus pruebas de
+ * la bandera, para poder probarlo en desarrollo. Los retos B, C y D (pasos 2 a 4), el huevo (paso 7), el
+ * castillo (paso 8) y los 12 recorridos con su mapa (paso 9) llegan con sus cambios. Está detrás del
+ * interruptor `mundo-3-isla`. TypeScript puro (sin Phaser).
  */
 
 import type { QuizKind } from '../../../learning/quiz';
@@ -14,12 +14,15 @@ import type { CourseRules, WorldDef, WorldMap } from '../types';
 
 const LEVELS = levelsFrom('isla', import.meta.glob('../../../../content/levels/isla/nivel-*.json', { eager: true, import: 'default' }));
 
-/** Provisional: el erizo y la abeja hasta que lleguen los pterosaurios, el volcancito y el tiranosaurio (paso 5). */
+/** El erizo y la abeja, y los de la isla: pterosaurios desde el nivel 3, volcancito desde el 5 y tiranosaurio desde el 7. */
 export const ENEMIES: EnemyRules = {
   perLevel: [2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10].slice(0, LEVELS.length),
   kinds: [
     { kind: 'bee', fromLevel: 2 },
     { kind: 'hedgehog', fromLevel: 1 },
+    { kind: 'ptero', fromLevel: 3 },
+    { kind: 'volcano', fromLevel: 5 },
+    { kind: 'trex', fromLevel: 7 },
   ],
 };
 
@@ -36,9 +39,24 @@ export const COURSE: CourseRules = {
   durationLimits,
 };
 
-/** Provisional: las pruebas de la isla llegan en el paso 6. */
-function quizFor(): QuizKind {
-  return 'series';
+/** Prueba de la bandera de cada nivel (`docs/MUNDO-3.md`, tabla de niveles). */
+const QUIZ_BY_LEVEL: Record<number, QuizKind> = {
+  1: 'dino-shadows',
+  2: 'shape-things',
+  3: 'stego-plates',
+  4: 'turned-shapes',
+  5: 'nest',
+  6: 'odd-egg',
+  7: 'fossil',
+  8: 'skin-mosaic',
+  9: 'growing-neck',
+  10: 'roll-or-not',
+  11: 'hidden-triangles',
+  12: 'island-review',
+};
+
+function quizFor(level: number): QuizKind {
+  return QUIZ_BY_LEVEL[level] ?? 'dino-shadows';
 }
 
 /** Mapa provisional: el camino sube de la playa al cráter. Solo se dibujan los nodos de los niveles que existen. */

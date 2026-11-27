@@ -38,6 +38,13 @@ function shapePoints(shape: ShapeId, s: number): Phaser.Math.Vector2[] | null {
         const a = -Math.PI / 2 + (i * Math.PI) / 5;
         return P(Math.cos(a) * r, Math.sin(a) * r);
       });
+    case 'oval':
+      return Array.from({ length: 32 }, (_, i) => P(Math.cos((i * Math.PI) / 16) * h * 0.66, Math.sin((i * Math.PI) / 16) * h));
+    case 'pentagon':
+      return Array.from({ length: 5 }, (_, i) => {
+        const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+        return P(Math.cos(a) * h, Math.sin(a) * h + h * 0.1);
+      });
   }
 }
 
