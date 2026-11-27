@@ -69,6 +69,65 @@ export function bakeGraphics(scene: Phaser.Scene, g: Phaser.GameObjects.Graphics
 }
 
 /**
+ * Como `bakeGraphics`, pero en una sola imagen cuyo punto (0, 0) es el del `Graphics`: se mueve, gira,
+ * escala, cambia de transparencia o entra en un contenedor igual que el dibujo original. Para piezas
+ * sueltas de como mucho `CHUNK_W` px de lado (bloques, grabados, cuerpos de los dinosaurios). `rect` va en
+ * las coordenadas del dibujo y puede ser holgado: lo que quede fuera se recorta. Copia la posición,
+ * la profundidad, la transparencia, la escala, el giro y la visibilidad del `Graphics`. La textura se
+ * libera al cerrar la escena.
+ */
+export function bakePiece(scene: Phaser.Scene, g: Phaser.GameObjects.Graphics, rect: BakeRect): Phaser.GameObjects.Image {
+  const x0 = Math.floor(rect.x);
+  const y0 = Math.floor(rect.y);
+  const w = Math.max(1, Math.min(CHUNK_W, Math.ceil(rect.x + rect.width) - x0));
+  const h = Math.max(1, Math.min(CHUNK_W, Math.ceil(rect.y + rect.height) - y0));
+  const key = `baked-${++seq}`;
+  const commands = g.commandBuffer;
+  const { x: gx, y: gy } = g;
+  g.setPosition(0, 0);
+  g.commandBuffer = [];
+  g.translateCanvas(-x0, -y0);
+  g.commandBuffer = g.commandBuffer.concat(commands);
+  g.generateTexture(key, w, h);
+  g.commandBuffer = commands;
+  const parent = g.parentContainer;
+  const img = (parent ? new Phaser.GameObjects.Image(scene, 0, 0, key) : scene.add.image(0, 0, key))
+    .setDisplayOrigin(-x0, -y0)
+    .setPosition(gx, gy)
+    .setScrollFactor(g.scrollFactorX, g.scrollFactorY)
+    .setDepth(g.depth)
+    .setAlpha(g.alpha)
+    .setScale(g.scaleX, g.scaleY)
+    .setRotation(g.rotation)
+    .setVisible(g.visible);
+  if (parent) parent.addAt(img, parent.getIndex(g));
+  else scene.children.moveBelow(img, g);
+  g.destroy();
+  releaseOnShutdown(scene, [key]);
+  return img;
+}
+
+/**
+ * Imagen de un dibujo que se repite (el mismo bloque, el mismo grabado): la primera vez que se pide `id`
+ * en la escena se hornea con `draw` en una textura y las siguientes la reutilizan. El punto (0, 0) del
+ * dibujo es el de la imagen, como en `bakePiece`; `rect` puede ser holgado. Se libera al cerrar la escena.
+ */
+export function bakeShared(scene: Phaser.Scene, id: string, rect: BakeRect, draw: (g: Phaser.GameObjects.Graphics) => void): Phaser.GameObjects.Image {
+  const x0 = Math.floor(rect.x);
+  const y0 = Math.floor(rect.y);
+  const key = `baked-shared-${id}`;
+  if (!scene.textures.exists(key)) {
+    const g = scene.make.graphics({}, false);
+    g.translateCanvas(-x0, -y0);
+    draw(g);
+    g.generateTexture(key, Math.max(1, Math.min(CHUNK_W, Math.ceil(rect.x + rect.width) - x0)), Math.max(1, Math.min(CHUNK_W, Math.ceil(rect.y + rect.height) - y0)));
+    g.destroy();
+    releaseOnShutdown(scene, [key]);
+  }
+  return scene.add.image(0, 0, key).setDisplayOrigin(-x0, -y0);
+}
+
+/**
  * Textura de un solo dibujo (de `width` × `height`, con el origen arriba a la izquierda) para repetirlo
  * en varias imágenes. Se libera al cerrar la escena.
  */
