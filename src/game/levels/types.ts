@@ -28,7 +28,7 @@ export { GROUND_TOP };
 export const AMBIENT_IDS = [
   'prado', 'flores', 'bosque', 'otono', 'atardecer', 'noche', 'playa', 'selva', 'montana', 'nieve', 'desierto', 'nubes',
   'manantial', 'arroyo', 'cascada', 'molino', 'canaveral', 'lago', 'embarcadero', 'puente', 'huertas', 'lluvia', 'puerto', 'desembocadura',
-  'playa-negra',
+  'playa-negra', 'helechos', 'geiseres', 'huellas', 'cascada-templada', 'pantano', 'cuellos-largos', 'columnas', 'yacimiento', 'cristales', 'rios-lava', 'borde-crater',
 ] as const;
 export type AmbientId = (typeof AMBIENT_IDS)[number];
 

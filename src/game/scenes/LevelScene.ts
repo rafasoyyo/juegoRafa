@@ -19,7 +19,7 @@ import { CaveDoorChallengeView } from '../challenges/cave-door-challenge-view';
 import { GeyserChallengeView } from '../challenges/geyser-challenge-view';
 import { LaloFlyer } from '../challenges/lalo-flyer';
 import { COLORS, GAME_H } from '../config';
-import { castleCourse } from '../castle/castle';
+import { castleCourse, castleTexture } from '../castle/castle';
 import { courseFor, layoutEnemies, type EnemyKind } from '../enemies/enemy-layout';
 import { overlaps } from '../enemies/enemy-motion';
 import { createEnemyView, type EnemyView } from '../enemies/enemy-views';
@@ -38,6 +38,7 @@ import {
   reboundVelocity,
   SPIKE_CONE_H,
   SPIKE_PLATE_H,
+  LAVA,
   STEEL,
 } from '../levels/spikes';
 import { BOAT_LAKE, GEYSER_LAKE, RUN_SPEED, TILE, type WorldLevel, type WorldSpike } from '../levels/types';
@@ -612,6 +613,10 @@ export class LevelScene extends Phaser.Scene {
   private buildSpikes(): void {
     const plateTop = GROUND_TOP + PIT_DEPTH - SPIKE_PLATE_H;
     for (const z of this.world.spikes) {
+      if (this.ambient.pit === 'lava') {
+        this.buildLavaPool(z);
+        continue;
+      }
       const g = this.add.graphics().setDepth(4);
       g.fillStyle(STEEL.dark).fillRoundedRect(z.x, plateTop, z.width, SPIKE_PLATE_H, SPIKE_PLATE_H / 2);
       g.fillStyle(STEEL.mid).fillRoundedRect(z.x + 3, plateTop, z.width - 6, 3, 1.5);
@@ -620,6 +625,24 @@ export class LevelScene extends Phaser.Scene {
       this.add.tileSprite(z.x, plateTop, z.width, SPIKE_CONE_H, 'spikes').setOrigin(0, 1).setDepth(4);
       this.add.image(z.x + TILE / CONES_PER_TILE / 2, GROUND_TOP + PIT_TIP + 1, 'spike-glint').setDepth(4);
     }
+  }
+
+  /**
+   * Foso de la isla (`docs/MUNDO-3.md`): en lugar de pinchos, un charco de lava redondeado a la altura de
+   * las puntas, con un resplandor que late y una burbuja que crece y revienta de vez en cuando. Se juega
+   * igual que los pinchos.
+   */
+  private buildLavaPool(z: WorldSpike): void {
+    const top = GROUND_TOP + PIT_TIP;
+    const g = this.add.graphics().setDepth(4);
+    g.fillStyle(LAVA.dark).fillRoundedRect(z.x - 6, top, z.width + 12, PIT_DEPTH - PIT_TIP + 12, 14);
+    g.fillStyle(LAVA.mid).fillRoundedRect(z.x - 6, top, z.width + 12, 20, 10);
+    g.fillStyle(LAVA.light);
+    for (let x = z.x + 10; x < z.x + z.width - 24; x += 40) g.fillRoundedRect(x, top + 6 + ((x - z.x) % 80 === 10 ? 0 : 8), 22, 5, 2.5);
+    const glow = this.add.rectangle(z.x + z.width / 2, top - 8, z.width + 12, 22, LAVA.light, 0.28).setDepth(4);
+    this.tweens.add({ targets: glow, alpha: 0.06, duration: 1300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    const bubble = this.add.circle(z.x + z.width * 0.35, top + 4, 7, LAVA.light).setDepth(4).setScale(0);
+    this.tweens.add({ targets: bubble, scale: 1, alpha: { from: 1, to: 0 }, duration: 900, repeat: -1, repeatDelay: 1600 + (z.x % 7) * 200, ease: 'Quad.easeOut' });
   }
 
   /**
@@ -642,6 +665,7 @@ export class LevelScene extends Phaser.Scene {
     const costsCookie = powerPhase(time, this.powerStartedAt) === 'off' && time >= this.protectedUntil;
     const side = exitSide(zone, this.lastSafeX, this.fox.x);
     this.knock(time, side, reboundVelocity(zone, side, this.fox.x), 'spikes', costsCookie);
+    if (this.ambient.pit === 'lava') audio.sfx('hiss');
     this.spikeRebound = true;
   }
 
@@ -950,7 +974,7 @@ export class LevelScene extends Phaser.Scene {
   private buildGoal(): void {
     const flagX = this.world.flagX;
     // En el castillo, la bandera está a sus puertas.
-    if (this.castle) this.add.image(flagX + 150, GROUND_TOP + 6, 'castle').setOrigin(0.5, 1).setDepth(4);
+    if (this.castle) this.add.image(flagX + 150, GROUND_TOP + 6, castleTexture(this.def.castle)).setOrigin(0.5, 1).setDepth(4);
     this.add.image(flagX, GROUND_TOP + 4, 'flag').setOrigin(0.1, 1).setDepth(5);
     const zone = this.add.zone(flagX, GROUND_TOP - 20 * SCALE, 24 * SCALE, 40 * SCALE);
     this.physics.add.existing(zone, true);

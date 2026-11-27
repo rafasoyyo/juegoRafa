@@ -122,10 +122,17 @@ const DECOR_ICON: Record<DecorKind, string | null> = {
   snow: 'decor-pine-snow',
   desert: 'decor-cactus',
   rainbow: 'decor-rainbow',
+  ferns: 'decor-fern',
+  geysers: 'decor-geyser',
+  ruins: 'decor-column',
+  fireflies: 'decor-moon',
+  basalt: 'decor-basalt',
+  crystals: 'decor-crystal',
+  embers: 'decor-basalt',
 };
 
 /** Decoraciones que van grandes y al fondo de la miniatura (sol, luna, picos y arcoíris). */
-const BIG_DECOR: readonly DecorKind[] = ['sunset', 'night', 'mountains', 'rainbow'];
+const BIG_DECOR: readonly DecorKind[] = ['sunset', 'night', 'fireflies', 'mountains', 'rainbow'];
 
 const cssColor = (css: string): number => Phaser.Display.Color.HexStringToColor(css).color;
 

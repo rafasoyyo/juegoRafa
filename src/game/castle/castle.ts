@@ -24,6 +24,13 @@ export interface CastleDef {
    * siempre (`medal`).
    */
   medal?: string;
+  /** Textura del castillo en el mapa, al final de su recorrido y en su prueba. Sin ella, el castillo de siempre (`castle`). */
+  icon?: string;
+}
+
+/** Textura del castillo de un mundo. */
+export function castleTexture(castle: CastleDef | undefined): string {
+  return castle?.icon ?? 'castle';
 }
 
 /** Textura de la medalla de un castillo, pequeña o grande. */

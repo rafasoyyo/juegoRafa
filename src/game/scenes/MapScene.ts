@@ -15,7 +15,7 @@ import { drawIslandEgg, drawSpot, SPOT_HEX } from '../ui/island-egg';
 import { digits, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
 import { cookieCounter, fixToCamera } from '../ui/widgets';
-import { medalTexture } from '../castle/castle';
+import { castleTexture, medalTexture } from '../castle/castle';
 import { opensAfter, worldAccess, type WorldAccess } from '../worlds/access';
 import { showWorld, shownWorld, UPCOMING, WORLDS, worldDef } from '../worlds/registry';
 import type { SelectorButton, WorldDef, WorldId } from '../worlds/types';
@@ -665,7 +665,7 @@ export class MapScene extends Phaser.Scene {
       color: locked ? COLORS.locked : status === 'done' ? COLORS.grass : COLORS.white,
       shadowColor: locked ? COLORS.lockedDark : status === 'done' ? COLORS.grassDark : COLORS.shadow,
       shadowDepth: 8,
-      icon: 'castle',
+      icon: castleTexture(this.def.castle),
       iconSize: 100,
       onTap: () => (locked ? btn.shake() : goTo(this, 'Level', { world: this.def.id, castle: true })),
     });

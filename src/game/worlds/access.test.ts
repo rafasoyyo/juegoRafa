@@ -75,13 +75,15 @@ describe('mundos que abre el final de otro', () => {
     expect(opensAfter({ ...RIO, gate: { ...RIO.gate, flag: 'mundo-2-rio' } }, ARCOIRIS.id, 5, OFF)).toBe(false);
   });
 
-  it('la isla, en construcción: tras el interruptor; abierta con 7 años o al llegar al nivel 12 del río', () => {
-    expect(ISLA.gate).toEqual({ flag: 'mundo-3-isla', openAge: 7, after: { world: 'rio', level: 12 } });
-    expect(worldAccess(ISLA, createGameState(), 8, OFF)).toBe('soon');
-    expect(worldAccess(ISLA, createGameState(), 7, ON)).toBe('open');
-    expect(worldAccess(ISLA, createGameState(), 6, ON)).toBe('locked');
+  it('la isla, sin interruptor: abierta con 7 años o al llegar al nivel 12 del río, también en el juego publicado', () => {
+    expect(ISLA.gate).toEqual({ openAge: 7, after: { world: 'rio', level: 12 } });
+    expect(worldAccess(ISLA, createGameState(), 8, OFF)).toBe('open');
+    expect(worldAccess(ISLA, createGameState(), 7, OFF)).toBe('open');
+    expect(worldAccess(ISLA, createGameState(), 6, OFF)).toBe('locked');
     const s = createGameState();
     worldProgress(s, 'rio').stars.set(12, 1);
-    expect(worldAccess(ISLA, s, 5, ON)).toBe('open');
+    expect(worldAccess(ISLA, s, 5, OFF)).toBe('open');
+    expect(opensAfter(ISLA, RIO.id, 6, OFF)).toBe(true);
+    expect(opensAfter(ISLA, RIO.id, 7, OFF)).toBe(false);
   });
 });

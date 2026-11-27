@@ -64,40 +64,45 @@ describe('registro de mundos', () => {
     expect(WORLDS[0]!.gate).toBeUndefined();
   });
 
-  it('el nivel 1 de la isla lleva 3 caminos de huellas y el primero es la demostración', () => {
-    const challenges = worldDef('isla').levels[0]!.challenges;
-    expect(challenges.map((c) => [c.kind, c.demo])).toEqual([
-      ['footprints', true],
-      ['footprints', false],
-      ['footprints', false],
+  it('los 12 tramos de la isla siguen la tabla de docs/MUNDO-3.md: retos, paisajes y novedades', () => {
+    const isla = worldDef('isla');
+    expect(isla.levelCount).toBe(12);
+    const K = { footprints: 'A', door: 'B', brachio: 'C', geyser: 'D', count: '-', bridge: '-', boat: '-' } as const;
+    const mix = isla.levels.map((l) => l.challenges.map((c) => K[c.kind]).sort().join(''));
+    expect(mix).toEqual(['AAA', 'AAA', 'AAA', 'AABB', 'BBBB', 'AABB', 'AACC', 'BBCC', 'ABCCD', 'BBCCD', 'ABCDD', 'ABCCD']);
+    expect(isla.levels.map((l) => l.ambient)).toEqual([
+      'playa-negra', 'helechos', 'geiseres', 'huellas', 'cascada-templada', 'pantano', 'cuellos-largos', 'columnas', 'yacimiento', 'cristales', 'rios-lava', 'borde-crater',
+    ]);
+    // Lalo hace la demostración la primera vez que sale cada reto, y solo entonces.
+    const demos = isla.levels.flatMap((l, i) => l.challenges.filter((c) => c.demo).map((c) => [i + 1, c.kind]));
+    expect(demos).toEqual([[1, 'footprints'], [4, 'door'], [7, 'brachio'], [9, 'geyser']]);
+    for (const [n, kind] of demos as [number, string][]) expect(isla.levels[n - 1]!.challenges.find((c) => c.kind === kind)!.demo).toBe(true);
+    // Primeros escalones en el 2, primeros charcos de lava en el 4, primeras plataformas en el 5 y charcos
+    // anchos (de 2 baldosas) desde el 7, más en el 11.
+    const first = (has: (l: (typeof isla.levels)[number]) => boolean): number => isla.levels.findIndex(has) + 1;
+    expect(first((l) => l.steps.length > 0)).toBe(2);
+    expect(first((l) => l.spikes.length > 0)).toBe(4);
+    expect(first((l) => l.platforms.length > 0)).toBe(5);
+    expect(first((l) => l.spikes.some((z) => z.width === 2))).toBe(7);
+    const wide = isla.levels.map((l) => l.spikes.filter((z) => z.width === 2).length);
+    expect(Math.max(...wide.slice(0, 10))).toBeLessThan(wide[10]!);
+    // Pterosaurios desde el 3, volcancito desde el 5 y tiranosaurio desde el 7.
+    expect(isla.enemies.kinds.filter((k) => ['ptero', 'volcano', 'trex'].includes(k.kind)).map((k) => [k.kind, k.fromLevel])).toEqual([
+      ['ptero', 3],
+      ['volcano', 5],
+      ['trex', 7],
     ]);
   });
 
-  it('borrador: el nivel 2 de la isla lleva 3 puertas de la cueva y la primera es la demostración', () => {
-    const challenges = worldDef('isla').levels[1]!.challenges;
-    expect(challenges.map((c) => [c.kind, c.demo])).toEqual([
-      ['door', true],
-      ['door', false],
-      ['door', false],
-    ]);
-  });
-
-  it('borrador: el nivel 3 de la isla lleva 3 paseos en braquiosaurio y el primero es la demostración', () => {
-    const challenges = worldDef('isla').levels[2]!.challenges;
-    expect(challenges.map((c) => [c.kind, c.demo])).toEqual([
-      ['brachio', true],
-      ['brachio', false],
-      ['brachio', false],
-    ]);
-  });
-
-  it('borrador: el nivel 4 de la isla lleva 3 piedras del géiser y la primera es la demostración', () => {
-    const challenges = worldDef('isla').levels[3]!.challenges;
-    expect(challenges.map((c) => [c.kind, c.demo])).toEqual([
-      ['geyser', true],
-      ['geyser', false],
-      ['geyser', false],
-    ]);
+  it('la isla: todos sus fosos son charcos de lava y el nido del cráter es su castillo', () => {
+    const isla = worldDef('isla');
+    for (const l of isla.levels) expect(AMBIENTS[l.ambient].pit, l.id).toBe('lava');
+    expect(AMBIENTS[isla.castle!.ambient].pit).toBe('lava');
+    expect(isla.castle!.icon).toBe('nest');
+    for (const w of ['arcoiris', 'rio'] as const) {
+      for (const l of worldDef(w).levels) expect(AMBIENTS[l.ambient].pit ?? 'spikes', l.id).toBe('spikes');
+      expect(worldDef(w).castle?.icon).toBeUndefined();
+    }
   });
 
   it('la isla tiene el huevo de 12 manchas en el mapa y su final es la eclosión', () => {

@@ -9,7 +9,10 @@
 import type { AmbientId } from './types';
 
 /** Decoración de fondo de cada ambiente. */
-export type DecorKind = 'clouds' | 'flowers' | 'trees' | 'autumn-trees' | 'sunset' | 'night' | 'beach' | 'jungle' | 'mountains' | 'snow' | 'desert' | 'rainbow';
+export type DecorKind =
+  | 'clouds' | 'flowers' | 'trees' | 'autumn-trees' | 'sunset' | 'night' | 'beach' | 'jungle' | 'mountains' | 'snow' | 'desert' | 'rainbow'
+  // Los de la isla (`docs/MUNDO-3.md`): helechos, vapor de géiseres, ruinas, luciérnagas, columnas de basalto, cristales y brasas.
+  | 'ferns' | 'geysers' | 'ruins' | 'fireflies' | 'basalt' | 'crystals' | 'embers';
 
 /** Borde superior del suelo: hierba, arena lisa, nieve redondeada o nube festoneada. */
 export type GroundStyle = 'grass' | 'sand' | 'snow' | 'cloud';
@@ -37,6 +40,12 @@ export interface Ambient {
   pitMix?: number;
   /** Opacidad del arcoíris del horizonte (0 a 1); si falta, `RAINBOW_ALPHA` (`horizon-rainbow.ts`). */
   rainbowAlpha?: number;
+  /** Qué hay en el fondo de los fosos: pinchos de acero (si falta) o un charco de lava (la isla). */
+  pit?: 'spikes' | 'lava';
+  /** Color del mar de la playa (`decor: 'beach'`); si falta, el azul claro de los mundos 1 y 2. */
+  sea?: number;
+  /** El gran volcán de la isla humea al fondo, detrás de las colinas. */
+  volcano?: boolean;
 }
 
 export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
@@ -456,8 +465,8 @@ export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
     platform: 'log',
     ground: 'sand',
   },
-  // Isla de los dinosaurios (`docs/MUNDO-3.md`). Provisional hasta el paso 9: atardecer volcánico,
-  // arena negra y la decoración de la playa.
+  // Isla de los dinosaurios (`docs/MUNDO-3.md`): atardecer volcánico, selva oscura y basalto. Los fosos son
+  // charcos de lava y, salvo de noche, en el yacimiento, en la cueva o en el borde del cráter, el gran volcán humea al fondo.
   'playa-negra': {
     id: 'playa-negra',
     sky: [
@@ -474,6 +483,213 @@ export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
     decor: 'beach',
     platform: 'log',
     ground: 'sand',
+    // Mar oscuro de atardecer, a juego con la arena negra.
+    sea: 0x4f7f96,
+    pit: 'lava',
+    volcano: true,
+  },
+  'helechos': {
+    id: 'helechos',
+    sky: [
+      [0, '#4F6E7A'],
+      [0.7, '#9DB8A8'],
+      [1, '#C4D6BE'],
+    ],
+    hillLight: 0x4f7d66,
+    hill: 0x3c6852,
+    grass: 0x3b7a4a,
+    grassDark: 0x2c5f3a,
+    earth: 0x4a3a30,
+    cloud: { tint: 0xe2ece4, alpha: 0.7 },
+    decor: 'ferns',
+    platform: 'log',
+    ground: 'grass',
+    pit: 'lava',
+    volcano: true,
+  },
+  'geiseres': {
+    id: 'geiseres',
+    sky: [
+      [0, '#6A7590'],
+      [0.65, '#B9A2A0'],
+      [1, '#D8C2B0'],
+    ],
+    hillLight: 0x7a7068,
+    hill: 0x5e564f,
+    grass: 0x7a6a52,
+    grassDark: 0x5e4f3c,
+    earth: 0x3e332b,
+    cloud: { tint: 0xf2e6e2, alpha: 0.85 },
+    decor: 'geysers',
+    platform: 'log',
+    ground: 'sand',
+    pit: 'lava',
+    volcano: true,
+  },
+  'huellas': {
+    id: 'huellas',
+    sky: [
+      [0, '#5E6F8E'],
+      [0.6, '#C8A08A'],
+      [1, '#E5C3A0'],
+    ],
+    hillLight: 0x8a7a66,
+    hill: 0x6e604f,
+    grass: 0x6f8a4f,
+    grassDark: 0x55703c,
+    earth: 0x5a4636,
+    cloud: { tint: 0xf3dccf, alpha: 0.8 },
+    decor: 'ruins',
+    platform: 'log',
+    ground: 'grass',
+    pit: 'lava',
+    volcano: true,
+  },
+  'cascada-templada': {
+    id: 'cascada-templada',
+    sky: [
+      [0, '#4E7C8C'],
+      [0.7, '#A8CCC8'],
+      [1, '#D4E6DC'],
+    ],
+    hillLight: 0x4f8a78,
+    hill: 0x3a705e,
+    grass: 0x3f8f5a,
+    grassDark: 0x2f7347,
+    earth: 0x4f4038,
+    cloud: { tint: 0xffffff, alpha: 0.75 },
+    decor: 'jungle',
+    platform: 'log',
+    ground: 'grass',
+    pit: 'lava',
+    volcano: true,
+  },
+  'pantano': {
+    id: 'pantano',
+    sky: [
+      [0, '#1E2840'],
+      [1, '#3A4A66'],
+    ],
+    hillLight: 0x2f4a4a,
+    hill: 0x243c3c,
+    grass: 0x3a6a4a,
+    grassDark: 0x2a5038,
+    earth: 0x2e2a2c,
+    cloud: { tint: 0x8a98b0, alpha: 0.3 },
+    decor: 'fireflies',
+    platform: 'log',
+    ground: 'grass',
+    pit: 'lava',
+  },
+  'cuellos-largos': {
+    id: 'cuellos-largos',
+    sky: [
+      [0, '#5A6488'],
+      [0.5, '#D49A8C'],
+      [1, '#EDC4A2'],
+    ],
+    hillLight: 0x7f8a5a,
+    hill: 0x66733f,
+    grass: 0x7a9a4a,
+    grassDark: 0x5e7d36,
+    earth: 0x5f4a34,
+    cloud: { tint: 0xf6d2c6, alpha: 0.8 },
+    decor: 'sunset',
+    platform: 'log',
+    ground: 'grass',
+    pit: 'lava',
+    volcano: true,
+  },
+  'columnas': {
+    id: 'columnas',
+    sky: [
+      [0, '#4A5570'],
+      [0.7, '#8E8FA0'],
+      [1, '#B8B4B8'],
+    ],
+    hillLight: 0x5a5868,
+    hill: 0x45434f,
+    grass: 0x5a5a62,
+    grassDark: 0x434349,
+    earth: 0x2f2e34,
+    cloud: { tint: 0xd8d8e0, alpha: 0.6 },
+    decor: 'basalt',
+    platform: 'log',
+    ground: 'grass',
+    pit: 'lava',
+    volcano: true,
+  },
+  'yacimiento': {
+    id: 'yacimiento',
+    sky: [
+      [0, '#6C7C98'],
+      [0.6, '#D8B898'],
+      [1, '#EAD2B0'],
+    ],
+    hillLight: 0xb59a74,
+    hill: 0x9a7e5a,
+    grass: 0xb8a07a,
+    grassDark: 0x9a835f,
+    earth: 0x7a6448,
+    cloud: { tint: 0xfaeadc, alpha: 0.85 },
+    decor: 'ruins',
+    platform: 'log',
+    ground: 'sand',
+    pit: 'lava',
+  },
+  'cristales': {
+    id: 'cristales',
+    sky: [
+      [0, '#2A2440'],
+      [1, '#4A3E66'],
+    ],
+    hillLight: 0x4a4070,
+    hill: 0x3a3258,
+    grass: 0x5a5470,
+    grassDark: 0x46405a,
+    earth: 0x2a2636,
+    cloud: { tint: 0x9a8ec0, alpha: 0.25 },
+    decor: 'crystals',
+    platform: 'log',
+    ground: 'grass',
+    pit: 'lava',
+  },
+  'rios-lava': {
+    id: 'rios-lava',
+    sky: [
+      [0, '#3A2E3E'],
+      [0.6, '#7A4A48'],
+      [1, '#A86450'],
+    ],
+    hillLight: 0x5a3a40,
+    hill: 0x48303a,
+    grass: 0x3e3a40,
+    grassDark: 0x2c292e,
+    earth: 0x221f24,
+    cloud: { tint: 0xc89a90, alpha: 0.5 },
+    decor: 'embers',
+    platform: 'log',
+    ground: 'sand',
+    pit: 'lava',
+    volcano: true,
+  },
+  'borde-crater': {
+    id: 'borde-crater',
+    sky: [
+      [0, '#3E3550'],
+      [0.6, '#9A5A5A'],
+      [1, '#C87860'],
+    ],
+    hillLight: 0x6a4a56,
+    hill: 0x553a46,
+    grass: 0x4a4048,
+    grassDark: 0x36303a,
+    earth: 0x26222a,
+    cloud: { tint: 0xd8a8a0, alpha: 0.55 },
+    decor: 'embers',
+    platform: 'log',
+    ground: 'sand',
+    pit: 'lava',
   },
 };
 
@@ -514,4 +730,12 @@ export const DECOR_TEXTURES = [
   'decor-flake',
   'decor-cactus',
   'decor-rainbow',
+  'decor-fern',
+  'decor-column',
+  'decor-basalt',
+  'decor-crystal',
+  'decor-geyser',
+  'decor-volcano',
+  'decor-ember',
+  'decor-firefly',
 ] as const;

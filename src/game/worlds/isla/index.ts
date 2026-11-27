@@ -1,9 +1,8 @@
 /**
- * Mundo 3, «La isla de los dinosaurios» (`docs/MUNDO-3.md`). BORRADOR: los niveles 1 a 4, uno por reto
- * (A «El camino de huellas», B «La puerta de la cueva», C «Paseo en braquiosaurio» y D «Las piedras del
- * géiser»), con un ambiente provisional de playa negra y ya con sus enemigos y sus pruebas de la bandera,
- * para poder probarlo en desarrollo. El huevo (paso 7), el castillo (paso 8) y los 12 recorridos con su
- * mapa (paso 9) llegan con sus cambios. Está detrás del interruptor `mundo-3-isla`. TypeScript puro (sin Phaser).
+ * Mundo 3, «La isla de los dinosaurios» (`docs/MUNDO-3.md`): 12 tramos de la playa negra al borde del
+ * cráter, con los retos del recorrido (A «El camino de huellas», B «La puerta de la cueva», C «Paseo en
+ * braquiosaurio» y D «Las piedras del géiser»), una prueba de la bandera por nivel, el huevo de 12 manchas
+ * en el mapa y el nido del cráter como castillo. TypeScript puro (sin Phaser).
  */
 
 import type { QuizKind } from '../../../learning/quiz';
@@ -17,7 +16,7 @@ const LEVELS = levelsFrom('isla', import.meta.glob('../../../../content/levels/i
 
 /** El erizo y la abeja, y los de la isla: pterosaurios desde el nivel 3, volcancito desde el 5 y tiranosaurio desde el 7. */
 export const ENEMIES: EnemyRules = {
-  perLevel: [2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10].slice(0, LEVELS.length),
+  perLevel: [2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10],
   kinds: [
     { kind: 'bee', fromLevel: 2 },
     { kind: 'hedgehog', fromLevel: 1 },
@@ -35,7 +34,7 @@ function durationLimits(): DurationLimits {
 export const COURSE: CourseRules = {
   blockLimits: () => ({ min: 12, max: 25 }),
   // Charcos de lava (fosos) desde el nivel 4.
-  spikesPerLevel: [0, 0, 0, 2, 2, 3, 3, 3, 4, 4, 5, 5].slice(0, LEVELS.length),
+  spikesPerLevel: [0, 0, 0, 2, 2, 3, 3, 3, 4, 4, 5, 5],
   narrowSpikesUntil: 6,
   durationLimits,
 };
@@ -66,43 +65,78 @@ const CASTLE_QUIZZES: readonly QuizKind[] = [
 ];
 
 export const CASTLE: CastleDef = {
-  ambient: 'playa-negra',
+  ambient: 'borde-crater',
   steps: [{ challenge: 'footprints' }, { challenge: 'door' }, { challenge: 'brachio' }, { quiz: CASTLE_QUIZZES }, { quiz: CASTLE_QUIZZES }],
   medal: 'medal-footprint',
+  icon: 'nest',
 };
 
 function quizFor(level: number): QuizKind {
   return QUIZ_BY_LEVEL[level] ?? 'dino-shadows';
 }
 
-/** Mapa provisional: el camino sube de la playa al cráter. Solo se dibujan los nodos de los niveles que existen. */
+/**
+ * Mapa del volcán (`docs/MUNDO-3.md`, «El mapa»): dos pantallas en las que el camino sube de la playa negra,
+ * a la izquierda, por la selva, las charcas, las ruinas y el pantano hasta las columnas, los fósiles, la cueva
+ * de cristales y los ríos de lava, al pie del gran volcán; el nido del cráter (el castillo) está en su cima.
+ * Encima de los niveles del medio, el huevo de 12 manchas.
+ */
 const MAP: WorldMap = {
   sky: 'sky-map',
-  screens: LEVELS.length <= 6 ? 1 : 2,
-  // El huevo de 12 manchas, arriba, encima del camino (paso 9: su sitio en el mapa definitivo).
-  egg: { center: [430, 215], size: 240 },
-  nodes: [
-    [150, 560],
-    [330, 470],
-    [510, 540],
-    [690, 430],
-    [870, 520],
-    [1050, 380],
-    [1230, 480],
-    [1400, 540],
-    [1580, 420],
-    [1760, 500],
-    [1930, 380],
-    [2100, 450],
-    [2250, 330],
+  skyline: [
+    { x: 0, ambient: 'playa-negra' },
+    { x: 260, ambient: 'playa-negra' },
+    { x: 400, ambient: 'helechos' },
+    { x: 560, ambient: 'geiseres' },
+    { x: 730, ambient: 'huellas' },
+    { x: 900, ambient: 'cascada-templada' },
+    { x: 1060, ambient: 'pantano' },
+    { x: 1150, ambient: 'pantano' },
+    { x: 1260, ambient: 'cuellos-largos' },
+    { x: 1440, ambient: 'columnas' },
+    { x: 1600, ambient: 'yacimiento' },
+    { x: 1960, ambient: 'rios-lava' },
+    { x: 2200, ambient: 'borde-crater' },
   ],
+  screens: 2,
+  nodes: [
+    [180, 540],
+    [350, 470],
+    [520, 530],
+    [700, 430],
+    [870, 510],
+    [1050, 400],
+    [1230, 520],
+    // Del 8 al 12, por debajo del huevo y como mucho a la altura de los más bajos: más abajo, el selector
+    // de mundos taparía sus estrellas.
+    [1400, 520],
+    [1570, 480],
+    [1740, 530],
+    [1910, 470],
+    [2060, 420],
+    // El nido, en el cráter del gran volcán.
+    [2240, 330],
+  ],
+  // El huevo, arriba, sobre los niveles del medio del camino.
+  egg: { center: [1480, 220], size: 240 },
   decor: [
-    { at: [80, 690], key: 'decor-palm', size: 150 },
-    { at: [610, 690], key: 'tree', size: 0 },
+    // El gran volcán, al final del camino, con el nido en el cráter.
+    { at: [2240, 830], key: 'decor-volcano', size: 1000 },
+    { at: [70, 690], key: 'decor-palm', size: 160 },
+    { at: [260, 400], key: 'decor-palm', size: 120 },
+    { at: [440, 690], key: 'decor-fern', size: 120 },
+    { at: [610, 420], key: 'decor-geyser', size: 120 },
+    { at: [790, 360], key: 'decor-column', size: 120 },
+    { at: [960, 690], key: 'decor-leaf', size: 110 },
+    { at: [1130, 300], key: 'decor-moon', size: 90 },
+    { at: [1320, 410], key: 'decor-fern', size: 110 },
+    { at: [1480, 690], key: 'decor-basalt', size: 130 },
+    { at: [1660, 400], key: 'decor-column', size: 110 },
+    { at: [1820, 690], key: 'decor-crystal', size: 120 },
   ],
   clouds: [
-    { x: 0.62, y: 150, scale: 1 },
-    { x: 1.5, y: 140, scale: 0.9 },
+    { x: 0.35, y: 150, scale: 1 },
+    { x: 1.05, y: 120, scale: 0.8 },
   ],
 };
 
@@ -120,5 +154,5 @@ export const ISLA: WorldDef = {
   selector: { color: 0xe4f4e8, shadow: 0xbfe0c6, icon: 'icon-shapes', iconSize: 88 },
   castle: CASTLE,
   // Abierta con 7 años o más; con menos, al llegar al nivel 12 del río.
-  gate: { flag: 'mundo-3-isla', openAge: 7, after: { world: 'rio', level: 12 } },
+  gate: { openAge: 7, after: { world: 'rio', level: 12 } },
 };

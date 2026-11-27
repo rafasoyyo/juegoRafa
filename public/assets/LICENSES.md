@@ -66,6 +66,7 @@ Licencia: la del repositorio.
 | `svg/castle.svg` | propio: castillo del final de cada mundo (mapa, recorrido y prueba), en la paleta y el estilo del lienzo |
 | `svg/medal.svg` | propio: medalla que da el castillo (fin del castillo y selector de mundos), en la paleta y el estilo del lienzo |
 | `svg/medal-footprint.svg` | propio: medalla de la huella del castillo de la isla (mundo 3), con la huella de tres dedos de un dinosaurio, en los colores de los grabados de la isla |
+| `svg/nest.svg` | propio: nido del cráter con el huevo de manchas, castillo de la isla (mundo 3) en el mapa, al final de su recorrido y en su prueba, en los colores de la isla |
 | `svg/icon-ten-frame.svg` | propio: marco de diez (2×5 casillas con 7 fichas), icono del mundo del río, en la paleta del lienzo |
 | `svg/icon-speaker-off.svg` | derivado de `icon-speaker.svg`: mismo altavoz con un aspa en lugar de las ondas (silencio) |
 | `svg/lalo-blink.svg` | derivado de Lalo del lienzo (ojos cerrados) |

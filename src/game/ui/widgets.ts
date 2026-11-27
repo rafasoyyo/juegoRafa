@@ -175,10 +175,11 @@ export function addScenery(
   if (ambient.decor === 'sunset') {
     scene.add.image(MAX_W * 0.62, groundTop - 90, 'decor-sun').setScrollFactor(0.03, 1);
   }
-  if (ambient.decor === 'night') {
+  if (ambient.decor === 'night' || ambient.decor === 'fireflies') {
     scene.add.image(MAX_W * 0.72, 220, 'decor-moon').setScrollFactor(0.03, 1);
     addStars(scene, worldW * 0.1 + MAX_W);
   }
+  if (ambient.volcano) addVolcano(scene, groundTop);
 
   addClouds(scene, 120, worldW * 0.3 + MAX_W, 520, 0.3, ambient.cloud);
   if (ambient.decor === 'mountains') {
@@ -193,7 +194,7 @@ export function addScenery(
     }
   }
   drawHills(scene, groundTop, -200, worldW * 0.45 + MAX_W, 900, ambient.hillLight, 0.45);
-  if (ambient.decor === 'beach') drawSea(scene, groundTop, worldW * 0.45 + MAX_W);
+  if (ambient.decor === 'beach') drawSea(scene, groundTop, worldW * 0.45 + MAX_W, ambient.sea);
   if (ambient.decor === 'rainbow') {
     // Nubes grandes y bajas, delante del arcoíris.
     for (let i = 0, x = 200; x < worldW * 0.4 + MAX_W; i++, x += 700 + jitter(i) * 400) {
@@ -213,6 +214,12 @@ export function addScenery(
     jungle: { key: 'decor-leaf', every: 240, scale: 0.7 },
     snow: { key: 'decor-pine-snow', every: 300, scale: 0.8 },
     desert: { key: 'decor-cactus', every: 460, scale: 0.6 },
+    ferns: { key: 'decor-fern', every: 240, scale: 0.7 },
+    geysers: { key: 'decor-geyser', every: 460, scale: 0.75 },
+    ruins: { key: 'decor-column', every: 420, scale: 0.6 },
+    basalt: { key: 'decor-basalt', every: 380, scale: 0.65 },
+    crystals: { key: 'decor-crystal', every: 300, scale: 0.6 },
+    embers: { key: 'decor-basalt', every: 620, scale: 0.55 },
   };
   const planted = groundDecor[ambient.decor];
   if (planted) {
@@ -237,6 +244,8 @@ export function addScenery(
     }
   }
   if (ambient.decor === 'snow') addSnowflakes(scene, groundTop, worldW * 0.3 + MAX_W);
+  if (ambient.decor === 'fireflies') addGlows(scene, 'decor-firefly', groundTop, worldW * DECOR_SCROLL + MAX_W, false);
+  if (ambient.decor === 'embers') addGlows(scene, 'decor-ember', groundTop, worldW * DECOR_SCROLL + MAX_W, true);
 
   const near = { groundTop: groundTop + 30, from: -200, step: 800, phase: 420, scroll: 0.6 };
   // En la playa el mar llega hasta la arena: sin colinas cercanas.
@@ -273,15 +282,65 @@ function hillTop(x: number, hills: { groundTop: number; from: number; step: numb
   return hills.groundTop + 100 - 210 * Math.sqrt(Math.max(0, 1 - (dx / rx) ** 2));
 }
 
-/** Franja de mar en el horizonte de la playa, con ondas claras; se mueve con las colinas lejanas. */
-function drawSea(scene: Phaser.Scene, groundTop: number, to: number): void {
+/**
+ * Franja de mar en el horizonte de la playa, con ondas claras; se mueve con las colinas lejanas. `sea` es el
+ * color del agua (el azul claro de siempre si falta); la franja de arriba y las ondas, más claras.
+ */
+function drawSea(scene: Phaser.Scene, groundTop: number, to: number, sea?: number): void {
   const g = scene.add.graphics().setScrollFactor(0.45, 1);
   const top = groundTop - 96;
-  g.fillStyle(0x7fcfe8).fillRect(-200, top, to + 200, groundTop - top + 10);
-  g.fillStyle(0x9adbee).fillRect(-200, top, to + 200, 14);
-  g.fillStyle(0xd4f1f8, 0.9);
+  g.fillStyle(sea ?? 0x7fcfe8).fillRect(-200, top, to + 200, groundTop - top + 10);
+  g.fillStyle(sea === undefined ? 0x9adbee : mixColor(sea, 0xffffff, 0.2)).fillRect(-200, top, to + 200, 14);
+  g.fillStyle(sea === undefined ? 0xd4f1f8 : mixColor(sea, 0xffffff, 0.5), 0.9);
   for (let i = 0, x = -160; x < to; i++, x += 120 + jitter(i, 10) * 120) {
     g.fillRoundedRect(x, top + 28 + jitter(i, 11) * 50, 34 + jitter(i, 12) * 30, 6, 3);
+  }
+}
+
+/**
+ * El gran volcán de la isla, lejos y casi quieto: humea despacio por el cráter, que brilla al latir. No
+ * hace daño (`docs/MUNDO-3.md`, «Decisiones»).
+ */
+function addVolcano(scene: Phaser.Scene, groundTop: number): void {
+  // A la izquierda del centro, para no tapar el sol del atardecer.
+  const x = MAX_W * 0.36;
+  const scroll = 0.08;
+  const scale = 0.62;
+  const volcano = scene.add.image(x, groundTop + 30, 'decor-volcano').setOrigin(0.5, 1).setScale(scale).setScrollFactor(scroll, 1).setAlpha(0.8);
+  // El borde del cráter está a 70 px de lo alto de la textura (`BootScene.makeIslandDecor`).
+  const craterY = volcano.y - volcano.displayHeight + 70 * scale;
+  const glow = scene.add.ellipse(x, craterY, 200 * scale, 40 * scale, 0xff9b4a, 0.4).setScrollFactor(scroll, 1);
+  scene.tweens.add({ targets: glow, alpha: 0.1, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  for (let i = 0; i < 3; i++) {
+    const puff = scene.add.image(x, craterY - 10, 'cloud').setScale(0.25).setTint(0x8a8490).setAlpha(0).setScrollFactor(scroll, 1);
+    scene.tweens.add({
+      targets: puff,
+      y: craterY - 120,
+      x: x + 50,
+      scale: 0.7,
+      alpha: { from: 0.7, to: 0 },
+      duration: 6000,
+      delay: i * 2000,
+      repeat: -1,
+      ease: 'Sine.easeOut',
+    });
+  }
+}
+
+/**
+ * Luces pequeñas que flotan: luciérnagas que se encienden y se apagan cerca del suelo, o brasas que suben
+ * desde el suelo y se apagan (`rise`).
+ */
+function addGlows(scene: Phaser.Scene, key: string, groundTop: number, to: number, rise: boolean): void {
+  for (let i = 0, x = 60; x < to; i++, x += 140 + jitter(i, 18) * 160) {
+    const y = groundTop - 40 - jitter(i, 19) * (rise ? 60 : 220);
+    const glow = scene.add.image(x, y, key).setScale(0.8 + jitter(i, 20) * 0.6).setScrollFactor(DECOR_SCROLL, 1).setAlpha(0);
+    const delay = jitter(i, 21) * 3000;
+    if (rise) {
+      scene.tweens.add({ targets: glow, y: y - 220, alpha: { from: 0.95, to: 0 }, duration: 3200 + jitter(i, 22) * 1600, delay, repeat: -1, ease: 'Sine.easeOut' });
+    } else {
+      scene.tweens.add({ targets: glow, alpha: 0.95, x: x + 20, y: y - 16, duration: 1400 + jitter(i, 22) * 900, delay, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
   }
 }
 

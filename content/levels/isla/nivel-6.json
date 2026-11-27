@@ -1,0 +1,39 @@
+{
+  "ambient": "pantano",
+  "length": 207.4,
+  "steps": [
+    { "x": 96.6, "width": 3, "height": 1 },
+    { "x": 99.6, "width": 4, "height": 2 }
+  ],
+  "platforms": [
+    { "x": 48.9, "width": 4, "height": 1.5 },
+    { "x": 155.5, "width": 4, "height": 1 }
+  ],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 14.9, "row": "low" },
+    { "x": 50.9, "row": "low", "on": "platform" },
+    { "x": 68.4, "row": "high" },
+    { "x": 69.6, "row": "high" },
+    { "x": 101.6, "row": "low", "on": "step" },
+    { "x": 111.1, "row": "high" },
+    { "x": 112.3, "row": "high" },
+    { "x": 113.5, "row": "high" },
+    { "x": 157.5, "row": "low", "on": "platform" },
+    { "x": 194.5, "row": "low" },
+    { "x": 195.7, "row": "low" },
+    { "x": 196.9, "row": "low" }
+  ],
+  "spikes": [
+    { "x": 59.9, "width": 1 },
+    { "x": 147.5, "width": 1 },
+    { "x": 186, "width": 1 }
+  ],
+  "challenges": [
+    { "kind": "footprints", "x": 23.4 },
+    { "kind": "door", "x": 83.1 },
+    { "kind": "footprints", "x": 122 },
+    { "kind": "door", "x": 172.5 }
+  ]
+}

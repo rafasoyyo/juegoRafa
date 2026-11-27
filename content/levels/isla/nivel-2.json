@@ -1,30 +1,31 @@
 {
-  "ambient": "playa-negra",
-  "length": 162,
-  "steps": [],
+  "ambient": "helechos",
+  "length": 167.7,
+  "steps": [
+    { "x": 21.2, "width": 4, "height": 1 },
+    { "x": 69.1, "width": 5, "height": 1 },
+    { "x": 116.8, "width": 4, "height": 2 }
+  ],
   "platforms": [],
   "blocks": [
     { "x": 12.5, "row": "low" },
     { "x": 13.7, "row": "low" },
-    { "x": 21.5, "row": "high" },
-    { "x": 22.7, "row": "high" },
-    { "x": 56.0, "row": "low" },
-    { "x": 57.2, "row": "low" },
-    { "x": 58.4, "row": "low" },
-    { "x": 66.5, "row": "high" },
-    { "x": 67.7, "row": "high" },
-    { "x": 100.5, "row": "low" },
-    { "x": 101.7, "row": "low" },
-    { "x": 110.0, "row": "high" },
-    { "x": 111.2, "row": "high" },
-    { "x": 145.5, "row": "low" },
-    { "x": 146.7, "row": "low" },
-    { "x": 147.9, "row": "low" }
+    { "x": 23.2, "row": "high", "on": "step" },
+    { "x": 59.2, "row": "low" },
+    { "x": 60.4, "row": "low" },
+    { "x": 61.6, "row": "low" },
+    { "x": 71.6, "row": "low", "on": "step" },
+    { "x": 108.1, "row": "high" },
+    { "x": 109.3, "row": "high" },
+    { "x": 118.8, "row": "low", "on": "step" },
+    { "x": 154.8, "row": "low" },
+    { "x": 156, "row": "low" },
+    { "x": 157.2, "row": "low" }
   ],
   "spikes": [],
   "challenges": [
-    { "kind": "door", "x": 36, "demo": true },
-    { "kind": "door", "x": 80 },
-    { "kind": "door", "x": 125 }
+    { "kind": "footprints", "x": 33.2 },
+    { "kind": "footprints", "x": 82.1 },
+    { "kind": "footprints", "x": 128.8 }
   ]
 }

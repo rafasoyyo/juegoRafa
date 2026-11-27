@@ -1,0 +1,37 @@
+{
+  "ambient": "columnas",
+  "length": 195.2,
+  "steps": [
+    { "x": 41.9, "width": 3, "height": 1 },
+    { "x": 44.9, "width": 3, "height": 2 },
+    { "x": 135, "width": 4, "height": 1 },
+    { "x": 139, "width": 4, "height": 2 }
+  ],
+  "platforms": [],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 14.9, "row": "low" },
+    { "x": 43.4, "row": "high", "on": "step" },
+    { "x": 46.4, "row": "low", "on": "step" },
+    { "x": 64.4, "row": "low" },
+    { "x": 65.6, "row": "low" },
+    { "x": 97.6, "row": "high" },
+    { "x": 98.8, "row": "high" },
+    { "x": 100, "row": "high" },
+    { "x": 137, "row": "high", "on": "step" },
+    { "x": 183.5, "row": "low" },
+    { "x": 184.7, "row": "low" }
+  ],
+  "spikes": [
+    { "x": 54.9, "width": 2 },
+    { "x": 127, "width": 1 },
+    { "x": 174, "width": 2 }
+  ],
+  "challenges": [
+    { "kind": "door", "x": 28.4 },
+    { "kind": "brachio", "x": 79.1 },
+    { "kind": "door", "x": 113.5 },
+    { "kind": "brachio", "x": 156 }
+  ]
+}

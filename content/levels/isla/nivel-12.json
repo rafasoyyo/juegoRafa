@@ -1,0 +1,38 @@
+{
+  "ambient": "borde-crater",
+  "length": 239,
+  "steps": [
+    { "x": 81.9, "width": 4, "height": 1 }
+  ],
+  "platforms": [
+    { "x": 173.6, "width": 4, "height": 1.5 }
+  ],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 14.9, "row": "low" },
+    { "x": 83.9, "row": "high", "on": "step" },
+    { "x": 102.4, "row": "low" },
+    { "x": 103.6, "row": "low" },
+    { "x": 131.1, "row": "high" },
+    { "x": 132.3, "row": "high" },
+    { "x": 175.6, "row": "low", "on": "platform" },
+    { "x": 226, "row": "low" },
+    { "x": 227.2, "row": "low" },
+    { "x": 228.4, "row": "low" }
+  ],
+  "spikes": [
+    { "x": 46.4, "width": 2 },
+    { "x": 92.9, "width": 2 },
+    { "x": 139.8, "width": 2 },
+    { "x": 184.6, "width": 1 },
+    { "x": 216.6, "width": 2 }
+  ],
+  "challenges": [
+    { "kind": "brachio", "x": 28.4 },
+    { "kind": "footprints", "x": 56.4 },
+    { "kind": "door", "x": 117.1 },
+    { "kind": "geyser", "x": 152.8 },
+    { "kind": "brachio", "x": 198.6 }
+  ]
+}
