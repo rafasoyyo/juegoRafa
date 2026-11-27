@@ -8,6 +8,7 @@ import Phaser from 'phaser';
 import type { BoatChallenge } from '../../learning/challenges/boat';
 import { audio } from '../audio/audio-engine';
 import { COLORS } from '../config';
+import { bakeGraphics } from '../ui/bake';
 import { GROUND_TOP } from '../level-course';
 import { BOAT_BLOCK_XS, BOAT_LAKE, BOAT_LENGTH, TILE, type ChallengeData, type WorldSpike } from '../levels/types';
 import { ChallengeView, CHALLENGE_DEPTH, type ChallengeHooks } from './challenge-view';
@@ -77,6 +78,7 @@ export class BoatChallengeView extends ChallengeView {
       water.fillStyle(DECK_DARK).fillRoundedRect(px - 9, GROUND_TOP - 30, 18, 110, 7);
       water.fillStyle(DECK).fillCircle(px, GROUND_TOP - 30, 11);
     }
+    bakeGraphics(scene, water, { x: this.lakeLeft - 12, y: GROUND_TOP - 41, width: this.lakeW + 24, height: 720 - GROUND_TOP + 41 });
 
     this.boat = scene.add.container(this.lakeLeft + this.boatW / 2, GROUND_TOP).setDepth(CHALLENGE_DEPTH);
     this.drawBoat();
@@ -130,6 +132,8 @@ export class BoatChallengeView extends ChallengeView {
       panel.fillStyle(FRAME_BLUE).fillRoundedRect(-panelW / 2, frameTop(f), panelW, frameH, 14);
     }
     this.boat.add([panel, hull]);
+    bakeGraphics(this.scene, panel, { x: -panelW / 2, y: this.panelTop, width: panelW, height: Math.max(bottom + 4, -4) - this.panelTop });
+    bakeGraphics(this.scene, hull, { x: -w / 2, y: -6, width: w, height: HULL_H + 14 });
 
     for (let i = 0; i < cap; i++) {
       const f = Math.floor(i / 10);
@@ -156,7 +160,9 @@ export class BoatChallengeView extends ChallengeView {
     g.fillStyle(DUCK).fillCircle(r * 0.15, -r * 0.35, r * 0.6);
     g.fillStyle(BEAK).fillTriangle(r * 0.6, -r * 0.45, r * 0.6, -r * 0.15, r * 1.05, -r * 0.3);
     g.fillStyle(COLORS.ink).fillCircle(r * 0.3, -r * 0.5, r * 0.13);
-    return this.scene.add.container(x, y, [g]);
+    const duck = this.scene.add.container(x, y, [g]);
+    bakeGraphics(this.scene, g, { x: -r - 1, y: -r - 1, width: r * 2.1 + 2, height: r * 2 + 2 });
+    return duck;
   }
 
   /** Posición en el mundo de un punto de la barca. */

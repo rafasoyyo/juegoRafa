@@ -9,6 +9,7 @@ import type { Face } from '../../learning/challenges/count-blocks';
 import { hitBlock, startChallenge, type ChallengeRun } from '../../learning/challenges/ladder';
 import { audio } from '../audio/audio-engine';
 import { COLORS } from '../config';
+import { bakeGraphics } from '../ui/bake';
 import { BLOCK_SIZE, GROUND_TOP } from '../level-course';
 import { ROW_BASE, type WorldSpike } from '../levels/types';
 import { drawFace } from './faces';
@@ -89,6 +90,7 @@ export abstract class ChallengeView {
       g.fillStyle(COLORS.white).fillRoundedRect(-BLOCK_SIZE / 2, -BLOCK_SIZE / 2, BLOCK_SIZE, BLOCK_SIZE, 18);
       const f = drawFace(this.scene, face, BLOCK_SIZE * 0.8);
       const visual = this.scene.add.container(bx, by, [g, f.container]).setDepth(CHALLENGE_DEPTH);
+      bakeGraphics(this.scene, g, { x: -BLOCK_SIZE / 2, y: -BLOCK_SIZE / 2, width: BLOCK_SIZE, height: BLOCK_SIZE + 6 });
       const zone = this.scene.add.zone(bx, by, BLOCK_SIZE, BLOCK_SIZE);
       this.scene.physics.add.existing(zone, true);
       this.scene.physics.add.collider(this.fox, zone, () => {
