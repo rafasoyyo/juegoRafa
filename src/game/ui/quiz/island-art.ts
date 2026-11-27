@@ -258,6 +258,15 @@ const PIECE_SHAPES: Record<PieceId, { pts: XY[]; dot: XY }> = {
   arrow: { pts: [[-0.42, 0.46], [-0.42, -0.06], [0.08, -0.06], [0.08, -0.36], [0.46, 0.04], [0.08, 0.42], [0.08, 0.14], [-0.18, 0.14], [-0.18, 0.46]], dot: [-0.3, 0.32] },
 };
 
+/** Contorno de una pieza de lado `size`, girada y volteada, centrada en (0, 0). */
+export function piecePoints(piece: PieceId, angle: number, mirrored: boolean, size: number): Phaser.Math.Vector2[] {
+  const a = Phaser.Math.DegToRad(angle);
+  return PIECE_SHAPES[piece].pts.map(([x, y]) => {
+    const mx = mirrored ? -x : x;
+    return V((mx * Math.cos(a) - y * Math.sin(a)) * size, (mx * Math.sin(a) + y * Math.cos(a)) * size);
+  });
+}
+
 /** Pieza de un color, girada `angle` grados y volteada (espejo) si `mirrored`. */
 export function drawPiece(scene: Phaser.Scene, piece: PieceId, angle: number, mirrored: boolean, color: number, size: number): C {
   const { pts, dot } = PIECE_SHAPES[piece];

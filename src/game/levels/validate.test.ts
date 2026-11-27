@@ -256,3 +256,22 @@ describe('caminos de huellas (isla)', () => {
     expectError(withFootprints(54, (l) => l.steps.push({ x: 60, width: 3, height: 1 })), 'challenges[0]', /steps/);
   });
 });
+
+describe('puertas de la cueva (isla)', () => {
+  const withDoor = (x: number, extra: (l: LevelData) => void = () => undefined): LevelData =>
+    withChanges((l) => {
+      l.length = 100;
+      l.blocks.push({ x: 82, row: 'low' });
+      l.challenges.push({ kind: 'door', x, show: 'dots', reverse: false, demo: false });
+      extra(l);
+    });
+
+  it('ocupan lo de unos bloques que cuentan y sitio para el triceratops detrás', () => {
+    expect(validateLevel(withDoor(54))).toEqual([]);
+    expect(challengeZone({ kind: 'door', x: 54 })).toEqual({ from: challengeZone({ kind: 'count', x: 54 }).from, to: challengeZone({ kind: 'count', x: 54 }).to + 2.5 });
+  });
+
+  it('con un foso en el sitio del triceratops falla', () => {
+    expectError(withDoor(54, (l) => l.spikes.push({ x: 60, width: 1 })), 'challenges[0]', /spikes/);
+  });
+});

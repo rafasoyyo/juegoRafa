@@ -73,6 +73,15 @@ describe('registro de mundos', () => {
     ]);
   });
 
+  it('borrador: el nivel 2 de la isla lleva 3 puertas de la cueva y la primera es la demostración', () => {
+    const challenges = worldDef('isla').levels[1]!.challenges;
+    expect(challenges.map((c) => [c.kind, c.demo])).toEqual([
+      ['door', true],
+      ['door', false],
+      ['door', false],
+    ]);
+  });
+
   it('el mundo 1 no tiene retos del recorrido', () => {
     const [arcoiris] = WORLDS;
     for (const level of arcoiris!.levels) expect(level.challenges).toEqual([]);
@@ -90,7 +99,7 @@ describe('registro de mundos', () => {
   it('los 12 tramos del río siguen la tabla de docs/MUNDO-2.md: retos, paisajes y novedades', () => {
     const rio = worldDef('rio');
     expect(rio.levelCount).toBe(12);
-    const K = { count: 'A', bridge: 'B', boat: 'C', footprints: '-' } as const;
+    const K = { count: 'A', bridge: 'B', boat: 'C', footprints: '-', door: '-' } as const;
     const mix = rio.levels.map((l) => l.challenges.map((c) => K[c.kind]).sort().join(''));
     expect(mix).toEqual(['AAA', 'AAA', 'AAA', 'AABB', 'BBBB', 'AABB', 'AACC', 'BBCC', 'ABBCC', 'BBBCC', 'ABBCC', 'ABBCC']);
     expect(rio.levels.map((l) => l.ambient)).toEqual([

@@ -16,7 +16,7 @@ import { fitImage } from './round-button';
 type G = Phaser.GameObjects.Graphics;
 
 /** Traza el contorno de una forma de lado `s` centrada en (0, 0). */
-function shapePoints(shape: ShapeId, s: number): Phaser.Math.Vector2[] | null {
+export function shapePoints(shape: ShapeId, s: number): Phaser.Math.Vector2[] | null {
   const h = s / 2;
   const P = (x: number, y: number): Phaser.Math.Vector2 => new Phaser.Math.Vector2(x, y);
   switch (shape) {
