@@ -6,6 +6,7 @@
 import Phaser from 'phaser';
 import type { Face } from '../../learning/challenges/count-blocks';
 import { COLORS } from '../config';
+import { bakeGraphics } from '../ui/bake';
 import { digits } from '../ui/round-button';
 
 export const FRAME_BLUE = 0x4da3ff;
@@ -78,6 +79,7 @@ export function drawFace(scene: Phaser.Scene, face: Face, size: number): FaceVie
       if (f * 10 + i < face.value) dots.push(scene.add.circle(cx, cy, cell * 0.3, COLORS.coral));
     }
   }
+  bakeGraphics(scene, g, { x: -w / 2, y: -total / 2, width: w, height: total + 3 });
   container.add(dots);
   return { container, dots };
 }
