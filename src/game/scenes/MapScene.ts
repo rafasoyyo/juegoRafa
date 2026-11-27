@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
-import { FLAGS } from '../flags';
 import { skyColorAt, type SkyStop } from '../map/map-sky';
 import { eggSpot } from '../map/egg-spots';
 import { bandAngles, paintedBands, rainbowMemory } from '../map/rainbow-arc';
@@ -113,7 +112,7 @@ export class MapScene extends Phaser.Scene {
     if (this.inFinale) {
       markSeen(session, 'final', this.def.id);
       saveActive();
-      this.unlocking = WORLDS.filter((w) => opensAfter(w, this.def.id, activeAge(), FLAGS)).map((w) => w.id);
+      this.unlocking = WORLDS.filter((w) => opensAfter(w, this.def.id, activeAge(), import.meta.env.DEV)).map((w) => w.id);
     }
     this.build(this.scale.width);
     onResize(this, () => this.rebuild());
@@ -168,7 +167,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   private access(def: WorldDef): WorldAccess {
-    return worldAccess(def, session, activeAge(), FLAGS);
+    return worldAccess(def, session, activeAge(), import.meta.env.DEV);
   }
 
   private scrollTo(x: number): void {

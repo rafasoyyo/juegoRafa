@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
 import type { SfxName } from '../audio/sfx';
-import type { BeeSpawn, CrabSpawn, EnemySpawn, FrogSpawn, HedgehogSpawn, PteroSpawn, TrexSpawn, VolcanoSpawn } from './enemy-layout';
+import type { BeeSpawn, CrabSpawn, EnemyKind, EnemySpawn, FrogSpawn, HedgehogSpawn, PteroSpawn, SpawnOf, TrexSpawn, VolcanoSpawn } from './enemy-layout';
 import {
   beeBox,
   beePosition,
@@ -40,23 +40,21 @@ export interface EnemyView {
 }
 
 export function createEnemyView(scene: Phaser.Scene, spawn: EnemySpawn, groundY: number): EnemyView {
-  switch (spawn.kind) {
-    case 'hedgehog':
-      return hedgehogView(scene, spawn, groundY);
-    case 'bee':
-      return beeView(scene, spawn);
-    case 'frog':
-      return frogView(scene, spawn, groundY);
-    case 'crab':
-      return crabView(scene, spawn, groundY);
-    case 'ptero':
-      return pteroView(scene, spawn, groundY);
-    case 'volcano':
-      return volcanoView(scene, spawn, groundY);
-    case 'trex':
-      return trexView(scene, spawn, groundY);
-  }
+  return (ENEMY_VIEWS[spawn.kind] as ViewFactory<EnemyKind>)(scene, spawn, groundY);
 }
+
+type ViewFactory<K extends EnemyKind> = (scene: Phaser.Scene, spawn: SpawnOf<K>, groundY: number) => EnemyView;
+
+/** Dibujo y movimiento de cada tipo de enemigo (spec `world-isolation`: una entrada por tipo). */
+const ENEMY_VIEWS: { readonly [K in EnemyKind]: ViewFactory<K> } = {
+  hedgehog: (scene, spawn, groundY) => hedgehogView(scene, spawn, groundY),
+  bee: (scene, spawn) => beeView(scene, spawn),
+  frog: (scene, spawn, groundY) => frogView(scene, spawn, groundY),
+  crab: (scene, spawn, groundY) => crabView(scene, spawn, groundY),
+  ptero: (scene, spawn, groundY) => pteroView(scene, spawn, groundY),
+  volcano: (scene, spawn, groundY) => volcanoView(scene, spawn, groundY),
+  trex: (scene, spawn, groundY) => trexView(scene, spawn, groundY),
+};
 
 /** Suena `name` y tiembla un poco la pantalla solo si `x` está a la vista (o casi). */
 function warn(scene: Phaser.Scene, x: number, name: SfxName, shake: number): void {

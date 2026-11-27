@@ -1,26 +1,13 @@
 import Phaser from 'phaser';
-import { boatChallenge, type BoatChallenge } from '../../learning/challenges/boat';
-import { bridgeChallenge, type BridgeChallenge } from '../../learning/challenges/bridge';
-import { countChallenge, countRange, type CountChallenge } from '../../learning/challenges/count-blocks';
-import { footprintsChallenge, type FootprintsChallenge } from '../../learning/challenges/footprints';
-import { brachioChallenge, type BrachioChallenge } from '../../learning/challenges/brachio';
-import { caveDoorChallenge, type CaveDoorChallenge } from '../../learning/challenges/cave-door';
-import { geyserChallenge, type GeyserChallenge } from '../../learning/challenges/geyser';
 import { ageBand } from '../../learning/quiz/age';
 import { createRng } from '../../learning/quiz/rng';
 import { audio } from '../audio/audio-engine';
-import { BoatChallengeView } from '../challenges/boat-challenge-view';
-import { BridgeChallengeView, bridgeHole } from '../challenges/bridge-challenge-view';
 import type { ChallengeView } from '../challenges/challenge-view';
-import { CountChallengeView } from '../challenges/count-challenge-view';
-import { FootprintsChallengeView } from '../challenges/footprints-challenge-view';
-import { BrachioChallengeView } from '../challenges/brachio-challenge-view';
-import { CaveDoorChallengeView } from '../challenges/cave-door-challenge-view';
-import { GeyserChallengeView } from '../challenges/geyser-challenge-view';
+import { CHALLENGE_MECHANICS } from '../challenges/registry';
 import { LaloFlyer } from '../challenges/lalo-flyer';
 import { COLORS, GAME_H } from '../config';
 import { castleCourse, castleTexture } from '../castle/castle';
-import { courseFor, layoutEnemies, type EnemyKind } from '../enemies/enemy-layout';
+import { courseFor, emptyEnemyCounts, layoutEnemies, type EnemyKind } from '../enemies/enemy-layout';
 import { overlaps } from '../enemies/enemy-motion';
 import { createEnemyView, type EnemyView } from '../enemies/enemy-views';
 import { BLOCK_SIZE, GROUND_TOP, JUMP_SPEED, KNOCK_VY, MAX_VELOCITY, SCALE } from '../level-course';
@@ -41,7 +28,7 @@ import {
   LAVA,
   STEEL,
 } from '../levels/spikes';
-import { BOAT_LAKE, GEYSER_LAKE, RUN_SPEED, TILE, type WorldLevel, type WorldSpike } from '../levels/types';
+import { RUN_SPEED, TILE, type ChallengeKind, type WorldLevel, type WorldSpike } from '../levels/types';
 import { FRUIT_SIZE, FRUIT_VX, FRUIT_VY, loseCookie, pickFruitBlock, powerPhase, type PowerPhase } from '../power/power';
 import { activeAge, saveActive } from '../profile/active';
 import { session } from '../state';
@@ -170,7 +157,7 @@ export class LevelScene extends Phaser.Scene {
   private nextDustAt = 0;
   private enemies: EnemyView[] = [];
   /** Erizos y abejas del nivel, para «¿Te acuerdas?». */
-  private enemyCounts: Record<EnemyKind, number> = { hedgehog: 0, bee: 0, frog: 0, crab: 0, ptero: 0, volcano: 0, trex: 0 };
+  private enemyCounts: Record<EnemyKind, number> = emptyEnemyCounts();
   private knockUntil = -Infinity;
   private protectedUntil = -Infinity;
   private hitAt = -Infinity;
@@ -199,7 +186,8 @@ export class LevelScene extends Phaser.Scene {
   /** Retos del recorrido (mundo 2) y Lalo volando para ayudar en ellos. */
   private challenges: ChallengeView[] = [];
   /** Retos generados para esta partida (con la edad del perfil), antes de dibujarlos. */
-  private plannedChallenges: (CountChallenge | BridgeChallenge | BoatChallenge | FootprintsChallenge | CaveDoorChallenge | BrachioChallenge | GeyserChallenge)[] = [];
+  /** Plan de cada reto del nivel; solo lo entiende la entrada de su tipo en `CHALLENGE_MECHANICS`. */
+  private plannedChallenges: unknown[] = [];
   /**
    * Agua que cortan los retos en el suelo (hueco del puente y lago de la barca), para el escenario. La
    * que hace rebotar en cada momento la da `water()`.
@@ -460,7 +448,7 @@ export class LevelScene extends Phaser.Scene {
   /** Enemigos al azar en zonas seguras (suelo llano); cambian cada vez que se entra en el nivel. */
   private buildEnemies(): void {
     const spawns = this.castle ? [] : layoutEnemies(this.def.enemies, this.level, courseFor(this.world));
-    this.enemyCounts = { hedgehog: 0, bee: 0, frog: 0, crab: 0, ptero: 0, volcano: 0, trex: 0 };
+    this.enemyCounts = emptyEnemyCounts();
     for (const spawn of spawns) this.enemyCounts[spawn.kind] += 1;
     this.enemies = spawns.map((spawn) => createEnemyView(this, spawn, GROUND_TOP));
     for (const enemy of this.enemies) enemy.update(this.time.now);
@@ -475,26 +463,17 @@ export class LevelScene extends Phaser.Scene {
     if (data.length === 0) return;
     const rng = createRng((Date.now() ^ (this.level * 104729)) >>> 0);
     const band = ageBand(activeAge());
-    // Respuestas distintas entre los retos A del nivel mientras quepan en el rango.
-    const [min, max] = countRange(band);
-    const pool = rng.shuffle(Array.from({ length: max - min + 1 }, (_, i) => min + i));
-    let next = 0;
+    // Un planificador por tipo, creado al encontrar el primer reto de ese tipo.
+    const planners = new Map<ChallengeKind, (c: (typeof data)[number]) => unknown>();
     this.plannedChallenges = data.map((c) => {
-      if (c.kind === 'bridge') return bridgeChallenge(band, rng);
-      if (c.kind === 'footprints') return footprintsChallenge(band, rng);
-      if (c.kind === 'door') return caveDoorChallenge(band, rng);
-      if (c.kind === 'geyser') return geyserChallenge(band, rng);
-      if (c.kind === 'boat') return boatChallenge(band, rng);
-      if (c.kind === 'brachio') return brachioChallenge(band, rng);
-      return countChallenge(band, rng, c, pool[next++ % pool.length]!);
+      let plan = planners.get(c.kind);
+      if (!plan) {
+        plan = CHALLENGE_MECHANICS[c.kind].planner(band, rng);
+        planners.set(c.kind, plan);
+      }
+      return plan(c);
     });
-    this.waterHoles = data.flatMap((c, i) => {
-      const plan = this.plannedChallenges[i]!;
-      if (plan.kind === 'bridge' || plan.kind === 'footprints') return [bridgeHole(c.x, plan)];
-      if (plan.kind === 'boat' || plan.kind === 'brachio') return [{ index: -1, x: c.x, width: BOAT_LAKE * TILE }];
-      if (plan.kind === 'geyser') return [{ index: -1, x: c.x, width: GEYSER_LAKE * TILE }];
-      return [];
-    });
+    this.waterHoles = data.flatMap((c, i) => CHALLENGE_MECHANICS[c.kind].holes(c.x, this.plannedChallenges[i]));
   }
 
   private buildChallenges(): void {
@@ -513,16 +492,7 @@ export class LevelScene extends Phaser.Scene {
         this.fox.x += dx;
       },
     };
-    this.challenges = data.map((c, i) => {
-      const plan = this.plannedChallenges[i]!;
-      if (plan.kind === 'bridge') return new BridgeChallengeView(this, this.fox, c, plan, hooks);
-      if (plan.kind === 'footprints') return new FootprintsChallengeView(this, this.fox, c, plan, hooks);
-      if (plan.kind === 'door') return new CaveDoorChallengeView(this, this.fox, c, plan, hooks);
-      if (plan.kind === 'geyser') return new GeyserChallengeView(this, this.fox, c, plan, hooks);
-      if (plan.kind === 'boat') return new BoatChallengeView(this, this.fox, c, plan, hooks);
-      if (plan.kind === 'brachio') return new BrachioChallengeView(this, this.fox, c, plan, hooks);
-      return new CountChallengeView(this, this.fox, c, plan, hooks);
-    });
+    this.challenges = data.map((c, i) => CHALLENGE_MECHANICS[c.kind].view(this, this.fox, c, this.plannedChallenges[i], hooks));
   }
 
   /** Agua de los retos que hace rebotar ahora mismo (cambia al cerrar el puente o al cruzar la barca). */
