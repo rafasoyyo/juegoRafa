@@ -69,6 +69,7 @@ import {
   type RunState,
 } from '../ui/run-cycle';
 import { enter, goTo, onResize } from '../ui/transition';
+import { bakeGraphics } from '../ui/bake';
 import { addScenery, bump, cookieCounter, drawPlatform, drawStep, fixToCamera, type CookieCounter } from '../ui/widgets';
 
 const VARIABLE_JUMP_MIN = 140 * SCALE;
@@ -209,7 +210,7 @@ export class LevelScene extends Phaser.Scene {
   private hudLalo?: Phaser.GameObjects.Image;
 
   private home!: RoundButton;
-  private progress!: { container: Phaser.GameObjects.Container; fill: Phaser.GameObjects.Graphics; face: Phaser.GameObjects.Image; barW: number };
+  private progress!: { container: Phaser.GameObjects.Container; fill: Phaser.GameObjects.Graphics; fillW: number; face: Phaser.GameObjects.Image; barW: number };
   private counter!: CookieCounter;
   /** Se pidió el prólogo desde el mapa. */
   private forcePrologue = false;
@@ -354,6 +355,9 @@ export class LevelScene extends Phaser.Scene {
 
     const input = this.controls.read();
     if (grounded) this.lastGrounded = time;
+    // Agua y pinchos, una vez por fotograma (sin agua, el array de los pinchos tal cual).
+    const water = this.water();
+    const hazards = water.length > 0 ? this.world.spikes.concat(water) : this.world.spikes;
 
     // Durante el rebote se ignoran las flechas y el salto: si no, volvería a chocar.
     const knocked = time < this.knockUntil;
@@ -364,7 +368,7 @@ export class LevelScene extends Phaser.Scene {
     if (!knocked && !coasting) this.fox.setVelocityX(dir * RUN_SPEED);
     // Parado en el borde de un foso casi sobre el hueco: se desliza hacia el suelo firme.
     if (!knocked && !this.held && !this.spikeRebound && dir === 0 && grounded && Math.abs(body.bottom - GROUND_TOP) <= 2) {
-      const nudge = lipNudge(body.x, body.width, [...this.world.spikes, ...this.water()]);
+      const nudge = lipNudge(body.x, body.width, hazards);
       if (nudge !== 0) this.fox.setVelocityX(nudge * LIP_NUDGE_SPEED);
     }
     if (dir !== 0) this.faceLeft = dir < 0;
@@ -385,7 +389,7 @@ export class LevelScene extends Phaser.Scene {
 
     this.tickPower(time);
     this.checkEnemies(time);
-    this.checkSpikes(time, grounded);
+    this.checkSpikes(time, grounded, water, hazards);
     for (const c of this.challenges) c.update(this.fox.x);
     this.animateFox(time, delta, grounded, dir);
     this.updateProgress();
@@ -555,6 +559,14 @@ export class LevelScene extends Phaser.Scene {
     bump(this, this.counter.container);
   }
 
+  /** El primer enemigo que toca ahora la caja del zorro, sin crear listas (se mira en cada fotograma). */
+  private firstTouchingEnemy(): EnemyView | undefined {
+    const body = this.fox.body;
+    const fox = { x: body.x, y: body.y, w: body.width, h: body.height };
+    for (const e of this.enemies) for (const b of e.boxes()) if (overlaps(fox, b)) return e;
+    return undefined;
+  }
+
   /** Enemigos que tocan ahora la caja del zorro. */
   private touchingEnemies(): EnemyView[] {
     const body = this.fox.body;
@@ -575,7 +587,7 @@ export class LevelScene extends Phaser.Scene {
     }
     this.contacts.clear();
     if (time < this.protectedUntil) return;
-    const enemy = this.touchingEnemies()[0];
+    const enemy = this.firstTouchingEnemy();
     if (enemy) this.onEnemyHit(enemy, time);
   }
 
@@ -622,6 +634,7 @@ export class LevelScene extends Phaser.Scene {
       g.fillStyle(STEEL.mid).fillRoundedRect(z.x + 3, plateTop, z.width - 6, 3, 1.5);
       g.fillStyle(STEEL.light);
       for (let x = z.x + RIVET_EVERY / 2; x < z.x + z.width; x += RIVET_EVERY) g.fillCircle(x, plateTop + SPIKE_PLATE_H / 2 + 1, RIVET_R);
+      bakeGraphics(this, g, { x: z.x, y: plateTop, width: z.width, height: SPIKE_PLATE_H + 2 });
       this.add.tileSprite(z.x, plateTop, z.width, SPIKE_CONE_H, 'spikes').setOrigin(0, 1).setDepth(4);
       this.add.image(z.x + TILE / CONES_PER_TILE / 2, GROUND_TOP + PIT_TIP + 1, 'spike-glint').setDepth(4);
     }
@@ -650,9 +663,8 @@ export class LevelScene extends Phaser.Scene {
    * Cuesta una galleta salvo si está protegido o es invencible. Mientras pisa algo fuera de los fosos
    * (suelo, escalón o plataforma) se recuerda dónde, para rebotar hacia ese lado.
    */
-  private checkSpikes(time: number, grounded: boolean): void {
-    const water = this.water();
-    const zone = grounded ? pitUnder(this.fox.body.bottom, this.fox.x, [...this.world.spikes, ...water]) : undefined;
+  private checkSpikes(time: number, grounded: boolean, water: readonly WorldSpike[], hazards: readonly WorldSpike[]): void {
+    const zone = grounded ? pitUnder(this.fox.body.bottom, this.fox.x, hazards) : undefined;
     if (grounded && !zone) this.lastSafeX = this.fox.x;
     if (!zone) return;
     if (water.includes(zone)) {
@@ -864,7 +876,8 @@ export class LevelScene extends Phaser.Scene {
     if (mix > 0) {
       // Líneas de velocidad detrás del cuerpo.
       for (const [i, ly] of [-36, -52, -68].entries()) {
-        const len = 20 + Math.random() * 16 + i * 4;
+        // Largo que late con la zancada (antes era al azar en cada fotograma y parpadeaba).
+        const len = 28 + 8 * Math.sin(phase * Math.PI * 4 + i * 2.1) + i * 4;
         const lx = -40 - i * 4;
         g.lineStyle(5, RUN_COLORS.speedLine, 0.2 * mix).lineBetween(lx, y0 + ly, lx - len, y0 + ly);
       }
@@ -1053,8 +1066,9 @@ export class LevelScene extends Phaser.Scene {
     const flag = this.add.image(barX + barW + 34, 0, 'icon-flag').setDisplaySize(44, 44);
     const face = this.add.image(barX, 0, 'icon-fox-face').setDisplaySize(46, 46);
     container.add([pill, fill, flag, face]);
+    bakeGraphics(this, pill, { x: -pillW / 2, y: -36, width: pillW, height: 78 });
     container.setData('barX', barX);
-    this.progress = { container, fill, face, barW };
+    this.progress = { container, fill, fillW: -1, face, barW };
 
     this.counter = cookieCounter(this, 0, 0, 0);
     const lalo = drawLalo(this, 32, 140);
@@ -1068,8 +1082,12 @@ export class LevelScene extends Phaser.Scene {
     const { startX, flagX } = this.world;
     const t = force ?? Phaser.Math.Clamp((this.fox.x - startX) / (flagX - startX), 0, 1);
     const barX = this.progress.container.getData('barX') as number;
-    const w = Math.max(16, this.progress.barW * t);
-    this.progress.fill.clear().fillStyle(COLORS.grass).fillRoundedRect(barX, -8, w, 16, 8);
+    const w = Math.max(16, Math.round(this.progress.barW * t));
+    // Solo se redibuja cuando la barra crece o mengua un píxel entero.
+    if (w !== this.progress.fillW) {
+      this.progress.fillW = w;
+      this.progress.fill.clear().fillStyle(COLORS.grass).fillRoundedRect(barX, -8, w, 16, 8);
+    }
     this.progress.face.x = barX + this.progress.barW * t;
   }
 

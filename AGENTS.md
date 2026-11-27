@@ -14,6 +14,7 @@ Plataformas 2D web para niños de 4 a 6 años que no leen ni suman. Rufo el zorr
 4. **Sin material de terceros con copyright** (ni Nintendo, ni Mario). Arte propio o CC0, anotado en `public/assets/LICENSES.md` en el mismo commit que lo añade.
 5. **Se publica y es para menores**: sin publicidad, sin analítica con identificadores personales, datos mínimos (alias, edad, avatar, progreso), sin enlaces externos ni chat. RGPD (menores de 14) y COPPA (menores de 13).
 6. **`src/learning/` es TypeScript puro**: no importa `phaser` ni `firebase`.
+7. **Fluido en tablets antiguas** (reglas completas en [openspec/specs/performance/spec.md](openspec/specs/performance/spec.md)): cada nivel cabe en 20 ms de media por fotograma (33 ms en el percentil 95) con la CPU frenada ×4 a 844×390. Los `Graphics` fijos se hornean una vez con `bakeGraphics` o `bakeShape` (`src/game/ui/bake.ts`); solo siguen como `Graphics` los que cambian de forma. En `update`, nada de `Math.random()` para dibujar ni listas u objetos nuevos si se puede evitar; los efectos repetidos usan reserva de objetos. Texturas de 2048 px de lado como mucho y liberadas al cerrar la escena. Física con paso variable (`fixedStep: false`) y sin `roundPixels`. Música con 0,25 s de margen.
 
 ## Comandos
 

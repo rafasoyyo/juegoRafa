@@ -58,6 +58,7 @@ rules:
   proposal:
     - Indicar qué habilidad educativa (cantidad, número, patrones, formas, letras) toca el cambio, si toca alguna.
     - Declarar qué queda fuera de alcance.
+    - Revisar la spec `performance` y declarar si el cambio la afecta (escenario, retos, efectos, audio o escenas nuevas) y cómo se cumple su presupuesto.
   specs:
     - Todo requisito de interfaz debe ser válido en móvil táctil horizontal.
     - Ningún requisito puede exigir que el niño lea.
