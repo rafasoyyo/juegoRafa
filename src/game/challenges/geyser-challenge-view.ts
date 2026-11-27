@@ -13,6 +13,7 @@ import { audio } from '../audio/audio-engine';
 import { GROUND_TOP } from '../level-course';
 import { GEYSER_LAKE, GEYSER_STONE_W, GEYSER_TOTEM_X, geyserStoneX, TILE, type ChallengeData, type WorldSpike } from '../levels/types';
 import { LAVA as LAVA_COLORS } from '../levels/spikes';
+import { bakeGraphics, bakePiece, bakeShared } from '../ui/bake';
 import { fillShape } from '../ui/quiz-art';
 import { ChallengeView, CHALLENGE_DEPTH as DEPTH, type ChallengeHooks } from './challenge-view';
 import { drawGlyph, GLYPH_HEX, GOLD, lightGlyph, STONE, type GlyphView } from './glyphs';
@@ -51,7 +52,7 @@ export class GeyserChallengeView extends ChallengeView {
   private readonly lakeW: number;
   private readonly stones: StoneView[] = [];
   private readonly totem: Phaser.GameObjects.Container;
-  private readonly totemGlow: Phaser.GameObjects.Graphics;
+  private readonly totemGlow: Phaser.GameObjects.Image;
   private readonly geyserX: number;
   /** Piedra en la que está Rufo (−1: la orilla de salida). */
   private onStone = -1;
@@ -121,6 +122,7 @@ export class GeyserChallengeView extends ChallengeView {
       g.fillStyle(BASALT).fillRoundedRect(px - 12, GROUND_TOP - 4, 24, 120, 8);
       g.fillStyle(BASALT_LIGHT).fillRoundedRect(px - 12, GROUND_TOP - 4, 24, 10, 5);
     }
+    bakeGraphics(this.scene, g, { x: x - 12, y: GROUND_TOP - 4, width: w + 24, height: 720 - GROUND_TOP + 4 });
     // Resplandor que late despacio sobre la lava.
     const glow = this.scene.add.rectangle(x + w / 2, GROUND_TOP + 10, w, 26, LAVA_LIGHT, 0.25).setDepth(DEPTH - 1);
     this.scene.tweens.add({ targets: glow, alpha: 0.08, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
@@ -130,16 +132,19 @@ export class GeyserChallengeView extends ChallengeView {
   private addStone(stone: GeyserStone, i: number): StoneView {
     const x = this.lakeLeft + geyserStoneX(i) * TILE;
     const w = GEYSER_STONE_W * TILE;
-    const g = this.scene.add.graphics();
-    g.fillStyle(STONE.dark).fillRoundedRect(-STELE_W / 2, -STELE_H, STELE_W, STELE_H, { tl: 16, tr: 16, bl: 0, br: 0 });
-    g.fillStyle(STONE.base).fillRoundedRect(-STELE_W / 2 + 4, -STELE_H + 4, STELE_W - 8, STELE_H - 4, { tl: 13, tr: 13, bl: 0, br: 0 });
-    g.fillStyle(BASALT).fillRoundedRect(-w / 2, -4, w, STONE_H, 14);
-    g.fillStyle(BASALT_LIGHT).fillRoundedRect(-w / 2, -4, w, 14, { tl: 14, tr: 14, bl: 0, br: 0 });
-    g.fillStyle(LAVA, 0.35).fillRoundedRect(-w / 2, STONE_H - 30, w, 26, { tl: 0, tr: 0, bl: 14, br: 14 });
+    // Todas las piedras son iguales: comparten una textura.
+    const half = Math.max(w, STELE_W) / 2;
+    const face = bakeShared(this.scene, 'geyser-stone', { x: -half, y: -STELE_H, width: half * 2, height: STELE_H + STONE_H }, (g) => {
+      g.fillStyle(STONE.dark).fillRoundedRect(-STELE_W / 2, -STELE_H, STELE_W, STELE_H, { tl: 16, tr: 16, bl: 0, br: 0 });
+      g.fillStyle(STONE.base).fillRoundedRect(-STELE_W / 2 + 4, -STELE_H + 4, STELE_W - 8, STELE_H - 4, { tl: 13, tr: 13, bl: 0, br: 0 });
+      g.fillStyle(BASALT).fillRoundedRect(-w / 2, -4, w, STONE_H, 14);
+      g.fillStyle(BASALT_LIGHT).fillRoundedRect(-w / 2, -4, w, 14, { tl: 14, tr: 14, bl: 0, br: 0 });
+      g.fillStyle(LAVA, 0.35).fillRoundedRect(-w / 2, STONE_H - 30, w, 26, { tl: 0, tr: 0, bl: 14, br: 14 });
+    });
     // El grabado va en una estela al fondo de la piedra, a la vista sobre el suelo (Rufo pasa por delante).
     const glyph = drawGlyph(this.scene, { shape: stone.shape, color: stone.color, count: 1 }, GLYPH_SIZE[stone.size]);
     glyph.container.setPosition(0, -STELE_H / 2 - 2);
-    const container = this.scene.add.container(x, GROUND_TOP, [g, glyph.container]).setDepth(DEPTH);
+    const container = this.scene.add.container(x, GROUND_TOP, [face, glyph.container]).setDepth(DEPTH);
     const zone = this.scene.add.zone(x, GROUND_TOP + 20, w, 40);
     this.scene.physics.add.existing(zone, true);
     this.scene.physics.add.collider(this.fox, zone, () => {
@@ -149,7 +154,7 @@ export class GeyserChallengeView extends ChallengeView {
   }
 
   /** Tótem: pilar de piedra con la forma tallada arriba; con color para los mayores, en piedra clara si no. */
-  private drawTotem(x: number): { container: Phaser.GameObjects.Container; glow: Phaser.GameObjects.Graphics } {
+  private drawTotem(x: number): { container: Phaser.GameObjects.Container; glow: Phaser.GameObjects.Image } {
     const { shape, color } = this.challenge.totem;
     const g = this.scene.add.graphics();
     g.fillStyle(STONE.dark).fillRoundedRect(-44, -TOTEM_H + 6, 88, TOTEM_H, 16);
@@ -157,9 +162,10 @@ export class GeyserChallengeView extends ChallengeView {
     g.fillStyle(STONE.light).fillRoundedRect(-44, -TOTEM_H, 88, 12, { tl: 16, tr: 16, bl: 0, br: 0 });
     g.fillStyle(GOLD).fillRect(-44, -TOTEM_H + 104, 88, 8);
     for (let y = -TOTEM_H + 140; y < -20; y += 40) g.fillStyle(STONE.dark).fillRect(-30, y, 60, 5);
-    const glow = this.scene.add.graphics();
-    glow.fillStyle(GLOW, 0.5).fillCircle(0, -TOTEM_H + 52, 50);
-    glow.setAlpha(0);
+    const pillar = bakePiece(this.scene, g, { x: -44, y: -TOTEM_H, width: 88, height: TOTEM_H + 6 });
+    const glowG = this.scene.add.graphics();
+    glowG.fillStyle(GLOW, 0.5).fillCircle(0, -TOTEM_H + 52, 50);
+    const glow = bakePiece(this.scene, glowG, { x: -51, y: -TOTEM_H + 1, width: 102, height: 102 }).setAlpha(0);
     const carving = this.scene.add.graphics();
     carving.fillStyle(STONE.groove);
     carving.save();
@@ -171,7 +177,8 @@ export class GeyserChallengeView extends ChallengeView {
     carving.translateCanvas(0, -TOTEM_H + 52);
     fillShape(carving, shape, 64);
     carving.restore();
-    const container = this.scene.add.container(x, GROUND_TOP, [g, glow, carving]).setDepth(DEPTH - 1);
+    const carved = bakePiece(this.scene, carving, { x: -42, y: -TOTEM_H + 10, width: 84, height: 90 });
+    const container = this.scene.add.container(x, GROUND_TOP, [pillar, glow, carved]).setDepth(DEPTH - 1);
     return { container, glow };
   }
 
@@ -182,6 +189,7 @@ export class GeyserChallengeView extends ChallengeView {
     g.fillStyle(BASALT).fillTriangle(x - 70, GROUND_TOP + 2, x + 70, GROUND_TOP + 2, x, GROUND_TOP - 70);
     g.fillStyle(BASALT_LIGHT).fillTriangle(x - 30, GROUND_TOP - 40, x + 30, GROUND_TOP - 40, x, GROUND_TOP - 70);
     g.fillStyle(0x1f1b24).fillEllipse(x, GROUND_TOP - 58, 34, 12);
+    bakePiece(this.scene, g, { x: x - 72, y: GROUND_TOP - 72, width: 144, height: 76 });
     const wisp = this.scene.add.ellipse(x, GROUND_TOP - 70, 30, 20, STEAM, 0.4).setDepth(DEPTH - 1);
     this.scene.tweens.add({ targets: wisp, y: GROUND_TOP - 150, scale: 2, alpha: 0, duration: 2200, repeat: -1 });
   }

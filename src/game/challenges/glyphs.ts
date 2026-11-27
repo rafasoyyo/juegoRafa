@@ -7,6 +7,7 @@
 import Phaser from 'phaser';
 import type { Glyph, GlyphColor } from '../../learning/challenges/footprints';
 import { BLOCK_SIZE } from '../level-course';
+import { bakeShared } from '../ui/bake';
 import { fillShape } from '../ui/quiz-art';
 
 export const GLYPH_HEX: Record<GlyphColor, number> = {
@@ -26,12 +27,12 @@ const DIM = 0.78;
 export interface GlyphView {
   container: Phaser.GameObjects.Container;
   /** La parte de color, que se enciende. */
-  glow: Phaser.GameObjects.Graphics;
+  glow: Phaser.GameObjects.Image;
 }
 
 /**
  * Grabado de `size` px de lado: el surco oscuro de la talla y, encima, la forma de color. Con varias
- * formas (series que crecen), en fila y más pequeñas.
+ * formas (series que crecen), en fila y más pequeñas. Se hornea en dos imágenes (surco y color).
  */
 export function drawGlyph(scene: Phaser.Scene, glyph: Glyph, size: number): GlyphView {
   const n = Math.max(1, glyph.count);
@@ -39,27 +40,25 @@ export function drawGlyph(scene: Phaser.Scene, glyph: Glyph, size: number): Glyp
   const rows = n <= 3 ? 1 : 2;
   const cell = Math.min(size / cols, size / rows / 0.95);
   const s = cell * (n === 1 ? 0.86 : 0.78);
-  const groove = scene.add.graphics();
-  const glow = scene.add.graphics();
-  const color = GLYPH_HEX[glyph.color];
-  for (let i = 0; i < n; i++) {
-    const r = Math.floor(i / cols);
-    const inRow = r === rows - 1 ? n - cols * (rows - 1) : cols;
-    const c = i - r * cols;
-    const x = (c - (inRow - 1) / 2) * cell;
-    const y = (r - (rows - 1) / 2) * cell * 0.95;
-    groove.fillStyle(STONE.groove);
-    groove.save();
-    groove.translateCanvas(x, y + 3);
-    fillShape(groove, glyph.shape, s + 4);
-    groove.restore();
-    glow.fillStyle(color);
-    glow.save();
-    glow.translateCanvas(x, y);
-    fillShape(glow, glyph.shape, s);
-    glow.restore();
-  }
-  glow.setAlpha(DIM);
+  const draw = (g: Phaser.GameObjects.Graphics, color: number, grow: number, dy: number): void => {
+    g.fillStyle(color);
+    for (let i = 0; i < n; i++) {
+      const r = Math.floor(i / cols);
+      const inRow = r === rows - 1 ? n - cols * (rows - 1) : cols;
+      const c = i - r * cols;
+      const x = (c - (inRow - 1) / 2) * cell;
+      const y = (r - (rows - 1) / 2) * cell * 0.95;
+      g.save();
+      g.translateCanvas(x, y + dy);
+      fillShape(g, glyph.shape, s + grow);
+      g.restore();
+    }
+  };
+  // Holgado: cada forma cabe en su celda y el surco baja 3 px. Los grabados iguales comparten textura.
+  const rect = { x: -size * 0.6 - 4, y: -size * 0.6 - 4, width: size * 1.2 + 8, height: size * 1.2 + 12 };
+  const id = `glyph-${glyph.shape}-${n}-${Math.round(size)}`;
+  const groove = bakeShared(scene, `${id}-groove`, rect, (g) => draw(g, STONE.groove, 4, 3));
+  const glow = bakeShared(scene, `${id}-${glyph.color}`, rect, (g) => draw(g, GLYPH_HEX[glyph.color], 0, 0)).setAlpha(DIM);
   return { container: scene.add.container(0, 0, [groove, glow]), glow };
 }
 
@@ -70,13 +69,16 @@ export function lightGlyph(scene: Phaser.Scene, view: GlyphView, keep = false): 
   if (!keep) scene.time.delayedCall(420, () => view.glow.setAlpha(DIM));
 }
 
-/** Bloque de piedra con borde dorado, centrado en (0, 0), para meter en el contenedor del bloque. */
-export function drawStoneBlock(scene: Phaser.Scene): Phaser.GameObjects.Graphics {
+/**
+ * Bloque de piedra con borde dorado, centrado en (0, 0), para meter en el contenedor del bloque. Horneado
+ * en una imagen.
+ */
+export function drawStoneBlock(scene: Phaser.Scene): Phaser.GameObjects.Image {
   const h = BLOCK_SIZE / 2;
-  const g = scene.add.graphics();
-  g.fillStyle(GOLD_DARK).fillRoundedRect(-h, -h + 6, BLOCK_SIZE, BLOCK_SIZE, 16);
-  g.fillStyle(GOLD).fillRoundedRect(-h, -h, BLOCK_SIZE, BLOCK_SIZE, 16);
-  g.fillStyle(STONE.base).fillRoundedRect(-h + 7, -h + 7, BLOCK_SIZE - 14, BLOCK_SIZE - 14, 11);
-  g.fillStyle(STONE.light).fillRoundedRect(-h + 7, -h + 7, BLOCK_SIZE - 14, 10, { tl: 11, tr: 11, bl: 0, br: 0 });
-  return g;
+  return bakeShared(scene, 'stone-block', { x: -h, y: -h, width: BLOCK_SIZE, height: BLOCK_SIZE + 6 }, (g) => {
+    g.fillStyle(GOLD_DARK).fillRoundedRect(-h, -h + 6, BLOCK_SIZE, BLOCK_SIZE, 16);
+    g.fillStyle(GOLD).fillRoundedRect(-h, -h, BLOCK_SIZE, BLOCK_SIZE, 16);
+    g.fillStyle(STONE.base).fillRoundedRect(-h + 7, -h + 7, BLOCK_SIZE - 14, BLOCK_SIZE - 14, 11);
+    g.fillStyle(STONE.light).fillRoundedRect(-h + 7, -h + 7, BLOCK_SIZE - 14, 10, { tl: 11, tr: 11, bl: 0, br: 0 });
+  });
 }
