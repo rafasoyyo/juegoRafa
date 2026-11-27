@@ -1,9 +1,9 @@
 /**
- * Mundo 3, «La isla de los dinosaurios» (`docs/MUNDO-3.md`). BORRADOR: solo el nivel 1, con el reto A
- * («El camino de huellas») y un ambiente provisional de playa negra, ya con sus enemigos y sus pruebas de
- * la bandera, para poder probarlo en desarrollo. Los retos B, C y D (pasos 2 a 4), el huevo (paso 7), el
- * castillo (paso 8) y los 12 recorridos con su mapa (paso 9) llegan con sus cambios. Está detrás del
- * interruptor `mundo-3-isla`. TypeScript puro (sin Phaser).
+ * Mundo 3, «La isla de los dinosaurios» (`docs/MUNDO-3.md`). BORRADOR: el nivel 1, con el reto A
+ * («El camino de huellas»), y el 2, con el reto B («La puerta de la cueva»), con un ambiente provisional
+ * de playa negra y ya con sus enemigos y sus pruebas de la bandera, para poder probarlo en desarrollo. Los
+ * retos C y D (pasos 3 y 4), el huevo (paso 7), el castillo (paso 8) y los 12 recorridos con su mapa
+ * (paso 9) llegan con sus cambios. Está detrás del interruptor `mundo-3-isla`. TypeScript puro (sin Phaser).
  */
 
 import type { QuizKind } from '../../../learning/quiz';

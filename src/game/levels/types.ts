@@ -71,9 +71,10 @@ export interface SpikeData {
 /**
  * Mecánicas de reto del recorrido. Del río (`docs/MUNDO-2.md`): A, «Bloques que cuentan»; B, «El puente
  * de los números», y C, «La barca de diez». De la isla (`docs/MUNDO-3.md`): A, «El camino de huellas»
- * (`footprints`), con la geometría del puente.
+ * (`footprints`), con la geometría del puente, y B, «La puerta de la cueva» (`door`), con la de los bloques
+ * que cuentan (la losa está donde la compuerta).
  */
-export const CHALLENGE_KINDS = ['count', 'bridge', 'boat', 'footprints'] as const;
+export const CHALLENGE_KINDS = ['count', 'bridge', 'boat', 'footprints', 'door'] as const;
 export type ChallengeKind = (typeof CHALLENGE_KINDS)[number];
 export const QUANTITY_SHOWS = ['dots', 'tenframe'] as const;
 export type QuantityShowId = (typeof QUANTITY_SHOWS)[number];
@@ -120,11 +121,14 @@ export const BOAT_BLOCK_XS = [-4.5, -3, -1.5] as const;
 export const BOAT_DOCK = 6;
 export const BOAT_MARGIN = 1;
 
+/** La puerta de la cueva deja sitio tras la losa para el triceratops que la aparta, en baldosas. */
+export const DOOR_EXTRA = 2.5;
+
 /** Tramo que ocupa un reto, en baldosas. */
 export function challengeZone(c: { kind: ChallengeKind; x: number }): { from: number; to: number } {
   if (c.kind === 'boat') return { from: c.x - BOAT_DOCK, to: c.x + BOAT_LAKE + BOAT_MARGIN };
   if (c.kind === 'bridge' || c.kind === 'footprints') return { from: c.x - BRIDGE_MARGIN, to: c.x + BRIDGE_SECTIONS * BRIDGE_SECTION + BRIDGE_MARGIN };
-  return { from: c.x + CHALLENGE_ZONE.from, to: c.x + CHALLENGE_ZONE.to };
+  return { from: c.x + CHALLENGE_ZONE.from, to: c.x + CHALLENGE_ZONE.to + (c.kind === 'door' ? DOOR_EXTRA : 0) };
 }
 
 /** Un nivel tal como está en el JSON (en baldosas), con su nombre para los mensajes de error. */
