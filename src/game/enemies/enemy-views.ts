@@ -1,6 +1,26 @@
 import Phaser from 'phaser';
-import type { BeeSpawn, CrabSpawn, EnemySpawn, FrogSpawn, HedgehogSpawn } from './enemy-layout';
-import { beeBox, beePosition, crabBox, crabX, frogBox, frogState, hedgehogBox, hedgehogX, type Rect } from './enemy-motion';
+import { audio } from '../audio/audio-engine';
+import type { SfxName } from '../audio/sfx';
+import type { BeeSpawn, CrabSpawn, EnemySpawn, FrogSpawn, HedgehogSpawn, PteroSpawn, TrexSpawn, VolcanoSpawn } from './enemy-layout';
+import {
+  beeBox,
+  beePosition,
+  crabBox,
+  crabX,
+  frogBox,
+  frogState,
+  hedgehogBox,
+  hedgehogX,
+  pteroBox,
+  pteroPosition,
+  rockBox,
+  trexBox,
+  trexState,
+  VOLCANO_H,
+  volcanoBox,
+  volcanoState,
+  type Rect,
+} from './enemy-motion';
 
 /** Por debajo del zorro (10) y sus piernas (9), por encima de la bandera (5). */
 const ENEMY_DEPTH = 8;
@@ -13,8 +33,8 @@ export interface EnemyView {
   readonly spawn: EnemySpawn;
   /** Coloca el enemigo para el tiempo de escena `timeMs`. */
   update(timeMs: number): void;
-  /** Caja de choque actual en coordenadas del mundo. */
-  box(): Rect;
+  /** Cajas de choque actuales en coordenadas del mundo (varias en una fila de pterosaurios o en el volcán y su piedra). */
+  boxes(): readonly Rect[];
   /** Gesto breve al chocar con el zorro; no cambia su movimiento. */
   gesture(): void;
 }
@@ -29,7 +49,129 @@ export function createEnemyView(scene: Phaser.Scene, spawn: EnemySpawn, groundY:
       return frogView(scene, spawn, groundY);
     case 'crab':
       return crabView(scene, spawn, groundY);
+    case 'ptero':
+      return pteroView(scene, spawn, groundY);
+    case 'volcano':
+      return volcanoView(scene, spawn, groundY);
+    case 'trex':
+      return trexView(scene, spawn, groundY);
   }
+}
+
+/** Suena `name` y tiembla un poco la pantalla solo si `x` está a la vista (o casi). */
+function warn(scene: Phaser.Scene, x: number, name: SfxName, shake: number): void {
+  const view = scene.cameras.main.worldView;
+  if (x < view.x - 200 || x > view.right + 200) return;
+  audio.sfx(name);
+  if (shake > 0) scene.cameras.main.shake(shake, 0.003);
+}
+
+/**
+ * Fila de pterosaurios: cada uno aletea y sube y baja con la ola. Su sombra en el suelo crece y se
+ * oscurece al bajar: avisa antes de que esté a la altura del zorro.
+ */
+function pteroView(scene: Phaser.Scene, spawn: PteroSpawn, groundY: number): EnemyView {
+  const birds = Array.from({ length: spawn.of }, () => ({
+    shadow: scene.add.ellipse(0, groundY + 4, 70, 14, 0x000000, 0.2).setDepth(ENEMY_DEPTH - 1),
+    img: scene.add.image(0, 0, 'ptero').setDepth(ENEMY_DEPTH),
+    box: { x: 0, y: 0, w: 0, h: 0 } as Rect,
+  }));
+  const boxes = birds.map((b) => b.box);
+  let tilt = 0;
+  return {
+    spawn,
+    update(timeMs) {
+      birds.forEach((b, i) => {
+        const p = pteroPosition(timeMs, spawn, i);
+        b.img.setPosition(p.x, p.y);
+        const flap = 0.7 + 0.3 * Math.abs(Math.sin((timeMs / 1000) * 3 * Math.PI + i));
+        b.img.setScale(p.facing, flap);
+        b.img.setAngle(tilt);
+        // Cuanto más bajo, sombra más grande y más oscura.
+        const low = (p.y - 440) / 130;
+        b.shadow.setPosition(p.x, groundY + 4);
+        b.shadow.setScale(0.6 + 0.6 * low, 1);
+        b.shadow.setFillStyle(0x000000, 0.1 + 0.25 * low);
+        Object.assign(b.box, pteroBox(p.x, p.y));
+      });
+    },
+    boxes: () => boxes,
+    gesture() {
+      scene.tweens.addCounter({ from: 0, to: 1, duration: 300, onUpdate: (tw) => (tilt = 12 * Math.sin((tw.getValue() ?? 0) * Math.PI * 2)), onComplete: () => (tilt = 0) });
+    },
+  };
+}
+
+/**
+ * Volcancito: reposa humeando poco; antes de lanzar tiembla y echa más humo (el aviso) y la piedra sube
+ * y vuelve a caer en el cráter, siempre en la misma columna.
+ */
+function volcanoView(scene: Phaser.Scene, spawn: VolcanoSpawn, groundY: number): EnemyView {
+  const rock = scene.add.image(spawn.x, groundY - VOLCANO_H + 7, 'lava-rock').setOrigin(0.5, 1).setDepth(ENEMY_DEPTH - 1).setVisible(false);
+  const cone = scene.add.image(spawn.x, groundY + 4, 'volcano-small').setOrigin(0.5, 1).setDepth(ENEMY_DEPTH);
+  // Tres bocanadas de humo que se reciclan.
+  const puffs = Array.from({ length: 3 }, () => scene.add.circle(spawn.x, groundY - VOLCANO_H, 14, 0x9a96a0, 0).setDepth(ENEMY_DEPTH - 1));
+  const coneBox = volcanoBox(spawn.x, groundY);
+  const boxes: Rect[] = [coneBox, rockBox(spawn.x, 0, groundY)];
+  let last = '';
+  return {
+    spawn,
+    update(timeMs) {
+      const s = volcanoState(timeMs, spawn);
+      if (s.pose === 'shake' && last !== 'shake') warn(scene, spawn.x, 'rumble', 200);
+      last = s.pose;
+      cone.setX(spawn.x + (s.pose === 'shake' ? Math.sin(timeMs / 18) * 3 * s.shake : 0));
+      rock.setVisible(s.pose === 'air');
+      rock.setPosition(spawn.x, groundY - VOLCANO_H + 7 - s.rock);
+      rock.setAngle(s.rock * 0.6);
+      // Humo: sube despacio; más denso al temblar.
+      const dense = s.pose === 'shake' ? 0.75 : 0.3;
+      puffs.forEach((p, i) => {
+        const u = ((timeMs / 1400 + i / puffs.length) % 1 + 1) % 1;
+        p.setPosition(spawn.x + Math.sin(u * 6 + i) * 8, groundY - VOLCANO_H - u * 90);
+        p.setScale(0.6 + u);
+        p.setFillStyle(0x9a96a0, dense * (1 - u));
+      });
+      Object.assign(boxes[1]!, s.pose === 'air' ? rockBox(spawn.x, s.rock, groundY) : { x: spawn.x, y: groundY, w: 0, h: 0 });
+    },
+    boxes: () => boxes,
+    gesture() {
+      scene.tweens.killTweensOf(cone);
+      cone.setScale(1);
+      scene.tweens.add({ targets: cone, scaleY: 1.12, duration: 90, yoyo: true });
+    },
+  };
+}
+
+/**
+ * Tiranosaurio: el dibujo mira a la derecha; se voltea al ir a la izquierda y balancea el cuerpo al
+ * andar. Al pararse levanta la cabeza y ruge: suena un rugido grave que crece y el suelo tiembla un poco.
+ */
+function trexView(scene: Phaser.Scene, spawn: TrexSpawn, groundY: number): EnemyView {
+  const img = scene.add.image(spawn.minX, groundY + 4, 'trex').setOrigin(0.5, 1).setDepth(ENEMY_DEPTH);
+  const boxes: Rect[] = [trexBox(spawn.minX, groundY)];
+  let last = '';
+  return {
+    spawn,
+    update(timeMs) {
+      const s = trexState(timeMs, spawn);
+      if (s.pose === 'roar' && last === 'walk') warn(scene, s.x, 'roar', 450);
+      last = s.pose;
+      const step = s.pose === 'walk' ? Math.sin((timeMs / 1000) * 2 * Math.PI * 1.6) : 0;
+      img.setPosition(s.x, groundY + 4 - Math.abs(step) * 3);
+      img.setFlipX(s.facing < 0);
+      // Al rugir, levanta un poco la parte de delante.
+      const lift = s.pose === 'roar' ? Math.sin(Math.min(1, s.roar * 3) * Math.PI * 0.5) * (1 - Math.max(0, s.roar - 0.75) * 4) : 0;
+      img.setAngle(step * 1.5 - lift * 6 * s.facing);
+      Object.assign(boxes[0]!, trexBox(s.x, groundY));
+    },
+    boxes: () => boxes,
+    gesture() {
+      scene.tweens.killTweensOf(img);
+      img.setScale(1);
+      scene.tweens.add({ targets: img, scaleY: 1.06, duration: 100, yoyo: true });
+    },
+  };
 }
 
 /**
@@ -60,7 +202,7 @@ function frogView(scene: Phaser.Scene, spawn: FrogSpawn, groundY: number): Enemy
       img.setPosition(spawn.x, groundY + 2 - height);
       img.setScale(sx * pop, sy * pop);
     },
-    box: () => frogBox(spawn.x, height, groundY),
+    boxes: () => [frogBox(spawn.x, height, groundY)],
     gesture() {
       // Hincha la garganta: crece un 15 % y vuelve.
       scene.tweens.addCounter({ from: 0, to: 1, duration: 160, onUpdate: (tw) => (pop = 1 + 0.15 * Math.sin((tw.getValue() ?? 0) * Math.PI)), onComplete: () => (pop = 1) });
@@ -80,7 +222,7 @@ function crabView(scene: Phaser.Scene, spawn: CrabSpawn, groundY: number): Enemy
       img.setPosition(x, groundY + 2 - Math.abs(step) * 2);
       img.setAngle(step * 4);
     },
-    box: () => crabBox(x, groundY),
+    boxes: () => [crabBox(x, groundY)],
     gesture() {
       // Levanta las pinzas: se estira hacia arriba y vuelve.
       scene.tweens.killTweensOf(img);
@@ -104,7 +246,7 @@ function hedgehogView(scene: Phaser.Scene, spawn: HedgehogSpawn, groundY: number
       img.setAngle(step * 3);
       img.setFlipX(pos.facing < 0);
     },
-    box: () => hedgehogBox(x, groundY),
+    boxes: () => [hedgehogBox(x, groundY)],
     gesture() {
       // Eriza los pinchos: crece un 15 % y vuelve (150 ms).
       scene.tweens.killTweensOf(img);
@@ -134,7 +276,7 @@ function beeView(scene: Phaser.Scene, spawn: BeeSpawn): EnemyView {
       back.setScale(1, flap);
       front.setScale(1, flap);
     },
-    box: () => beeBox(pos.x, pos.y),
+    boxes: () => [beeBox(pos.x, pos.y)],
     gesture() {
       // Se tambalea: +15°, −15° y vuelve (300 ms).
       wobble?.stop();

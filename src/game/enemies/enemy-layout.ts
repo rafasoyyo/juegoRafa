@@ -10,9 +10,9 @@
 
 import { BLOCK_SIZE } from '../level-course';
 import { challengeZone, TILE, type WorldLevel } from '../levels/types';
-import { BEE_DRIFT, CRAB_PATROL_MAX } from './enemy-motion';
+import { BEE_DRIFT, CRAB_PATROL_MAX, PTERO_DRIFT, PTERO_SPACING, TREX_PATROL_MAX } from './enemy-motion';
 
-export type EnemyKind = 'hedgehog' | 'bee' | 'frog' | 'crab';
+export type EnemyKind = 'hedgehog' | 'bee' | 'frog' | 'crab' | 'ptero' | 'volcano' | 'trex';
 
 /** Zona a evitar: `x` es su centro y `width` su ancho, en px. */
 export interface ClearZone {
@@ -85,7 +85,36 @@ export interface CrabSpawn {
   phase: number;
 }
 
-export type EnemySpawn = HedgehogSpawn | BeeSpawn | FrogSpawn | CrabSpawn;
+/** Fila de `of` pterosaurios (2 o 3) centrada en `x`: cuenta como un enemigo y ocupa un tramo. */
+export interface PteroSpawn {
+  kind: 'ptero';
+  stretch: Stretch;
+  x: number;
+  phase: number;
+  of: number;
+  /** Distancia entre uno y otro y vaivén de la fila a cada lado: los de `enemy-motion` o menos si el tramo es corto. */
+  spacing: number;
+  drift: number;
+}
+
+/** Volcancito en `x`: su piedra sube y baja siempre en esa columna. */
+export interface VolcanoSpawn {
+  kind: 'volcano';
+  stretch: Stretch;
+  x: number;
+  phase: number;
+}
+
+/** Tiranosaurio: camina entre `minX` y `maxX` (su centro) y se para a rugir. */
+export interface TrexSpawn {
+  kind: 'trex';
+  stretch: Stretch;
+  minX: number;
+  maxX: number;
+  phase: number;
+}
+
+export type EnemySpawn = HedgehogSpawn | BeeSpawn | FrogSpawn | CrabSpawn | PteroSpawn | VolcanoSpawn | TrexSpawn;
 
 /** Enemigos de un mundo (los fija su definición en `src/game/worlds/`). */
 export interface EnemyRules {
@@ -115,8 +144,33 @@ export function kindsAt(rules: EnemyRules, level: number): EnemyKind[] {
 export const PATROL_MAX = 320;
 /** Lo que se descuenta del tramo para que el cuerpo del enemigo no salga de él (medio cuerpo por lado). */
 export const BODY_INSET = 50;
+/** El tiranosaurio es más largo: medio cuerpo (con la cabeza y la cola) por lado. */
+export const TREX_INSET = 140;
 
 export type Rng = () => number;
+
+/**
+ * Intervalo que puede ocupar el centro del enemigo (o de cualquiera de una fila de pterosaurios) en
+ * algún momento, y su medio cuerpo.
+ */
+export function spawnReach(e: EnemySpawn): { from: number; to: number; half: number } {
+  switch (e.kind) {
+    case 'hedgehog':
+    case 'crab':
+      return { from: e.minX, to: e.maxX, half: BODY_INSET };
+    case 'trex':
+      return { from: e.minX, to: e.maxX, half: TREX_INSET };
+    case 'frog':
+    case 'volcano':
+      return { from: e.x, to: e.x, half: BODY_INSET };
+    case 'bee':
+      return { from: e.x - BEE_DRIFT, to: e.x + BEE_DRIFT, half: BODY_INSET };
+    case 'ptero': {
+      const half = ((e.of - 1) * e.spacing) / 2 + e.drift;
+      return { from: e.x - half, to: e.x + half, half: BODY_INSET };
+    }
+  }
+}
 
 /** Enemigos del nivel `level`; fuera de rango, los del más cercano. */
 export function enemyCount(rules: EnemyRules, level: number): number {
@@ -165,10 +219,28 @@ export function layoutEnemies(rules: EnemyRules, level: number, course: Course, 
     const lo = stretch.from + BODY_INSET;
     const hi = stretch.to - BODY_INSET;
     if (kind === 'frog') return { kind, stretch, x: lo + rng() * (hi - lo), phase: rng() };
+    if (kind === 'volcano') return { kind, stretch, x: lo + rng() * (hi - lo), phase: rng() };
     if (kind === 'crab') {
       const width = Math.min(CRAB_PATROL_MAX, hi - lo);
       const minX = lo + rng() * (hi - lo - width);
       return { kind, stretch, minX, maxX: minX + width, phase: rng() };
+    }
+    if (kind === 'trex') {
+      const tlo = stretch.from + TREX_INSET;
+      const thi = Math.max(tlo, stretch.to - TREX_INSET);
+      const width = Math.min(TREX_PATROL_MAX, thi - tlo);
+      const minX = tlo + rng() * (thi - tlo - width);
+      return { kind, stretch, minX, maxX: minX + width, phase: rng() };
+    }
+    if (kind === 'ptero') {
+      // Fila de tres si cabe con su vaivén; si no, de dos, más juntos y con menos vaivén si hace falta.
+      const room = hi - lo;
+      const of = room >= 2 * PTERO_SPACING + 2 * PTERO_DRIFT && rng() < 0.5 ? 3 : 2;
+      const spacing = Math.min(PTERO_SPACING, room / (of - 1));
+      const drift = Math.max(0, Math.min(PTERO_DRIFT, (room - (of - 1) * spacing) / 2));
+      const half = ((of - 1) * spacing) / 2 + drift;
+      const x = lo + half + rng() * Math.max(0, room - 2 * half);
+      return { kind, stretch, x, phase: rng(), of, spacing, drift };
     }
     if (kind === 'bee') {
       // La abeja deriva a los lados: su punto central deja sitio para la deriva.
