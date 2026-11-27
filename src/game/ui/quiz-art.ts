@@ -41,7 +41,7 @@ function shapePoints(shape: ShapeId, s: number): Phaser.Math.Vector2[] | null {
   }
 }
 
-function fillShape(g: G, shape: ShapeId, s: number, dy = 0): void {
+export function fillShape(g: G, shape: ShapeId, s: number, dy = 0): void {
   const pts = shapePoints(shape, s);
   if (!pts) {
     g.fillCircle(0, dy, s / 2);

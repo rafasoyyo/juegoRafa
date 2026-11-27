@@ -84,7 +84,7 @@ y SHALL hacer que el candado tiemble.
 - **THEN** el candado tiembla y el mapa sigue abierto
 
 ### Requirement: Selector de mundos
-El mapa SHALL mostrar abajo un selector con 4 mundos en este orden: números (`123`), el río (con un marco de diez como icono), formas y letras (`Aa`), con el mundo mostrado resaltado. Tocar un mundo abierto SHALL abrir su mapa. Tocar un mundo con candado o que aún no existe SHALL hacer que su botón tiemble sin cambiar el mapa. Formas y letras SHALL mostrarse como mundos que aún no existen.
+El mapa SHALL mostrar abajo un selector con 4 mundos en este orden: números (`123`), el río (con un marco de diez como icono), formas y letras (`Aa`), con el mundo mostrado resaltado. Tocar un mundo abierto SHALL abrir su mapa. Tocar un mundo con candado o que aún no existe SHALL hacer que su botón tiemble sin cambiar el mapa. Letras SHALL mostrarse como un mundo que aún no existe; formas, también, mientras su interruptor de desarrollo esté apagado (ver «La isla en construcción»).
 
 #### Scenario: Orden del selector
 - **WHEN** se abre el mapa en un móvil horizontal de 844×390
@@ -345,3 +345,14 @@ Con la medalla del arcoíris ganada, el botón 123 del selector SHALL mostrarla 
 #### Scenario: Medalla del arcoíris en el selector
 - **WHEN** el niño ha ganado la medalla del arcoíris y abre cualquier mapa
 - **THEN** el botón 123 muestra la medalla en su esquina
+
+### Requirement: La isla en construcción
+El tercer botón del selector (formas) SHALL abrir el mundo 3, «La isla de los dinosaurios», solo cuando el interruptor de desarrollo `mundo-3-isla` está activo; en el juego publicado SHALL seguir temblando como un mundo que aún no existe. Con el interruptor activo, la isla SHALL abrirse con 7 años o más o al llegar al nivel 12 del río, y con candado en otro caso.
+
+#### Scenario: Juego publicado
+- **WHEN** un niño de 8 años toca el botón de formas en el juego publicado
+- **THEN** el botón tiembla y no se abre ningún mundo
+
+#### Scenario: En desarrollo con 6 años
+- **WHEN** en desarrollo un perfil de 6 años que no ha llegado al nivel 12 del río toca el botón de formas
+- **THEN** el botón tiembla con candado
