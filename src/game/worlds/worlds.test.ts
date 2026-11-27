@@ -82,6 +82,15 @@ describe('registro de mundos', () => {
     ]);
   });
 
+  it('borrador: el nivel 3 de la isla lleva 3 paseos en braquiosaurio y el primero es la demostración', () => {
+    const challenges = worldDef('isla').levels[2]!.challenges;
+    expect(challenges.map((c) => [c.kind, c.demo])).toEqual([
+      ['brachio', true],
+      ['brachio', false],
+      ['brachio', false],
+    ]);
+  });
+
   it('pruebas de la bandera de la isla: una propia en cada nivel y el repaso en el 12', () => {
     const isla = worldDef('isla');
     const kinds = Array.from({ length: 12 }, (_, i) => isla.quizFor(i + 1));
@@ -105,7 +114,7 @@ describe('registro de mundos', () => {
   it('los 12 tramos del río siguen la tabla de docs/MUNDO-2.md: retos, paisajes y novedades', () => {
     const rio = worldDef('rio');
     expect(rio.levelCount).toBe(12);
-    const K = { count: 'A', bridge: 'B', boat: 'C', footprints: '-', door: '-' } as const;
+    const K = { count: 'A', bridge: 'B', boat: 'C', footprints: '-', door: '-', brachio: '-' } as const;
     const mix = rio.levels.map((l) => l.challenges.map((c) => K[c.kind]).sort().join(''));
     expect(mix).toEqual(['AAA', 'AAA', 'AAA', 'AABB', 'BBBB', 'AABB', 'AACC', 'BBCC', 'ABBCC', 'BBBCC', 'ABBCC', 'ABBCC']);
     expect(rio.levels.map((l) => l.ambient)).toEqual([

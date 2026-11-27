@@ -96,7 +96,7 @@ const DINO_PARTS: Record<DinoId, Part[]> = {
 };
 
 /** Colores (cuerpo, sombra, barriga, adorno) de cada dinosaurio, en tonos de estilo documental. */
-const DINO_COLORS: Record<DinoId, [number, number, number, number]> = {
+export const DINO_COLORS: Record<DinoId, [number, number, number, number]> = {
   trex: [0x6f9a45, 0x4f7432, 0xe9dcae, 0x4f7432],
   brachio: [0x6c9fbf, 0x4c7b99, 0xdde9ef, 0x4c7b99],
   trici: [0xc98a43, 0x9c642b, 0xf1dfb6, 0x9c642b],

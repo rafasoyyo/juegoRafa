@@ -60,7 +60,8 @@ export type SfxName =
   | 'roar'
   | 'rumble'
   | 'stone'
-  | 'glyph';
+  | 'glyph'
+  | 'brachio';
 export interface SfxOptions {
   /**
    * Para `star`: 0, 1 o 2; cada una más aguda. Para `tick`: el número que se cuenta (1, 2…), cada uno más agudo.
@@ -234,6 +235,14 @@ export function recipe(name: SfxName, opts: SfxOptions = {}): Recipe {
       const f = hz(GLYPH_NOTES[i]!);
       return { layers: [tone(0, 0.3, 'triangle', f, 0.26, 0.006), tone(0, 0.18, 'sine', f * 2, 0.08, 0.006)] };
     }
+    case 'brachio':
+      // Llamada del braquiosaurio: un mugido grave y suave que sube y baja, sin susto.
+      return {
+        layers: [
+          { ...tone(0, 0.9, 'sine', [[0, 98], [0.35, 131], [0.85, 110]], 0.34, 0.12), vibrato: { rate: 5, depth: 3 } },
+          tone(0, 0.85, 'triangle', [[0, 196], [0.35, 262], [0.8, 220]], 0.1, 0.12),
+        ],
+      };
     case 'tick': {
       // «Tic» de contar: corto, más agudo con cada número (una escala que sube).
       const k = Math.max(0, Math.min(20, Math.round(opts.index ?? 1) - 1));
@@ -285,4 +294,5 @@ export const SFX_NAMES: readonly SfxName[] = [
   'rumble',
   'stone',
   'glyph',
+  'brachio',
 ];

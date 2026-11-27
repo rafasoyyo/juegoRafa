@@ -3,6 +3,7 @@ import { boatChallenge, type BoatChallenge } from '../../learning/challenges/boa
 import { bridgeChallenge, type BridgeChallenge } from '../../learning/challenges/bridge';
 import { countChallenge, countRange, type CountChallenge } from '../../learning/challenges/count-blocks';
 import { footprintsChallenge, type FootprintsChallenge } from '../../learning/challenges/footprints';
+import { brachioChallenge, type BrachioChallenge } from '../../learning/challenges/brachio';
 import { caveDoorChallenge, type CaveDoorChallenge } from '../../learning/challenges/cave-door';
 import { ageBand } from '../../learning/quiz/age';
 import { createRng } from '../../learning/quiz/rng';
@@ -12,6 +13,7 @@ import { BridgeChallengeView, bridgeHole } from '../challenges/bridge-challenge-
 import type { ChallengeView } from '../challenges/challenge-view';
 import { CountChallengeView } from '../challenges/count-challenge-view';
 import { FootprintsChallengeView } from '../challenges/footprints-challenge-view';
+import { BrachioChallengeView } from '../challenges/brachio-challenge-view';
 import { CaveDoorChallengeView } from '../challenges/cave-door-challenge-view';
 import { LaloFlyer } from '../challenges/lalo-flyer';
 import { COLORS, GAME_H } from '../config';
@@ -193,7 +195,7 @@ export class LevelScene extends Phaser.Scene {
   /** Retos del recorrido (mundo 2) y Lalo volando para ayudar en ellos. */
   private challenges: ChallengeView[] = [];
   /** Retos generados para esta partida (con la edad del perfil), antes de dibujarlos. */
-  private plannedChallenges: (CountChallenge | BridgeChallenge | BoatChallenge | FootprintsChallenge | CaveDoorChallenge)[] = [];
+  private plannedChallenges: (CountChallenge | BridgeChallenge | BoatChallenge | FootprintsChallenge | CaveDoorChallenge | BrachioChallenge)[] = [];
   /**
    * Agua que cortan los retos en el suelo (hueco del puente y lago de la barca), para el escenario. La
    * que hace rebotar en cada momento la da `water()`.
@@ -475,12 +477,13 @@ export class LevelScene extends Phaser.Scene {
       if (c.kind === 'footprints') return footprintsChallenge(band, rng);
       if (c.kind === 'door') return caveDoorChallenge(band, rng);
       if (c.kind === 'boat') return boatChallenge(band, rng);
+      if (c.kind === 'brachio') return brachioChallenge(band, rng);
       return countChallenge(band, rng, c, pool[next++ % pool.length]!);
     });
     this.waterHoles = data.flatMap((c, i) => {
       const plan = this.plannedChallenges[i]!;
       if (plan.kind === 'bridge' || plan.kind === 'footprints') return [bridgeHole(c.x, plan)];
-      if (plan.kind === 'boat') return [{ index: -1, x: c.x, width: BOAT_LAKE * TILE }];
+      if (plan.kind === 'boat' || plan.kind === 'brachio') return [{ index: -1, x: c.x, width: BOAT_LAKE * TILE }];
       return [];
     });
   }
@@ -507,6 +510,7 @@ export class LevelScene extends Phaser.Scene {
       if (plan.kind === 'footprints') return new FootprintsChallengeView(this, this.fox, c, plan, hooks);
       if (plan.kind === 'door') return new CaveDoorChallengeView(this, this.fox, c, plan, hooks);
       if (plan.kind === 'boat') return new BoatChallengeView(this, this.fox, c, plan, hooks);
+      if (plan.kind === 'brachio') return new BrachioChallengeView(this, this.fox, c, plan, hooks);
       return new CountChallengeView(this, this.fox, c, plan, hooks);
     });
   }
