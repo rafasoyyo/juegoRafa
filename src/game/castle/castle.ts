@@ -19,6 +19,17 @@ export interface CastleDef {
   ambient: AmbientId;
   /** Retos en orden: los del recorrido se juegan antes de la bandera y las preguntas, en ella. */
   steps: readonly CastleStep[];
+  /**
+   * Textura de la medalla (con `-l` detrás, la grande del final del castillo). Sin ella, la medalla de
+   * siempre (`medal`).
+   */
+  medal?: string;
+}
+
+/** Textura de la medalla de un castillo, pequeña o grande. */
+export function medalTexture(castle: CastleDef | undefined, large = false): string {
+  const key = castle?.medal ?? 'medal';
+  return large ? `${key}-l` : key;
 }
 
 /** Baldosas libres tras la salida y antes de la bandera (las de `validate.ts`). */

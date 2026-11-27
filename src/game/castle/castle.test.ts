@@ -7,7 +7,7 @@ import { toWorld } from '../levels/parse';
 import { challengeZone } from '../levels/types';
 import { validateLevel } from '../levels/validate';
 import { WORLDS } from '../worlds/registry';
-import { castleChallenges, castleCourse, castleQuizPools, type CastleDef } from './castle';
+import { castleChallenges, castleCourse, castleQuizPools, medalTexture, type CastleDef } from './castle';
 
 const ALL: CastleDef = {
   ambient: 'playa',
@@ -100,6 +100,16 @@ describe('castillos de cada mundo', () => {
     const castle = byId('rio');
     expect([...castleChallenges(castle)].sort()).toEqual(['boat', 'bridge', 'count']);
     expect(castleQuizPools(castle)).toHaveLength(2);
+  });
+
+  it('el de la isla, el nido del cráter: los retos A, B y C, dos preguntas de la isla y la medalla de la huella', () => {
+    const castle = byId('isla');
+    expect(castleChallenges(castle)).toEqual(['footprints', 'door', 'brachio']);
+    expect(castleQuizPools(castle)).toHaveLength(2);
+    for (const pool of castleQuizPools(castle)) expect(pool).not.toContain('island-review');
+    expect(medalTexture(castle)).toBe('medal-footprint');
+    expect(medalTexture(castle, true)).toBe('medal-footprint-l');
+    expect(medalTexture(byId('rio'))).toBe('medal');
   });
 
   it('el del arcoíris es un paseo por las nubes con 5 preguntas de pruebas distintas', () => {

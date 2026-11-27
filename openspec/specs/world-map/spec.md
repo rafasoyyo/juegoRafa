@@ -356,3 +356,10 @@ El tercer botón del selector (formas) SHALL abrir el mundo 3, «La isla de los 
 #### Scenario: En desarrollo con 6 años
 - **WHEN** en desarrollo un perfil de 6 años que no ha llegado al nivel 12 del río toca el botón de formas
 - **THEN** el botón tiembla con candado
+
+### Requirement: Medalla de la huella en el mapa
+El mapa de la isla SHALL mostrar el castillo como la parada siguiente a su último nivel y, ganada su medalla, la medalla de la huella junto a él y en la esquina del botón de formas del selector.
+
+#### Scenario: Medalla en el selector
+- **WHEN** un perfil gana el castillo de la isla y vuelve al mapa
+- **THEN** el botón de formas del selector lleva la medalla de la huella
