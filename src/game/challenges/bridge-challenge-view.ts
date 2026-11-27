@@ -8,6 +8,7 @@ import Phaser from 'phaser';
 import type { BridgeChallenge } from '../../learning/challenges/bridge';
 import { audio } from '../audio/audio-engine';
 import { COLORS } from '../config';
+import { bakeGraphics } from '../ui/bake';
 import { GROUND_TOP } from '../level-course';
 import { BRIDGE_BLOCK_XS, BRIDGE_SECTION, BRIDGE_SECTIONS, TILE, type ChallengeData, type WorldSpike } from '../levels/types';
 import { ChallengeView, CHALLENGE_DEPTH, type ChallengeHooks } from './challenge-view';
@@ -42,7 +43,7 @@ export class BridgeChallengeView extends ChallengeView {
   private readonly hole: WorldSpike;
   private readonly planks: (Phaser.GameObjects.Container | undefined)[] = [];
   private readonly signs: (Phaser.GameObjects.Container | undefined)[] = [];
-  private readonly slot: Phaser.GameObjects.Graphics;
+  private readonly slot: Phaser.GameObjects.Image;
   private gapSign: Phaser.GameObjects.Container;
   private counting = false;
 
@@ -64,6 +65,7 @@ export class BridgeChallengeView extends ChallengeView {
     water.fillStyle(WATER).fillRect(this.hole.x, GROUND_TOP + 26, s, 720 - GROUND_TOP);
     water.fillStyle(FOAM);
     for (let x = this.hole.x + 14; x < this.hole.x + s - 20; x += 46) water.fillRoundedRect(x, GROUND_TOP + 30, 26, 6, 3);
+    bakeGraphics(scene, water, { x: left, y: GROUND_TOP + 26, width: BRIDGE_SECTIONS * s, height: 720 - GROUND_TOP - 26 });
 
     // Tramos firmes.
     for (let i = 0; i < BRIDGE_SECTIONS; i++) this.planks.push(i === challenge.gap ? undefined : this.plank(left + i * s + s / 2));
@@ -75,14 +77,16 @@ export class BridgeChallengeView extends ChallengeView {
       rope.fillStyle(WOOD).fillCircle(px, ROPE_Y - 20, 12);
     }
     rope.lineStyle(5, ROPE).lineBetween(left, ROPE_Y, left + BRIDGE_SECTIONS * s, ROPE_Y);
+    bakeGraphics(scene, rope, { x: left - 12, y: ROPE_Y - 32, width: BRIDGE_SECTIONS * s + 24, height: GROUND_TOP - ROPE_Y + 32 });
     for (let i = 0; i < BRIDGE_SECTIONS; i++) {
       this.signs.push(i !== challenge.gap && challenge.shown[i] ? this.sign(left + i * s + s / 2, i) : undefined);
     }
     this.gapSign = this.sign(this.hole.x + s / 2, -1);
 
     // Hueco: el sitio de la tabla, marcado con un contorno que parpadea en la pista.
-    this.slot = scene.add.graphics().setDepth(CHALLENGE_DEPTH);
-    this.slot.lineStyle(5, COLORS.white, 0.9).strokeRoundedRect(this.hole.x + 6, GROUND_TOP - 4, s - 12, DECK_H, 12);
+    const slot = scene.add.graphics().setDepth(CHALLENGE_DEPTH);
+    slot.lineStyle(5, COLORS.white, 0.9).strokeRoundedRect(this.hole.x + 6, GROUND_TOP - 4, s - 12, DECK_H, 12);
+    this.slot = bakeGraphics(scene, slot, { x: this.hole.x + 3, y: GROUND_TOP - 7, width: s - 6, height: DECK_H + 6 })[0]!;
 
     const holeLeft = this.hole.x;
     this.addBlocks(
@@ -103,7 +107,9 @@ export class BridgeChallengeView extends ChallengeView {
     g.fillStyle(WOOD).fillRoundedRect(-s / 2 + 2, -4, s - 4, DECK_H - 8, 12);
     g.fillStyle(WOOD_DARK);
     for (let x = -s / 2 + 2 + s / 4; x < s / 2 - 10; x += s / 4) g.fillRect(x, 0, 4, DECK_H - 16);
-    return this.scene.add.container(cx, GROUND_TOP, [g]).setDepth(CHALLENGE_DEPTH);
+    const plank = this.scene.add.container(cx, GROUND_TOP, [g]).setDepth(CHALLENGE_DEPTH);
+    bakeGraphics(this.scene, g, { x: -s / 2 + 2, y: -4, width: s - 4, height: DECK_H });
+    return plank;
   }
 
   /** Cartel colgado de la cuerda en `cx` con la cara del tramo `i`; con −1, el hueco: vacío y punteado. */
@@ -119,7 +125,11 @@ export class BridgeChallengeView extends ChallengeView {
       g.fillStyle(COLORS.white, 0.35).fillRoundedRect(-SIGN_W / 2, -SIGN_H / 2, SIGN_W, SIGN_H, 18);
       g.lineStyle(5, COLORS.white).strokeRoundedRect(-SIGN_W / 2, -SIGN_H / 2, SIGN_W, SIGN_H, 18);
     }
-    return this.scene.add.container(cx, SIGN_Y, parts).setDepth(CHALLENGE_DEPTH);
+    const sign = this.scene.add.container(cx, SIGN_Y, parts).setDepth(CHALLENGE_DEPTH);
+    // De la cuerda (arriba) a la sombra del cartel (abajo), con el grosor de las líneas.
+    const top = ROPE_Y - SIGN_Y - 2;
+    bakeGraphics(this.scene, g, { x: -SIGN_W / 2 - 3, y: top, width: SIGN_W + 6, height: SIGN_H / 2 + 9 - top });
+    return sign;
   }
 
   protected override demoTriggerX(): number {
