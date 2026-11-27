@@ -275,3 +275,22 @@ describe('puertas de la cueva (isla)', () => {
     expectError(withDoor(54, (l) => l.spikes.push({ x: 60, width: 1 })), 'challenges[0]', /spikes/);
   });
 });
+
+describe('paseos en braquiosaurio (isla)', () => {
+  const withBrachio = (x: number, extra: (l: LevelData) => void = () => undefined): LevelData =>
+    withChanges((l) => {
+      l.length = 100;
+      l.blocks.push({ x: 82, row: 'low' });
+      l.challenges.push({ kind: 'brachio', x, show: 'dots', reverse: false, demo: false });
+      extra(l);
+    });
+
+  it('ocupan lo mismo que una barca: con su orilla y su río sobre suelo llano y libre es válido', () => {
+    expect(validateLevel(withBrachio(60))).toEqual([]);
+    expect(challengeZone({ kind: 'brachio', x: 60 })).toEqual(challengeZone({ kind: 'boat', x: 60 }));
+  });
+
+  it('un escalón en la orilla falla', () => {
+    expectError(withBrachio(60, (l) => l.steps.push({ x: 55, width: 2, height: 1 })), 'challenges[0]', /steps\[/);
+  });
+});
