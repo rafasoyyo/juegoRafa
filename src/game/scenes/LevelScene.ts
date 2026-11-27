@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { boatChallenge, type BoatChallenge } from '../../learning/challenges/boat';
 import { bridgeChallenge, type BridgeChallenge } from '../../learning/challenges/bridge';
 import { countChallenge, countRange, type CountChallenge } from '../../learning/challenges/count-blocks';
+import { footprintsChallenge, type FootprintsChallenge } from '../../learning/challenges/footprints';
 import { ageBand } from '../../learning/quiz/age';
 import { createRng } from '../../learning/quiz/rng';
 import { audio } from '../audio/audio-engine';
@@ -9,6 +10,7 @@ import { BoatChallengeView } from '../challenges/boat-challenge-view';
 import { BridgeChallengeView, bridgeHole } from '../challenges/bridge-challenge-view';
 import type { ChallengeView } from '../challenges/challenge-view';
 import { CountChallengeView } from '../challenges/count-challenge-view';
+import { FootprintsChallengeView } from '../challenges/footprints-challenge-view';
 import { LaloFlyer } from '../challenges/lalo-flyer';
 import { COLORS, GAME_H } from '../config';
 import { castleCourse } from '../castle/castle';
@@ -189,7 +191,7 @@ export class LevelScene extends Phaser.Scene {
   /** Retos del recorrido (mundo 2) y Lalo volando para ayudar en ellos. */
   private challenges: ChallengeView[] = [];
   /** Retos generados para esta partida (con la edad del perfil), antes de dibujarlos. */
-  private plannedChallenges: (CountChallenge | BridgeChallenge | BoatChallenge)[] = [];
+  private plannedChallenges: (CountChallenge | BridgeChallenge | BoatChallenge | FootprintsChallenge)[] = [];
   /**
    * Agua que cortan los retos en el suelo (hueco del puente y lago de la barca), para el escenario. La
    * que hace rebotar en cada momento la da `water()`.
@@ -468,12 +470,13 @@ export class LevelScene extends Phaser.Scene {
     let next = 0;
     this.plannedChallenges = data.map((c) => {
       if (c.kind === 'bridge') return bridgeChallenge(band, rng);
+      if (c.kind === 'footprints') return footprintsChallenge(band, rng);
       if (c.kind === 'boat') return boatChallenge(band, rng);
       return countChallenge(band, rng, c, pool[next++ % pool.length]!);
     });
     this.waterHoles = data.flatMap((c, i) => {
       const plan = this.plannedChallenges[i]!;
-      if (plan.kind === 'bridge') return [bridgeHole(c.x, plan)];
+      if (plan.kind === 'bridge' || plan.kind === 'footprints') return [bridgeHole(c.x, plan)];
       if (plan.kind === 'boat') return [{ index: -1, x: c.x, width: BOAT_LAKE * TILE }];
       return [];
     });
@@ -498,6 +501,7 @@ export class LevelScene extends Phaser.Scene {
     this.challenges = data.map((c, i) => {
       const plan = this.plannedChallenges[i]!;
       if (plan.kind === 'bridge') return new BridgeChallengeView(this, this.fox, c, plan, hooks);
+      if (plan.kind === 'footprints') return new FootprintsChallengeView(this, this.fox, c, plan, hooks);
       if (plan.kind === 'boat') return new BoatChallengeView(this, this.fox, c, plan, hooks);
       return new CountChallengeView(this, this.fox, c, plan, hooks);
     });
