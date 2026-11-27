@@ -11,6 +11,7 @@ import { bounds, EMBLEM_UNITS, type BrachioChallenge, type Poly } from '../../le
 import { audio } from '../audio/audio-engine';
 import { GROUND_TOP } from '../level-course';
 import { BOAT_BLOCK_XS, BOAT_LAKE, BOAT_LENGTH, TILE, type ChallengeData, type WorldSpike } from '../levels/types';
+import { bakeGraphics, bakePiece } from '../ui/bake';
 import { DINO_COLORS } from '../ui/quiz/island-art';
 import { ChallengeView, CHALLENGE_DEPTH as DEPTH, type ChallengeHooks } from './challenge-view';
 import { drawStoneBlock, GLYPH_HEX, GOLD, STONE } from './glyphs';
@@ -43,14 +44,16 @@ const DOT = 0xfff2a8;
 
 type BrachioState = 'waiting' | 'filling' | 'ready' | 'sailing' | 'docked';
 
-/** Pieza de `unit` px por unidad, con el centro de su caja en (0, 0), y el surco debajo. */
-function drawPoly(scene: Phaser.Scene, poly: Poly, unit: number, color: number, groove = true): Phaser.GameObjects.Graphics {
+/** Pieza de `unit` px por unidad, con el centro de su caja en (0, 0), y el surco debajo. Horneada. */
+function drawPoly(scene: Phaser.Scene, poly: Poly, unit: number, color: number, groove = true): Phaser.GameObjects.Image {
   const b = bounds(poly);
   const pts = poly.map(([x, y]) => new Phaser.Math.Vector2((x - b.x - b.w / 2) * unit, (y - b.y - b.h / 2) * unit));
   const g = scene.add.graphics();
   if (groove) g.fillStyle(STONE.groove, 0.7).fillPoints(pts.map((p) => new Phaser.Math.Vector2(p.x, p.y + 3)), true);
   g.fillStyle(color).fillPoints(pts, true);
-  return g;
+  const w = b.w * unit;
+  const h = b.h * unit;
+  return bakePiece(scene, g, { x: -w / 2 - 2, y: -h / 2 - 2, width: w + 4, height: h + 7 });
 }
 
 /** ¿Está (x, y) dentro del polígono? */
@@ -71,7 +74,7 @@ export class BrachioChallengeView extends ChallengeView {
   private readonly neck: Phaser.GameObjects.Container;
   private readonly neckDx: number;
   private readonly deck: Phaser.GameObjects.Zone;
-  private readonly glyphs: Phaser.GameObjects.Graphics[] = [];
+  private readonly glyphs: Phaser.GameObjects.Image[] = [];
   private readonly rim: Phaser.GameObjects.Graphics;
   private state: BrachioState = 'waiting';
   private busy = false;
@@ -97,6 +100,7 @@ export class BrachioChallengeView extends ChallengeView {
       water.fillStyle(BANK).fillRoundedRect(px - 12, GROUND_TOP - 4, 24, 120, 8);
       water.fillStyle(STONE.dark).fillRoundedRect(px - 12, GROUND_TOP - 4, 24, 10, 5);
     }
+    bakeGraphics(scene, water, { x: this.lakeLeft - 12, y: GROUND_TOP - 4, width: this.lakeW + 24, height: 720 - GROUND_TOP + 4 });
     this.steam();
 
     this.dino = scene.add.container(this.lakeLeft + this.boatW / 2, GROUND_TOP).setDepth(DEPTH);
@@ -112,6 +116,7 @@ export class BrachioChallengeView extends ChallengeView {
     front.fillStyle(WATER, 0.88).fillRect(this.lakeLeft + 12, GROUND_TOP + 58, this.lakeW - 24, 720 - GROUND_TOP);
     front.fillStyle(STEAM, 0.5);
     for (let x = this.lakeLeft + 40; x < this.lakeLeft + this.lakeW - 40; x += 90) front.fillRoundedRect(x, GROUND_TOP + 64 + ((x / 90) % 2) * 16, 34, 6, 3);
+    bakeGraphics(scene, front, { x: this.lakeLeft + 12, y: GROUND_TOP + 58, width: this.lakeW - 24, height: 720 - GROUND_TOP - 58 });
 
     // El lomo es firme: el zorro anda por él como por el suelo.
     this.deck = scene.add.zone(this.dino.x, GROUND_TOP + 20, this.boatW, 40);
@@ -147,7 +152,7 @@ export class BrachioChallengeView extends ChallengeView {
   }
 
   /** Cuerpo (con la luz en el lomo y la sombra en la tripa), patas y cola. Sin contornos. */
-  private drawBody(): Phaser.GameObjects.Graphics {
+  private drawBody(): Phaser.GameObjects.Image {
     const w = this.boatW;
     const g = this.scene.add.graphics();
     g.fillStyle(SKIN_DARK);
@@ -165,11 +170,11 @@ export class BrachioChallengeView extends ChallengeView {
     for (const lx of [-w * 0.24, w * 0.32]) {
       g.fillStyle(SKIN).fillRoundedRect(lx, 40, 36, 80, 12);
     }
-    return g;
+    return bakePiece(this.scene, g, { x: -w / 2 - 82, y: -42, width: w + 124, height: 166 });
   }
 
   /** Cuello largo hacia arriba y a la derecha y la cabeza, que mira adelante (por detrás del cuerpo). */
-  private drawNeck(): Phaser.GameObjects.Graphics {
+  private drawNeck(): Phaser.GameObjects.Image {
     const g = this.scene.add.graphics();
     const curve = new Phaser.Curves.QuadraticBezier(new Phaser.Math.Vector2(0, 0), new Phaser.Math.Vector2(10, -170), new Phaser.Math.Vector2(80, -230));
     const n = 26;
@@ -193,7 +198,7 @@ export class BrachioChallengeView extends ChallengeView {
     g.fillStyle(EYE).fillCircle(96, -236, 6);
     g.fillStyle(INK).fillEllipse(96, -236, 3, 9);
     g.fillStyle(SKIN_DARK).fillCircle(134, -234, 2.5);
-    return g;
+    return bakePiece(this.scene, g, { x: -40, y: -262, width: 190, height: 306 });
   }
 
   /** Posición, dentro del braquiosaurio, de un punto del emblema (en unidades). */
@@ -224,7 +229,8 @@ export class BrachioChallengeView extends ChallengeView {
       const p = this.emblemPoint(x, y);
       return new Phaser.Math.Vector2(p.x, p.y);
     }), true);
-    const out: Phaser.GameObjects.GameObject[] = [g];
+    const top = TABLET_Y - TABLET / 2 - 6;
+    const out: Phaser.GameObjects.GameObject[] = [bakePiece(this.scene, g, { x: TABLET_X - TABLET / 2 - 6, y: top, width: TABLET + 12, height: 4 - top })];
     this.challenge.pieces.forEach((piece, i) => {
       if (i === this.challenge.missing) return;
       const b = bounds(piece);

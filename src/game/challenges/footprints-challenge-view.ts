@@ -11,6 +11,7 @@ import type { FootprintsChallenge } from '../../learning/challenges/footprints';
 import { audio } from '../audio/audio-engine';
 import { GROUND_TOP } from '../level-course';
 import { BRIDGE_BLOCK_XS, BRIDGE_SECTION, BRIDGE_SECTIONS, TILE, type ChallengeData, type WorldSpike } from '../levels/types';
+import { bakeGraphics, bakePiece } from '../ui/bake';
 import { bridgeHole } from './bridge-challenge-view';
 import { ChallengeView, CHALLENGE_DEPTH, type ChallengeHooks } from './challenge-view';
 import { drawGlyph, drawStoneBlock, GOLD, lightGlyph, STONE, type GlyphView } from './glyphs';
@@ -60,8 +61,8 @@ export class FootprintsChallengeView extends ChallengeView {
   private readonly slabs: (Phaser.GameObjects.Image | undefined)[] = [];
   private readonly tablets: Phaser.GameObjects.Container[] = [];
   private readonly glyphs: (GlyphView | undefined)[] = [];
-  private readonly slot: Phaser.GameObjects.Graphics;
-  private readonly gapMark: Phaser.GameObjects.Graphics;
+  private readonly slot: Phaser.GameObjects.Image;
+  private readonly gapMark: Phaser.GameObjects.Image;
   private playing = false;
 
   constructor(
@@ -86,16 +87,20 @@ export class FootprintsChallengeView extends ChallengeView {
     lava.fillStyle(LAVA).fillRect(this.hole.x, GROUND_TOP + 24, s, 720 - GROUND_TOP);
     lava.fillStyle(LAVA_HOT);
     for (let x = this.hole.x + 20; x < this.hole.x + s - 30; x += 56) lava.fillCircle(x + 12, GROUND_TOP + 40 + ((x / 56) % 2) * 16, 9);
+    bakeGraphics(scene, lava, { x: left, y: GROUND_TOP + 24, width, height: 720 - GROUND_TOP - 24 });
 
     // Losas firmes.
     for (let i = 0; i < BRIDGE_SECTIONS; i++) this.slabs.push(i === challenge.gap ? undefined : this.slab(left + i * s + s / 2, GROUND_TOP));
 
     // Dintel sobre dos columnas en los extremos del puente, y una tablilla grabada sobre cada losa.
-    const ruin = scene.add.graphics().setDepth(CHALLENGE_DEPTH - 1);
+    // Columnas, dintel y ganchos horneados por separado: juntos serían una imagen grande casi vacía.
     for (const px of [left, left + width]) {
-      ruin.fillStyle(STONE.dark).fillRoundedRect(px - 18, BEAM_Y, 36, GROUND_TOP - BEAM_Y + 6, 8);
-      ruin.fillStyle(STONE.base).fillRoundedRect(px - 14, BEAM_Y, 24, GROUND_TOP - BEAM_Y, 8);
+      const column = scene.add.graphics().setDepth(CHALLENGE_DEPTH - 1);
+      column.fillStyle(STONE.dark).fillRoundedRect(px - 18, BEAM_Y, 36, GROUND_TOP - BEAM_Y + 6, 8);
+      column.fillStyle(STONE.base).fillRoundedRect(px - 14, BEAM_Y, 24, GROUND_TOP - BEAM_Y, 8);
+      bakePiece(scene, column, { x: px - 18, y: BEAM_Y, width: 36, height: GROUND_TOP - BEAM_Y + 6 });
     }
+    const ruin = scene.add.graphics().setDepth(CHALLENGE_DEPTH - 1);
     ruin.fillStyle(STONE.dark).fillRoundedRect(left - 30, BEAM_Y + 6, width + 60, BEAM_H, 10);
     ruin.fillStyle(STONE.base).fillRoundedRect(left - 30, BEAM_Y, width + 60, BEAM_H, 10);
     ruin.fillStyle(GOLD).fillRect(left - 20, BEAM_Y + BEAM_H / 2 - 2, width + 40, 4);
@@ -109,13 +114,18 @@ export class FootprintsChallengeView extends ChallengeView {
       this.tablets.push(tablet);
       this.glyphs.push(glyph);
     }
+    bakeGraphics(scene, ruin, { x: left - 30, y: BEAM_Y, width: width + 60, height: BEAM_H + 16 });
     // La tablilla del hueco, vacía y con un marco que parpadea en la pista.
-    this.gapMark = scene.add.graphics().setDepth(CHALLENGE_DEPTH);
-    this.gapMark.lineStyle(5, GOLD).strokeRoundedRect(this.hole.x + s / 2 - TABLET / 2 + 10, TABLET_Y - TABLET / 2 + 10, TABLET - 20, TABLET - 20, 10);
+    const gapMark = scene.add.graphics().setDepth(CHALLENGE_DEPTH);
+    const markX = this.hole.x + s / 2 - TABLET / 2 + 10;
+    const markY = TABLET_Y - TABLET / 2 + 10;
+    gapMark.lineStyle(5, GOLD).strokeRoundedRect(markX, markY, TABLET - 20, TABLET - 20, 10);
+    this.gapMark = bakePiece(scene, gapMark, { x: markX - 4, y: markY - 4, width: TABLET - 12, height: TABLET - 12 });
 
     // El sitio de la losa que falta.
-    this.slot = scene.add.graphics().setDepth(CHALLENGE_DEPTH);
-    this.slot.lineStyle(5, LAVA_HOT, 0.9).strokeRoundedRect(this.hole.x + 6, GROUND_TOP - 4, s - 12, DECK_H, 12);
+    const slot = scene.add.graphics().setDepth(CHALLENGE_DEPTH);
+    slot.lineStyle(5, LAVA_HOT, 0.9).strokeRoundedRect(this.hole.x + 6, GROUND_TOP - 4, s - 12, DECK_H, 12);
+    this.slot = bakePiece(scene, slot, { x: this.hole.x + 2, y: GROUND_TOP - 8, width: s - 4, height: DECK_H + 8 });
 
     const holeLeft = this.hole.x;
     this.addBlockViews(

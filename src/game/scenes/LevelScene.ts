@@ -622,6 +622,7 @@ export class LevelScene extends Phaser.Scene {
     g.fillStyle(LAVA.mid).fillRoundedRect(z.x - 6, top, z.width + 12, 20, 10);
     g.fillStyle(LAVA.light);
     for (let x = z.x + 10; x < z.x + z.width - 24; x += 40) g.fillRoundedRect(x, top + 6 + ((x - z.x) % 80 === 10 ? 0 : 8), 22, 5, 2.5);
+    bakeGraphics(this, g, { x: z.x - 6, y: top, width: z.width + 12, height: PIT_DEPTH - PIT_TIP + 12 });
     const glow = this.add.rectangle(z.x + z.width / 2, top - 8, z.width + 12, 22, LAVA.light, 0.28).setDepth(4);
     this.tweens.add({ targets: glow, alpha: 0.06, duration: 1300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     const bubble = this.add.circle(z.x + z.width * 0.35, top + 4, 7, LAVA.light).setDepth(4).setScale(0);
