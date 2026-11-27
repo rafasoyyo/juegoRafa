@@ -38,7 +38,7 @@ export function markSeen(state: GameState, scene: StoryScene, world: string): vo
  * Si al abrir el mapa del mundo toca su final: el mundo lo tiene, todos sus niveles están hechos o
  * pendientes y el perfil aún no lo ha visto.
  */
-export function shouldPlayFinale(state: GameState, world: WorldShape & { finale?: boolean }): boolean {
+export function shouldPlayFinale(state: GameState, world: WorldShape & { finale?: string }): boolean {
   if (!world.finale || state.seen.has(storyKey('final', world.id))) return false;
   const progress = state.worlds.get(world.id);
   if (!progress) return false;

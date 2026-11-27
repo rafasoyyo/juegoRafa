@@ -21,6 +21,25 @@ import {
   hedgehogBox,
   hedgehogX,
   overlaps,
+  PTERO_BOTTOM_Y,
+  PTERO_DRIFT,
+  PTERO_PERIOD_MS,
+  PTERO_SPACING,
+  PTERO_TOP_Y,
+  pteroBox,
+  pteroPosition,
+  ROCK_RISE,
+  rockBox,
+  TREX_BOX,
+  TREX_ROAR_MS,
+  TREX_SPEED,
+  TREX_WALK_MS,
+  trexBox,
+  trexState,
+  VOLCANO_PERIOD_MS,
+  VOLCANO_SHAKE_MS,
+  volcanoBox,
+  volcanoState,
   type Rect,
 } from './enemy-motion';
 
@@ -169,5 +188,85 @@ describe('cangrejo', () => {
     const b = crabBox(200, GROUND);
     expect(b.y + b.h).toBe(GROUND);
     expect(b.w).toBe(CRAB_BOX.w);
+  });
+});
+
+describe('enemigos de la isla', () => {
+  const JUMP_APEX = 193; // altura de los pies en lo alto de un salto normal (v² / 2g)
+
+  it('pterosaurio: abajo choca con el zorro de pie y arriba deja pasar por debajo', () => {
+    const fila = { x: 1000, phase: 0, of: 3, spacing: PTERO_SPACING, drift: 0 };
+    let hits = 0;
+    let clear = 0;
+    for (let t = 0; t < PTERO_PERIOD_MS; t += 20) {
+      const p = pteroPosition(t, fila, 1);
+      const box = pteroBox(p.x, p.y);
+      const fox = { ...FOX_STANDING, x: p.x - 28 };
+      if (overlaps(box, fox)) hits++;
+      else if (box.y + box.h < FOX_STANDING.y - 10) clear++;
+    }
+    expect(hits).toBeGreaterThan(0);
+    expect(clear).toBeGreaterThan(PTERO_PERIOD_MS / 20 / 4);
+  });
+
+  it('pterosaurio: los de una fila van a la misma altura, separados y en ola', () => {
+    const fila = { x: 1000, phase: 0.3, of: 3, spacing: PTERO_SPACING, drift: PTERO_DRIFT };
+    const ys = new Set<number>();
+    for (let t = 0; t < 2 * PTERO_PERIOD_MS; t += 50) {
+      const [a, b, c] = [0, 1, 2].map((i) => pteroPosition(t, fila, i));
+      expect(b!.x - a!.x).toBeCloseTo(PTERO_SPACING);
+      expect(c!.x - b!.x).toBeCloseTo(PTERO_SPACING);
+      for (const p of [a!, b!, c!]) {
+        expect(p.y).toBeGreaterThanOrEqual(PTERO_TOP_Y - 0.001);
+        expect(p.y).toBeLessThanOrEqual(PTERO_BOTTOM_Y + 0.001);
+      }
+      ys.add(Math.round(a!.y - b!.y));
+    }
+    expect(ys.size).toBeGreaterThan(1);
+  });
+
+  it('volcancito: tiembla antes de lanzar y la piedra nunca sale de su columna ni del cráter al caer', () => {
+    let sawShakeBeforeAir = false;
+    let prev = volcanoState(0, { phase: 0 }).pose;
+    for (let t = 0; t <= 2 * VOLCANO_PERIOD_MS; t += 10) {
+      const s = volcanoState(t, { phase: 0 });
+      if (s.pose === 'air' && prev !== 'air') expect(prev).toBe('shake');
+      if (prev === 'shake' && s.pose === 'air') sawShakeBeforeAir = true;
+      prev = s.pose;
+      expect(s.rock).toBeGreaterThanOrEqual(0);
+      expect(s.rock).toBeLessThanOrEqual(ROCK_RISE + 0.001);
+      const box = rockBox(1000, s.rock, GROUND);
+      expect(box.x + box.w / 2).toBe(1000);
+    }
+    expect(sawShakeBeforeAir).toBe(true);
+    expect(VOLCANO_SHAKE_MS).toBeGreaterThanOrEqual(600);
+  });
+
+  it('volcancito: con la piedra arriba se puede saltar; el cono solo es bajo', () => {
+    // En lo alto del vuelo la piedra está muy por encima de la cabeza del zorro en lo alto de un salto.
+    const top = rockBox(1000, ROCK_RISE, GROUND);
+    expect(top.y + top.h).toBeLessThan(GROUND - JUMP_APEX - 87 - 40);
+    expect(volcanoBox(1000, GROUND).h).toBeLessThan(JUMP_APEX - 60);
+    // La mitad del vuelo, al menos, la piedra va por encima de un zorro que salta.
+    let high = 0;
+    for (let u = 0; u < 1; u += 0.01) if (rockBox(1000, 4 * ROCK_RISE * u * (1 - u), GROUND).y + 42 < GROUND - JUMP_APEX - 87) high++;
+    expect(high).toBeGreaterThanOrEqual(40);
+  });
+
+  it('tiranosaurio: camina, se para a rugir y mientras ruge está quieto; se le salta por encima', () => {
+    const t = { minX: 1000, maxX: 1360, phase: 0 };
+    const s1 = trexState(TREX_WALK_MS + 100, t);
+    const s2 = trexState(TREX_WALK_MS + TREX_ROAR_MS - 100, t);
+    expect(s1.pose).toBe('roar');
+    expect(s2.x).toBe(s1.x);
+    expect(trexState(100, t).pose).toBe('walk');
+    for (let ms = 0; ms < 40000; ms += 37) {
+      const s = trexState(ms, t);
+      expect(s.x).toBeGreaterThanOrEqual(t.minX - 0.001);
+      expect(s.x).toBeLessThanOrEqual(t.maxX + 0.001);
+    }
+    expect(TREX_BOX.h).toBeLessThan(JUMP_APEX - 60);
+    expect(trexBox(1000, GROUND).y).toBe(GROUND - TREX_BOX.h);
+    expect(TREX_SPEED).toBeLessThan(HEDGEHOG_SPEED);
   });
 });

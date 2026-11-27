@@ -45,9 +45,16 @@ export class BootScene extends Phaser.Scene {
     svg('bee-wing', 'bee-wing', 40, 30);
     svg('frog', 'frog', 84, 66);
     svg('crab', 'crab', 96, 62);
+    svg('trex', 'trex', 280, 136);
+    svg('ptero', 'ptero', 150, 45);
+    svg('volcano-small', 'volcano-small', 120, 66);
+    svg('lava-rock', 'lava-rock', 56);
     svg('castle', 'castle', 260, 240);
+    svg('nest', 'nest', 260, 240);
     svg('medal', 'medal', 48);
     svg('medal-l', 'medal', 200);
+    svg('medal-footprint', 'medal-footprint', 48);
+    svg('medal-footprint-l', 'medal-footprint', 200);
     svg('snail', 'snail', 100, 76);
     svg('star', 'star', 40);
     svg('star-empty', 'star-empty', 40);
@@ -95,6 +102,7 @@ export class BootScene extends Phaser.Scene {
     this.makeSparkle();
     this.makeDecor();
     this.makeTravelDecor();
+    this.makeIslandDecor();
     this.makeSpikes();
 
     // Espera a Baloo 2 para que los dígitos no se dibujen con la fuente de reserva.
@@ -353,6 +361,133 @@ export class BootScene extends Phaser.Scene {
       g.strokePath();
     });
     g.generateTexture('decor-rainbow', 1200, 624);
+    g.destroy();
+  }
+
+  /**
+   * Decoración de la isla (`docs/MUNDO-3.md`, «Dirección de arte»): helecho, columna en ruinas, columnas de
+   * basalto, cristales, montículo de géiser con su vapor, el gran volcán del fondo, brasa y luciérnaga.
+   * Planos, sin contorno y en tonos apagados de expedición.
+   */
+  private makeIslandDecor(): void {
+    const g = this.make.graphics({}, false);
+    const v = (x: number, y: number): Phaser.Math.Vector2 => new Phaser.Math.Vector2(x, y);
+
+    // Helecho: frondas que salen de la base y se curvan hacia fuera, cada una con foliolos a los dos lados.
+    g.clear();
+    const fronds: [number, number, number][] = [
+      [-2.3, 100, 0x2f6b48],
+      [-1.95, 130, 0x3d7d55],
+      [-1.57, 150, 0x4f8f62],
+      [-1.2, 130, 0x3d7d55],
+      [-0.85, 100, 0x2f6b48],
+    ];
+    for (const [a, len, color] of fronds) {
+      g.fillStyle(color);
+      const side = Math.sign(a + Math.PI / 2);
+      for (let k = 0; k <= 14; k++) {
+        const t = k / 14;
+        const bend = a + side * t * 0.35;
+        const p = v(110 + Math.cos(bend) * len * t, 182 + Math.sin(bend) * len * t);
+        const dir = v(Math.cos(bend), Math.sin(bend));
+        const nrm = v(-dir.y, dir.x);
+        const leaf = 26 * (1 - t * 0.75);
+        for (const s of [1, -1]) {
+          const tip = v(p.x + nrm.x * leaf * s + dir.x * leaf * 0.5, p.y + nrm.y * leaf * s + dir.y * leaf * 0.5);
+          g.fillPoints([v(p.x - dir.x * 5, p.y - dir.y * 5), tip, v(p.x + dir.x * 5, p.y + dir.y * 5)], true);
+        }
+        g.fillCircle(p.x, p.y, 2.5);
+      }
+    }
+    g.generateTexture('decor-fern', 220, 190);
+
+    // Columna en ruinas: basa, fuste con estrías y la parte de arriba rota, con un grabado ámbar apagado.
+    g.clear();
+    g.fillStyle(0x6f6a60).fillRoundedRect(10, 232, 120, 26, 6);
+    g.fillStyle(0x8a8578).fillRoundedRect(14, 228, 112, 14, 6);
+    g.fillStyle(0x7c776c).fillPoints([v(30, 232), v(30, 60), v(52, 44), v(70, 58), v(88, 30), v(110, 52), v(110, 232)], true);
+    g.fillStyle(0x9d988a).fillPoints([v(30, 232), v(30, 60), v(52, 44), v(60, 50), v(60, 232)], true);
+    g.fillStyle(0x6f6a60);
+    for (const x of [44, 72, 96]) g.fillRect(x, 70, 4, 156);
+    g.fillStyle(0xc99a4a, 0.75).fillCircle(70, 140, 13);
+    g.fillStyle(0x7c776c).fillCircle(70, 140, 7);
+    g.generateTexture('decor-column', 140, 260);
+
+    // Columnas de basalto: prismas de alturas distintas con la cara de arriba hexagonal y más clara.
+    g.clear();
+    const prisms: [number, number][] = [
+      [30, 120],
+      [72, 60],
+      [114, 96],
+      [156, 30],
+      [196, 140],
+    ];
+    for (const [cx, top] of prisms) {
+      g.fillStyle(0x2f2d35).fillRect(cx - 20, top + 6, 20, 260 - top);
+      g.fillStyle(0x3f3c46).fillRect(cx, top + 6, 20, 260 - top);
+      g.fillStyle(0x56525e).fillPoints([v(cx - 20, top + 6), v(cx - 10, top), v(cx + 10, top), v(cx + 20, top + 6), v(cx + 10, top + 12), v(cx - 10, top + 12)], true);
+    }
+    g.generateTexture('decor-basalt', 220, 260);
+
+    // Cristales: prismas alargados de punta afilada, violetas y uno ámbar.
+    g.clear();
+    const crystals: [number, number, number, number, number][] = [
+      [40, 120, -0.35, 0x7a5ab8, 0xa98ae0],
+      [118, 110, 0.3, 0x7a5ab8, 0xa98ae0],
+      [80, 180, 0, 0x8a6ad0, 0xc0a6f4],
+      [56, 80, -0.7, 0xc98a2a, 0xf3b23a],
+    ];
+    for (const [x, len, a, dark, light] of crystals) {
+      const dx = Math.sin(a);
+      const dy = -Math.cos(a);
+      const nx = -dy * 16;
+      const ny = dx * 16;
+      const base = v(x, 196);
+      const shoulder = v(x + dx * (len - 30), 196 + dy * (len - 30));
+      const tip = v(x + dx * len, 196 + dy * len);
+      g.fillStyle(dark).fillPoints([v(base.x - nx, base.y - ny), v(shoulder.x - nx, shoulder.y - ny), tip, v(shoulder.x + nx, shoulder.y + ny), v(base.x + nx, base.y + ny)], true);
+      g.fillStyle(light).fillPoints([v(base.x - nx, base.y - ny), v(shoulder.x - nx, shoulder.y - ny), tip, shoulder, base], true);
+    }
+    g.fillStyle(0x3a3258).fillEllipse(80, 196, 150, 18);
+    g.generateTexture('decor-crystal', 160, 206);
+
+    // Géiser: montículo de barro con su boca y una columna de vapor de bolas blancas.
+    g.clear();
+    g.fillStyle(0xffffff, 0.55);
+    for (const [x, y, r] of [
+      [60, 40, 26],
+      [44, 70, 22],
+      [72, 92, 24],
+      [56, 124, 20],
+      [64, 150, 16],
+    ] as const) {
+      g.fillCircle(x, y, r);
+    }
+    g.fillStyle(0x6a5a46).fillEllipse(60, 186, 116, 34);
+    g.fillStyle(0x7e6c54).fillEllipse(60, 178, 90, 22);
+    g.fillStyle(0x3e332b).fillEllipse(60, 176, 34, 10);
+    g.generateTexture('decor-geyser', 120, 204);
+
+    // El gran volcán: cono de basalto con la cara de sombra, el borde del cráter que brilla y regueros de lava.
+    g.clear();
+    g.fillStyle(0x4a4552).fillPoints([v(0, 460), v(360, 70), v(540, 70), v(900, 460)], true);
+    g.fillStyle(0x3a3642).fillPoints([v(450, 70), v(540, 70), v(900, 460), v(560, 460)], true);
+    g.fillStyle(0xff9b4a).fillEllipse(450, 72, 190, 22);
+    g.fillStyle(0xffc27a).fillEllipse(450, 70, 120, 10);
+    g.fillStyle(0xe8642c, 0.85);
+    g.fillPoints([v(400, 76), v(416, 76), v(380, 200), v(392, 260), v(370, 262), v(362, 200)], true);
+    g.fillPoints([v(500, 76), v(514, 76), v(540, 170), v(530, 230), v(518, 226), v(524, 170)], true);
+    g.generateTexture('decor-volcano', 900, 460);
+
+    // Brasa y luciérnaga: puntos de luz con halo.
+    g.clear();
+    g.fillStyle(0xff9b4a, 0.4).fillCircle(8, 8, 8);
+    g.fillStyle(0xffc27a).fillCircle(8, 8, 4);
+    g.generateTexture('decor-ember', 16, 16);
+    g.clear();
+    g.fillStyle(0xe8f59a, 0.35).fillCircle(10, 10, 10);
+    g.fillStyle(0xf4ffc0).fillCircle(10, 10, 4);
+    g.generateTexture('decor-firefly', 20, 20);
     g.destroy();
   }
 

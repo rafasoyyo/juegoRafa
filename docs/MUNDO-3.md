@@ -14,7 +14,7 @@ La barca del río deja a Rufo en una isla con un volcán. En la playa encuentra 
 
 El mundo 2 acaba en la desembocadura, y la barca lleva a Rufo a la playa donde empieza este mundo (ver [MUNDO-2.md](MUNDO-2.md)).
 
-## El hilo de los cuatro mundos
+## El hilo de los mundos
 
 Cada mundo termina abriendo el siguiente con algo que el niño ve, sin leer nada.
 
@@ -22,8 +22,8 @@ Cada mundo termina abriendo el siguiente con algo que el niño ve, sin leer nada
 |---|---|---|---|
 | 1. El camino del arcoíris | El arcoíris crece al fondo | Rufo sale de la madriguera | La nube llueve sobre la montaña y nace el manantial |
 | 2. El río de los números | El río baja hacia el mar | El manantial | La desembocadura y la barca |
-| 3. La isla de los dinosaurios | El huevo se pinta mancha a mancha | La barca llega a la playa negra y aparece el huevo | El huevo se abre en el nido y el bebé lleva a Rufo a una cueva con dibujos que se vuelven letras |
-| 4. Letras | Por decidir | La cueva de los dibujos | — |
+| 3. La isla de los dinosaurios | El huevo se pinta mancha a mancha | La barca llega a la playa negra y aparece el huevo | El huevo se abre en el nido y el bebé lleva a Rufo a una cueva con pinturas, la entrada a la prehistoria |
+| 4. La prehistoria | Por decidir | La cueva de las pinturas | — |
 
 ## El mapa
 
@@ -167,7 +167,7 @@ Se ve una vez por perfil, al volver al mapa después de terminar el nivel 12 por
 
 1. Se pinta la última mancha del huevo y Rufo sube al cráter con él.
 2. La mamá dinosaurio se asoma, el huevo se mueve, se abre y sale un bebé que da un saltito.
-3. El bebé tira de Rufo hacia una cueva con dibujos en las paredes que se van convirtiendo en letras. Así se abre el mundo 4.
+3. El bebé tira de Rufo hacia una cueva con pinturas en las paredes: manos, bisontes y una hoguera. Así se abre el mundo 4, la prehistoria.
 
 Mientras el mundo 4 no exista, el final se queda en el paso 2.
 
@@ -196,7 +196,7 @@ Cada mundo guarda su propio progreso.
 ## Fuera de este mundo
 
 - La voz grabada: todo se explica con dibujos, animación y Lalo.
-- El mundo 4 y la cueva de las letras, más allá del final.
+- El mundo 4 (la prehistoria) y la cueva de las pinturas, más allá del final.
 - La dificultad adaptativa invisible y el repaso de lo fallado. El «Repaso de la isla» del nivel 12 usa pruebas fijas.
 - Cambiar los mundos 1 y 2.
 - Sincronizar el progreso fuera del dispositivo.
@@ -210,16 +210,16 @@ Ciclo de cada cambio: `openspec-explore` (si hay dudas) → `openspec-propose` �
 | Paso | Cambio | Qué hace | Specs y código | Verificación | Estado |
 |---|---|---|---|---|---|
 | 0 | Documento de rumbo (no es un cambio de OpenSpec) | Este archivo y las líneas de estado en `docs/PROPUESTA.md`, `AGENTS.md` y `openspec/config.yaml`. | — | Revisión del texto. A partir de aquí, cada `openspec-propose` enlaza a este documento. | Hecho |
-| 1 | `reto-huellas` | El reto A: generador de series con semilla y franja de edad en `src/learning/` y el hueco de piedra sobre la pieza del puente. | `course-challenges`, `level-courses` | Pruebas del generador (AB, ABB, AAB, ABC, series que crecen). Nivel 1 de la isla en borrador a 844×390. | |
+| 1 | `reto-huellas` | El reto A: generador de series con semilla y franja de edad en `src/learning/` y el hueco de piedra sobre la pieza del puente. | `course-challenges`, `level-courses` | Pruebas del generador (AB, ABB, AAB, ABC, series que crecen). Nivel 1 de la isla en borrador a 844×390. | Hecho |
 | ★ | Prueba con niños del reto A | ¿Un niño de 4 años ve qué forma sigue sin que se lo expliquen? ¿Le ayuda la melodía de la serie? Lo que salga se ajusta antes de construir B, C y D. | — | Notas de la prueba. | |
-| 2 | `reto-puerta-formas` | El reto B: generador de formas y giros, la pieza que vuela y gira hasta encajar y el triceratops que aparta la roca. | `course-challenges`, `level-courses` | Pruebas del generador por franja (sin giro, un cuarto de vuelta, volteo). Revisión a 844×390. | |
-| 3 | `reto-braquiosaurio` | El reto C: siluetas con una pieza que falta y el braquiosaurio como plataforma que se mueve, reutilizando la barca. | `course-challenges`, `platformer-level`, `game-audio` | Pruebas de las siluetas (2, 3 y 4 piezas). Rufo no puede caerse del lomo en marcha. | |
-| 4 | `reto-geiser` | El reto D: piedras que aguantan o se hunden despacio según su forma, el rebote suave a la piedra anterior y el registro de «a la primera». | `course-challenges`, `platformer-level` (piedras que se hunden) | Pruebas del generador por franja. Siempre hay un camino de piedras buenas que se puede saltar. Revisión a 844×390. | |
-| 5 | `enemigos-de-la-isla` (en paralelo con 1 a 4) | Tiranosaurio, pterosaurios y volcancito. Solo toca `level-enemies`. | `level-enemies` (movimiento, aviso y colocación lejos de los retos); arte en `public/assets/svg` en el estilo A de la hoja de diseño, anotado en `LICENSES.md` | Pruebas de movimiento y de colocación. La piedra del volcancito nunca sale de su columna. El aviso del tiranosaurio y del volcancito se ve venir, comprobado en el móvil. | |
-| 6 | `pruebas-bandera-isla` (en paralelo con 1 a 4) | Once tipos de prueba nuevos (niveles 1 a 11), el repaso del nivel 12 y el catálogo del mundo 3, partiendo de `shapes.ts`, `series.ts` y `mirror.ts`. TypeScript puro con el mismo contrato (`Question`, `AgeBand`, `Rng`). | `flag-quiz` | Pruebas deterministas con semilla para cada prueba y franja. Cada prueba revisada en la pantalla de la bandera a 844×390. | |
-| 7 | `huevo-del-mapa` | Las 12 manchas del huevo, la animación de la mancha nueva y el final con la eclosión. La cueva de las letras se añade cuando exista el mundo 4. | `world-map`, `mascot-guide`, `child-profile` | Función pura de manchas según el progreso (0, una pendiente, 12). El final se ve una vez y se salta tocando. | |
-| 8 | `castillo-del-volcan` | El nido del cráter con la pieza `world-castle` y la medalla de la huella. | `world-castle`, `world-map` | Siempre da medalla y se ve en el selector. | |
-| 9 | `mundo-3-isla` | El contenido: 12 ambientes (con la lava como dibujo de los fosos), 12 recorridos en JSON con sus retos, el mapa del volcán, el desbloqueo por edad (7 años) y la apertura del mundo (se quita el interruptor de desarrollo). | `level-courses`, `world-map`, `visual-style` (paleta y ambiente del mundo 3, bloques de piedra, grabados) | `validate.ts` y `duration.ts` pasan con los 12 niveles. Perfil de 6 años: la isla tiembla con candado hasta acabar el río. Recorrido completo del mundo en el móvil. | |
+| 2 | `reto-puerta-formas` | El reto B: generador de formas y giros, la pieza que vuela y gira hasta encajar y el triceratops que aparta la roca. | `course-challenges`, `level-courses` | Pruebas del generador por franja (sin giro, un cuarto de vuelta, volteo). Revisión a 844×390. | Hecho (en el borrador, nivel 2 de la isla) |
+| 3 | `reto-braquiosaurio` | El reto C: siluetas con una pieza que falta y el braquiosaurio como plataforma que se mueve, reutilizando la barca. | `course-challenges`, `platformer-level`, `game-audio` | Pruebas de las siluetas (2, 3 y 4 piezas). Rufo no puede caerse del lomo en marcha. | Hecho (en el borrador, nivel 3 de la isla) |
+| 4 | `reto-geiser` | El reto D: piedras que aguantan o se hunden despacio según su forma, el rebote suave a la piedra anterior y el registro de «a la primera». | `course-challenges`, `platformer-level` (piedras que se hunden) | Pruebas del generador por franja. Siempre hay un camino de piedras buenas que se puede saltar. Revisión a 844×390. | Hecho (en el borrador, nivel 4 de la isla) |
+| 5 | `enemigos-de-la-isla` (en paralelo con 1 a 4) | Tiranosaurio, pterosaurios y volcancito. Solo toca `level-enemies`. | `level-enemies` (movimiento, aviso y colocación lejos de los retos); arte en `public/assets/svg` en el estilo A de la hoja de diseño, anotado en `LICENSES.md` | Pruebas de movimiento y de colocación. La piedra del volcancito nunca sale de su columna. El aviso del tiranosaurio y del volcancito se ve venir, comprobado en el móvil. | Hecho (se dan de alta en la isla al juntarse con el paso 1) |
+| 6 | `pruebas-bandera-isla` (en paralelo con 1 a 4) | Once tipos de prueba nuevos (niveles 1 a 11), el repaso del nivel 12 y el catálogo del mundo 3, partiendo de `shapes.ts`, `series.ts` y `mirror.ts`. TypeScript puro con el mismo contrato (`Question`, `AgeBand`, `Rng`). | `flag-quiz` | Pruebas deterministas con semilla para cada prueba y franja. Cada prueba revisada en la pantalla de la bandera a 844×390. | Hecho (se dan de alta en la isla al juntarse con el paso 1) |
+| 7 | `huevo-del-mapa` | Las 12 manchas del huevo, la animación de la mancha nueva y el final con la eclosión. La cueva de las pinturas se añade cuando exista el mundo 4. | `world-map`, `mascot-guide`, `child-profile` | Función pura de manchas según el progreso (0, una pendiente, 12). El final se ve una vez y se salta tocando. | Hecho (en el borrador, el final sale al terminar el último nivel que haya) |
+| 8 | `castillo-del-volcan` | El nido del cráter con la pieza `world-castle` y la medalla de la huella. | `world-castle`, `world-map` | Siempre da medalla y se ve en el selector. | Hecho (en el borrador, se abre al terminar el último nivel que haya) |
+| 9 | `mundo-3-isla` | El contenido: 12 ambientes (con la lava como dibujo de los fosos), 12 recorridos en JSON con sus retos, el mapa del volcán, el desbloqueo por edad (7 años) y la apertura del mundo (se quita el interruptor de desarrollo). | `level-courses`, `world-map`, `visual-style` (paleta y ambiente del mundo 3, bloques de piedra, grabados) | `validate.ts` y `duration.ts` pasan con los 12 niveles. Perfil de 6 años: la isla tiembla con candado hasta acabar el río. Recorrido completo del mundo en el móvil. | Hecho (sin el prólogo de la barca, la mamá al fondo del nivel 12, las hojas como plataformas ni los escalones de basalto) |
 | 10 | Prueba final con niños y ajustes | Rangos por edad, ritmo de los enemigos y si el tiranosaurio o el volcán dan miedo a los de 3 y 4 años. Los ajustes de valores no necesitan un cambio formal. Después, actualizar el estado en README y AGENTS.md y desplegar cuando se decida. | — | Notas de la prueba. | |
 
 Para empezar cada paso: `openspec-propose` con el nombre del cambio y una frase como «sigue docs/MUNDO-3.md, sección A. El camino de huellas», para que la propuesta parta de lo aprobado y no lo vuelva a inventar.

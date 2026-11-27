@@ -10,6 +10,24 @@ import { COLORS } from '../../config';
 import { halfPrims, type Prim } from '../../../learning/quiz/pictures';
 import type { Dir, LandmarkId, ObjectId, PictureId, QuizKind, Visual, WeightId } from '../../../learning/quiz/types';
 import { digits, fitImage } from '../round-button';
+import {
+  drawBones,
+  drawDino,
+  drawEgg,
+  drawFigure,
+  drawFossil,
+  drawIslandPictogram,
+  drawMix,
+  drawMosaic,
+  drawNeck,
+  drawNest,
+  drawPiece,
+  drawPlace,
+  drawRamp,
+  drawSolid,
+  drawThing,
+  drawTile,
+} from './island-art';
 
 type G = Phaser.GameObjects.Graphics;
 type C = Phaser.GameObjects.Container;
@@ -244,6 +262,36 @@ export function drawExtraVisual(scene: Phaser.Scene, v: Visual, w: number, h: nu
       return drawSock(scene, v.color, v.pattern, s * 0.85);
     case 'pairs':
       return drawPairs(scene, v.odd, Math.min(w, h * 1.6) * 0.9);
+    case 'dino':
+      return drawDino(scene, v.dino, v.shadow, v.flip, s * 0.95);
+    case 'thing':
+      return drawThing(scene, v.thing, s * 0.8);
+    case 'piece':
+      return drawPiece(scene, v.piece, v.angle, v.mirrored, v.color, s * 0.72);
+    case 'place':
+      return drawPlace(scene, v.rel, v.thing, v.holder, w * 0.95, h * 0.95);
+    case 'egg':
+      return drawEgg(scene, v.color, v.pattern, s * 0.8 * v.scale);
+    case 'nest':
+      return drawNest(scene, v.eggs, Math.min(w, h * 1.3) * 0.8);
+    case 'fossil':
+      return drawFossil(scene, v.rows, v.cols, v.hole, w * 0.9, h * 0.9);
+    case 'bones':
+      return drawBones(scene, v.cells, s * 0.9);
+    case 'mosaic':
+      return drawMosaic(scene, v.rows, v.cols, v.tiles, w * 0.9, h * 0.9);
+    case 'tile':
+      return drawTile(scene, v.color, s * 0.6);
+    case 'neck':
+      return drawNeck(scene, v.length, s);
+    case 'solid':
+      return drawSolid(scene, v.solid, s * 0.8);
+    case 'ramp':
+      return drawRamp(scene, v.ask, w, h);
+    case 'figure':
+      return drawFigure(scene, v.figure, s * 0.9);
+    case 'mix':
+      return drawMix(scene, v.shapes, w * 0.95, h * 0.9);
     default:
       return null;
   }
@@ -400,6 +448,7 @@ export function drawNewPictogram(scene: Phaser.Scene, kind: QuizKind, size: numb
       parts.push(digits(scene, -r * 0.32, r * 0.08, '3', r * 0.5), digits(scene, r * 0.3, 0, '8', r * 0.85, '#FF6B5E'));
       break;
     default:
+      parts.push(...(drawIslandPictogram(scene, kind, size) ?? []));
       break;
   }
   return parts;

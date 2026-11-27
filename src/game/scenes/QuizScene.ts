@@ -23,7 +23,7 @@ import { VIEW_KINDS, type DrawResult, type QuizView, type ViewState } from '../u
 import { digits, fitImage, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
 import { addSky } from '../ui/widgets';
-import { castleQuizPools } from '../castle/castle';
+import { castleQuizPools, castleTexture } from '../castle/castle';
 import { clampLevel, worldDef } from '../worlds/registry';
 import type { WorldDef, WorldId } from '../worlds/types';
 import {
@@ -75,14 +75,22 @@ interface Area {
   bottom: number;
 }
 
+/** Tamaño normal de cada casilla de la fila del modelo (serie, alias…). */
+const ROW_SIZE = 120;
+
 /** Zonas de la pantalla (en y lógica) para el modelo y para las respuestas de cada tipo de prueba. */
-const AREAS: Record<QuizKind, { prompt: Area; options: Area; cell: [number, number] }> = {
+/**
+ * `rowSize` es el tamaño máximo de cada casilla de la fila del modelo (por defecto, `ROW_SIZE`), y
+ * `plainSky`, que la prueba va con el cielo neutro y no con el del nivel (lo delataría).
+ * Una entrada por tipo (spec `world-isolation`).
+ */
+const AREAS: Record<QuizKind, { prompt: Area; options: Area; cell: [number, number]; rowSize?: number; plainSky?: boolean }> = {
   count: { prompt: { top: 140, bottom: 450 }, options: { top: 480, bottom: 690 }, cell: [160, 160] },
   compare: { prompt: { top: 130, bottom: 250 }, options: { top: 270, bottom: 690 }, cell: [330, 380] },
   series: { prompt: { top: 170, bottom: 420 }, options: { top: 470, bottom: 690 }, cell: [160, 160] },
   shapes: { prompt: { top: 130, bottom: 290 }, options: { top: 310, bottom: 700 }, cell: [150, 150] },
-  'name-letters': { prompt: { top: 150, bottom: 380 }, options: { top: 420, bottom: 700 }, cell: [140, 140] },
-  recall: { prompt: { top: 130, bottom: 400 }, options: { top: 430, bottom: 690 }, cell: [190, 190] },
+  'name-letters': { prompt: { top: 150, bottom: 380 }, options: { top: 420, bottom: 700 }, cell: [140, 140], rowSize: 110 },
+  recall: { prompt: { top: 130, bottom: 400 }, options: { top: 430, bottom: 690 }, cell: [190, 190], plainSky: true },
   // Las pruebas nuevas las coloca su vista (`ui/quiz/`); estas zonas solo valen si la vista no da la suya.
   share: { prompt: { top: 150, bottom: 400 }, options: { top: 450, bottom: 690 }, cell: [160, 200] },
   order: { prompt: { top: 150, bottom: 400 }, options: { top: 450, bottom: 690 }, cell: [140, 150] },
@@ -104,6 +112,20 @@ const AREAS: Record<QuizKind, { prompt: Area; options: Area; cell: [number, numb
   boats: { prompt: { top: 150, bottom: 400 }, options: { top: 450, bottom: 690 }, cell: [140, 150] },
   // El repaso dibuja cada pregunta con las zonas de su propio tipo.
   'river-review': { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 700 }, cell: [150, 150] },
+  // Isla de los dinosaurios.
+  'dino-shadows': { prompt: { top: 140, bottom: 420 }, options: { top: 450, bottom: 700 }, cell: [220, 210] },
+  'shape-things': { prompt: { top: 140, bottom: 420 }, options: { top: 450, bottom: 700 }, cell: [190, 190] },
+  'stego-plates': { prompt: { top: 140, bottom: 420 }, options: { top: 450, bottom: 700 }, cell: [190, 190] },
+  'turned-shapes': { prompt: { top: 140, bottom: 420 }, options: { top: 450, bottom: 700 }, cell: [190, 190] },
+  nest: { prompt: { top: 140, bottom: 420 }, options: { top: 450, bottom: 700 }, cell: [250, 220] },
+  'odd-egg': { prompt: { top: 140, bottom: 430 }, options: { top: 460, bottom: 700 }, cell: [160, 190] },
+  fossil: { prompt: { top: 140, bottom: 430 }, options: { top: 460, bottom: 700 }, cell: [200, 200] },
+  'skin-mosaic': { prompt: { top: 140, bottom: 430 }, options: { top: 460, bottom: 700 }, cell: [170, 170] },
+  'growing-neck': { prompt: { top: 150, bottom: 440 }, options: { top: 470, bottom: 700 }, cell: [170, 200], rowSize: 150 },
+  'roll-or-not': { prompt: { top: 140, bottom: 420 }, options: { top: 450, bottom: 700 }, cell: [190, 190] },
+  'hidden-triangles': { prompt: { top: 140, bottom: 440 }, options: { top: 470, bottom: 700 }, cell: [160, 160] },
+  // El repaso dibuja cada pregunta con las zonas de su propio tipo.
+  'island-review': { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 700 }, cell: [150, 150] },
 };
 
 interface OptionView {
@@ -228,9 +250,9 @@ export class QuizScene extends Phaser.Scene {
     this.usefulW = Math.min(width - 64, MAX_USEFUL_W);
     this.left = (width - this.usefulW) / 2;
 
-    // El cielo del nivel, salvo en «¿Te acuerdas?»: ahí delataría el paisaje que se pregunta.
+    // El cielo del nivel, salvo en las pruebas con `plainSky` («¿Te acuerdas?»): ahí delataría el paisaje que se pregunta.
     const sky = skyKey(this.recap.ambient as AmbientId);
-    addSky(this, this.kind !== 'recall' && this.textures.exists(sky) ? sky : 'sky');
+    addSky(this, !AREAS[this.kind].plainSky && this.textures.exists(sky) ? sky : 'sky');
     this.lalo = drawLalo(this, 32, 24, { question: true });
     // Tocar a Lalo abre el bocadillo del adulto (la demostración se repite desde ahí).
     const laloImg = this.lalo.list[0] as Phaser.GameObjects.Image;
@@ -239,7 +261,7 @@ export class QuizScene extends Phaser.Scene {
     });
 
     // En el castillo, el castillo en lugar del dibujo de la prueba.
-    if (this.castle) fitImage(this.add.image(width - 32 - 48, 24 + 48, 'castle'), 96);
+    if (this.castle) fitImage(this.add.image(width - 32 - 48, 24 + 48, castleTexture(this.def.castle)), 96);
     else drawQuizPictogram(this, this.kind, 96).setPosition(width - 32 - 48, 24 + 48);
 
     this.layer = this.add.container(0, 0);
@@ -375,19 +397,23 @@ export class QuizScene extends Phaser.Scene {
         break;
       }
       case 'model': {
-        const size = Math.min(h, 160);
+        // Las formas van en un marco pequeño; los dibujos (dinosaurios, cosas, escenas) en uno mayor.
+        const v = p.items[0]!;
+        const size = Math.min(h, v.type === 'shape' ? 160 : 240);
         const frame = this.add.graphics();
         frame.fillStyle(COLORS.shadow).fillRoundedRect(cx - size / 2, cy - size / 2 + 8, size, size, 30);
         frame.fillStyle(COLORS.white).fillRoundedRect(cx - size / 2, cy - size / 2, size, size, 30);
         frame.lineStyle(6, COLORS.coral).strokeRoundedRect(cx - size / 2, cy - size / 2, size, size, 30);
-        const v = p.items[0] as Extract<Visual, { type: 'shape' }>;
-        const shape = drawShape(this, v.shape, v.color, size * 0.62, v.angle).setPosition(cx, cy);
-        this.layer.add([frame, shape]);
+        const model = v.type === 'shape' ? drawShape(this, v.shape, v.color, size * 0.62, v.angle) : this.drawVisual(v, size * 0.86, size * 0.86);
+        this.layer.add([frame, model.setPosition(cx, cy)]);
         this.modelFrame = { x: cx, y: cy, size };
         break;
       }
       case 'row':
         this.drawRow(q, cx, cy, h);
+        break;
+      case 'picture':
+        this.layer.add(this.drawVisual(p.items[0]!, Math.min(this.usefulW * 0.5, 440), h).setPosition(cx, cy));
         break;
       case 'think': {
         const g = this.add.graphics();
@@ -466,7 +492,7 @@ export class QuizScene extends Phaser.Scene {
   private drawRow(q: Question, cx: number, cy: number, h: number): void {
     const items = q.prompt.items;
     const n = items.length;
-    const size = Math.min(q.kind === 'name-letters' ? 110 : 120, h * 0.6, (this.usefulW - 20) / n - 12);
+    const size = Math.min(AREAS[q.kind].rowSize ?? ROW_SIZE, h * 0.6, (this.usefulW - 20) / n - 12);
     const step = size + 12;
     const x0 = cx - ((n - 1) * step) / 2;
     const g = this.add.graphics();

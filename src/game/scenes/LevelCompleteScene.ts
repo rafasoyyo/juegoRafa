@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
+import { medalTexture } from '../castle/castle';
 import { COLORS, GAME_H, MAX_W } from '../config';
 import { starsForGoals, type Stars } from '../../learning/scoring';
 import { saveActive } from '../profile/active';
@@ -180,7 +181,7 @@ export class LevelCompleteScene extends Phaser.Scene {
 
     const glow = this.add.circle(width / 2, top + 130, 110, COLORS.yellow, 0.35);
     this.tweens.add({ targets: glow, scale: 1.12, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    const medal = fitImage(this.add.image(width / 2, top + 135, 'medal-l'), 200);
+    const medal = fitImage(this.add.image(width / 2, top + 135, medalTexture(this.def.castle, true)), 200);
     const target = medal.scale;
     if (animate) {
       medal.setScale(0);
