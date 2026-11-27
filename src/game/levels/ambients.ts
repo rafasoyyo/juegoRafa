@@ -456,6 +456,25 @@ export const AMBIENTS: Readonly<Record<AmbientId, Ambient>> = {
     platform: 'log',
     ground: 'sand',
   },
+  // Isla de los dinosaurios (`docs/MUNDO-3.md`). Provisional hasta el paso 9: atardecer volcánico,
+  // arena negra y la decoración de la playa.
+  'playa-negra': {
+    id: 'playa-negra',
+    sky: [
+      [0, '#5B6B8C'],
+      [0.6, '#C98A86'],
+      [1, '#F0B88E'],
+    ],
+    hillLight: 0x6f7f86,
+    hill: 0x4f6168,
+    grass: 0x4a4a52,
+    grassDark: 0x35353c,
+    earth: 0x2c2b31,
+    cloud: { tint: 0xf3d6cf, alpha: 0.8 },
+    decor: 'beach',
+    platform: 'log',
+    ground: 'sand',
+  },
 };
 
 /** Tinta de la paleta (`COLORS.ink`): oscurece la tierra en la pared del foso de los pinchos. */

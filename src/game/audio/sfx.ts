@@ -58,11 +58,14 @@ export type SfxName =
   | 'horn'
   | 'band'
   | 'roar'
-  | 'rumble';
+  | 'rumble'
+  | 'stone'
+  | 'glyph';
 export interface SfxOptions {
   /**
    * Para `star`: 0, 1 o 2; cada una más aguda. Para `tick`: el número que se cuenta (1, 2…), cada uno más agudo.
    * Para `band`: la banda del gajo del arcoíris, de 0 (fuera) a 5 (dentro), cada una más aguda.
+   * Para `glyph`: la nota del grabado (0, 1, 2…): cada forma de la serie suena siempre igual.
    */
   index?: number;
 }
@@ -80,6 +83,8 @@ const tone = (start: number, dur: number, wave: Wave, freq: ToneLayer['freq'], g
 });
 
 const STAR_NOTES = ['C6', 'E6', 'G6'];
+/** Notas de los grabados de la isla: pentatónica de Do, sin choques entre formas seguidas. */
+const GLYPH_NOTES = ['C5', 'E5', 'G5', 'A5', 'C6'];
 /** Notas de las 6 bandas de un gajo del arcoíris del mapa, de fuera adentro: una escala que sube. */
 export const BAND_NOTES = ['C5', 'D5', 'E5', 'G5', 'A5', 'C6'];
 
@@ -215,6 +220,20 @@ export function recipe(name: SfxName, opts: SfxOptions = {}): Recipe {
           tone(0, 0.7, 'sine', [[0, 62], [0.6, 78]], 0.3, 0.25),
         ],
       };
+    case 'stone':
+      // Losa de piedra que encaja: golpe seco y grave, sin rebote.
+      return {
+        layers: [
+          tone(0, 0.18, 'sine', [[0, 140], [0.15, 70]], 0.6, 0.005),
+          { kind: 'noise', start: 0, dur: 0.12, attack: 0.005, gain: 0.35, filterHz: 420, q: 0.9 },
+        ],
+      };
+    case 'glyph': {
+      // Grabado que se ilumina: campana de piedra, una nota de la pentatónica por forma.
+      const i = Math.max(0, Math.min(GLYPH_NOTES.length - 1, Math.round(opts.index ?? 0)));
+      const f = hz(GLYPH_NOTES[i]!);
+      return { layers: [tone(0, 0.3, 'triangle', f, 0.26, 0.006), tone(0, 0.18, 'sine', f * 2, 0.08, 0.006)] };
+    }
     case 'tick': {
       // «Tic» de contar: corto, más agudo con cada número (una escala que sube).
       const k = Math.max(0, Math.min(20, Math.round(opts.index ?? 1) - 1));
@@ -264,4 +283,6 @@ export const SFX_NAMES: readonly SfxName[] = [
   'band',
   'roar',
   'rumble',
+  'stone',
+  'glyph',
 ];

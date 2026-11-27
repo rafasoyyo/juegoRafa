@@ -24,10 +24,11 @@ export const RUN_SPEED = 110 * SCALE;
 
 export { GROUND_TOP };
 
-/** Los 12 paisajes del mundo 1 y, después, los 12 tramos del río (mundo 2). */
+/** Los 12 paisajes del mundo 1, los 12 tramos del río (mundo 2) y, después, los de la isla (mundo 3). */
 export const AMBIENT_IDS = [
   'prado', 'flores', 'bosque', 'otono', 'atardecer', 'noche', 'playa', 'selva', 'montana', 'nieve', 'desierto', 'nubes',
   'manantial', 'arroyo', 'cascada', 'molino', 'canaveral', 'lago', 'embarcadero', 'puente', 'huertas', 'lluvia', 'puerto', 'desembocadura',
+  'playa-negra',
 ] as const;
 export type AmbientId = (typeof AMBIENT_IDS)[number];
 
@@ -68,18 +69,19 @@ export interface SpikeData {
 }
 
 /**
- * Mecánicas de reto del recorrido (`docs/MUNDO-2.md`): A, «Bloques que cuentan»; B, «El puente de los
- * números», y C, «La barca de diez».
+ * Mecánicas de reto del recorrido. Del río (`docs/MUNDO-2.md`): A, «Bloques que cuentan»; B, «El puente
+ * de los números», y C, «La barca de diez». De la isla (`docs/MUNDO-3.md`): A, «El camino de huellas»
+ * (`footprints`), con la geometría del puente.
  */
-export const CHALLENGE_KINDS = ['count', 'bridge', 'boat'] as const;
+export const CHALLENGE_KINDS = ['count', 'bridge', 'boat', 'footprints'] as const;
 export type ChallengeKind = (typeof CHALLENGE_KINDS)[number];
 export const QUANTITY_SHOWS = ['dots', 'tenframe'] as const;
 export type QuantityShowId = (typeof QUANTITY_SHOWS)[number];
 
 /**
  * Reto del recorrido, siempre sobre el suelo. En `count`, `x` es el centro del bloque central y ocupa de
- * `x + CHALLENGE_ZONE.from` (cartel) a `x + CHALLENGE_ZONE.to` (compuerta). En `bridge`, `x` es el borde
- * izquierdo del puente y en `boat`, el borde izquierdo del lago. Su zona la da `challengeZone`.
+ * `x + CHALLENGE_ZONE.from` (cartel) a `x + CHALLENGE_ZONE.to` (compuerta). En `bridge` y `footprints`,
+ * `x` es el borde izquierdo del puente y en `boat`, el borde izquierdo del lago. Su zona la da `challengeZone`.
  */
 export interface ChallengeData {
   kind: ChallengeKind;
@@ -98,7 +100,7 @@ export const CHALLENGE_SIGN_X = -4.5;
 export const CHALLENGE_BLOCK_XS = [-1.5, 0, 1.5] as const;
 export const CHALLENGE_GATE_X = 3;
 
-/** Puente: tramos de 3,5 baldosas (más de lo que alcanza un salto, también desde un bloque). */
+/** Puente (también el de huellas de la isla): tramos de 3,5 baldosas (más de lo que alcanza un salto, también desde un bloque). */
 export const BRIDGE_SECTION = 3.5;
 export const BRIDGE_SECTIONS = 5;
 /** Margen de suelo llano a cada lado del puente, en baldosas. */
@@ -121,7 +123,7 @@ export const BOAT_MARGIN = 1;
 /** Tramo que ocupa un reto, en baldosas. */
 export function challengeZone(c: { kind: ChallengeKind; x: number }): { from: number; to: number } {
   if (c.kind === 'boat') return { from: c.x - BOAT_DOCK, to: c.x + BOAT_LAKE + BOAT_MARGIN };
-  if (c.kind === 'bridge') return { from: c.x - BRIDGE_MARGIN, to: c.x + BRIDGE_SECTIONS * BRIDGE_SECTION + BRIDGE_MARGIN };
+  if (c.kind === 'bridge' || c.kind === 'footprints') return { from: c.x - BRIDGE_MARGIN, to: c.x + BRIDGE_SECTIONS * BRIDGE_SECTION + BRIDGE_MARGIN };
   return { from: c.x + CHALLENGE_ZONE.from, to: c.x + CHALLENGE_ZONE.to };
 }
 
