@@ -38,6 +38,12 @@ export const QUIZ_KINDS = [
   'turned-shapes',
   'nest',
   'odd-egg',
+  'fossil',
+  'skin-mosaic',
+  'growing-neck',
+  'roll-or-not',
+  'hidden-triangles',
+  'island-review',
 ] as const;
 export type QuizKind = (typeof QUIZ_KINDS)[number];
 
@@ -79,6 +85,14 @@ export type PieceId = (typeof PIECES)[number];
 /** Dónde está una cosa respecto a otra («El nido»). */
 export const PLACES = ['in', 'out', 'on', 'under', 'front', 'behind', 'left', 'right'] as const;
 export type PlaceRel = (typeof PLACES)[number];
+
+/** Cuerpos de «Pelota, caja y cono»: los que ruedan (bola, cilindro, cono) y los que no. */
+export const SOLIDS = ['ball', 'cylinder', 'cone', 'cube', 'pyramid', 'brick'] as const;
+export type SolidId = (typeof SOLIDS)[number];
+
+/** Dibujos de «Formas escondidas» hechos con triángulos que se solapan. */
+export const FIGURES = ['one', 'cut-top', 'diagonal', 'split-1', 'triforce', 'split-2', 'two-diagonals'] as const;
+export type FigureId = (typeof FIGURES)[number];
 
 /** Dibujo de la cáscara de un huevo. */
 export type EggPattern = 'plain' | 'spots' | 'stripes';
@@ -141,7 +155,23 @@ export type Visual =
   /** Huevo con color (índice de la paleta de huevos), dibujo y tamaño relativo. */
   | { type: 'egg'; color: number; pattern: EggPattern; scale: number }
   /** Nido con los huevos de la familia de ejemplo. */
-  | { type: 'nest'; eggs: { color: number; pattern: EggPattern }[] };
+  | { type: 'nest'; eggs: { color: number; pattern: EggPattern }[] }
+  /** Losa de fósil de `rows`×`cols` huesos a la que le falta el trozo `hole`. */
+  | { type: 'fossil'; rows: number; cols: number; hole: GridCell[] }
+  /** Trozo de fósil: casillas desde (0, 0), sin girar. */
+  | { type: 'bones'; cells: GridCell[] }
+  /** Piel de dinosaurio en `rows`×`cols` escamas de colores (índices); -1 es la que falta. */
+  | { type: 'mosaic'; rows: number; cols: number; tiles: number[] }
+  /** Escama de un color (índice), con su marca para no depender del color. */
+  | { type: 'tile'; color: number }
+  /** Dinosaurio de cuello largo con `length` trozos de cuello. */
+  | { type: 'neck'; length: number }
+  | { type: 'solid'; solid: SolidId }
+  /** Rampa de la consigna: ¿cuál baja rodando (`roll`) o cuál se queda quieto (`stay`)? */
+  | { type: 'ramp'; ask: 'roll' | 'stay' }
+  | { type: 'figure'; figure: FigureId }
+  /** Formas sueltas de colores, para contar los triángulos entre ellas. */
+  | { type: 'mix'; shapes: { shape: ShapeId; color: number }[] };
 
 /**
  * Cómo se dibuja la parte de arriba de la pregunta:
@@ -330,7 +360,32 @@ export function visualKey(v: Visual): string {
       return `egg:${v.color}:${v.pattern}:${v.scale}`;
     case 'nest':
       return `nest:${v.eggs.map((e) => `${e.color}${e.pattern}`).join(',')}`;
+    case 'fossil':
+      return `fossil:${v.rows}x${v.cols}:${cellsKey(v.hole)}`;
+    case 'bones':
+      return `bones:${cellsKey(v.cells)}`;
+    case 'mosaic':
+      return `mosaic:${v.rows}x${v.cols}:${v.tiles.join('')}`;
+    case 'tile':
+      return `tile:${v.color}`;
+    case 'neck':
+      return `neck:${v.length}`;
+    case 'solid':
+      return `solid:${v.solid}`;
+    case 'ramp':
+      return `ramp:${v.ask}`;
+    case 'figure':
+      return `figure:${v.figure}`;
+    case 'mix':
+      return `mix:${v.shapes.map((x) => x.shape).join(',')}`;
   }
+}
+
+function cellsKey(cells: readonly GridCell[]): string {
+  return cells
+    .map((c) => `${c.row}.${c.col}`)
+    .sort()
+    .join('|');
 }
 
 /** Clave de una pregunta entera, para no repetir dos iguales en la misma prueba. */

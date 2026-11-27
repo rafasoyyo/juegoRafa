@@ -6,7 +6,7 @@
 
 import Phaser from 'phaser';
 import { COLORS } from '../../config';
-import type { DinoId, EggPattern, PieceId, PlaceRel, QuizKind, ThingId } from '../../../learning/quiz/types';
+import type { DinoId, EggPattern, FigureId, GridCell, PieceId, PlaceRel, QuizKind, ShapeId, SolidId, ThingId } from '../../../learning/quiz/types';
 
 type G = Phaser.GameObjects.Graphics;
 type C = Phaser.GameObjects.Container;
@@ -448,6 +448,314 @@ export function drawPlace(scene: Phaser.Scene, rel: PlaceRel, thing: 'egg' | 'ba
   }
 }
 
+// --- Fósil ---------------------------------------------------------------------------------------
+
+const SLAB = 0xd8c39a;
+const SLAB_DARK = 0xb59c6e;
+const BONE = 0xfaf3e0;
+
+/** Un hueso pequeño (con sus dos nudos) centrado en (x, y) dentro de una casilla de lado `cell`. */
+function bone(g: G, x: number, y: number, cell: number, turn: boolean): void {
+  const l = cell * 0.3;
+  const k = cell * 0.1;
+  g.fillStyle(BONE);
+  if (turn) {
+    g.fillRect(x - k * 0.7, y - l, k * 1.4, l * 2);
+    g.fillCircle(x - k * 0.8, y - l, k).fillCircle(x + k * 0.8, y - l, k).fillCircle(x - k * 0.8, y + l, k).fillCircle(x + k * 0.8, y + l, k);
+  } else {
+    g.fillRect(x - l, y - k * 0.7, l * 2, k * 1.4);
+    g.fillCircle(x - l, y - k * 0.8, k).fillCircle(x - l, y + k * 0.8, k).fillCircle(x + l, y - k * 0.8, k).fillCircle(x + l, y + k * 0.8, k);
+  }
+}
+
+/** Losa de piedra con huesos y el hueco (más oscuro y hundido) que hay que llenar. */
+export function drawFossil(scene: Phaser.Scene, rows: number, cols: number, hole: readonly GridCell[], w: number, h: number): C {
+  const cell = Math.min(w / cols, h / rows) * 0.92;
+  const x0 = (-cols * cell) / 2;
+  const y0 = (-rows * cell) / 2;
+  const g = scene.add.graphics();
+  g.fillStyle(SLAB_DARK).fillRoundedRect(x0 - 6, y0 - 6 + 6, cols * cell + 12, rows * cell + 12, 14);
+  g.fillStyle(SLAB).fillRoundedRect(x0 - 6, y0 - 6, cols * cell + 12, rows * cell + 12, 14);
+  const isHole = (r: number, c: number): boolean => hole.some((x) => x.row === r && x.col === c);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = x0 + (c + 0.5) * cell;
+      const y = y0 + (r + 0.5) * cell;
+      if (isHole(r, c)) {
+        g.fillStyle(0x5a4a38).fillRect(x - cell / 2, y - cell / 2, cell, cell);
+      } else {
+        g.lineStyle(2, SLAB_DARK).strokeRect(x - cell / 2, y - cell / 2, cell, cell);
+        bone(g, x, y, cell, (r + c) % 2 === 1);
+      }
+    }
+  }
+  // Borde del hueco, para que su forma se lea bien.
+  g.lineStyle(5, COLORS.coral);
+  for (const { row, col } of hole) {
+    const x = x0 + col * cell;
+    const y = y0 + row * cell;
+    if (!isHole(row - 1, col)) g.lineBetween(x, y, x + cell, y);
+    if (!isHole(row + 1, col)) g.lineBetween(x, y + cell, x + cell, y + cell);
+    if (!isHole(row, col - 1)) g.lineBetween(x, y, x, y + cell);
+    if (!isHole(row, col + 1)) g.lineBetween(x + cell, y, x + cell, y + cell);
+  }
+  return scene.add.container(0, 0, [g]);
+}
+
+/** Trozo de fósil: sus casillas de piedra con hueso, todas del mismo tamaño en cualquier opción. */
+export function drawBones(scene: Phaser.Scene, cells: readonly GridCell[], size: number): C {
+  const cell = size / 4.2;
+  const rows = Math.max(...cells.map((x) => x.row)) + 1;
+  const cols = Math.max(...cells.map((x) => x.col)) + 1;
+  const x0 = (-cols * cell) / 2;
+  const y0 = (-rows * cell) / 2;
+  const g = scene.add.graphics();
+  for (const { row, col } of cells) g.fillStyle(SLAB_DARK).fillRect(x0 + col * cell, y0 + row * cell + 5, cell, cell);
+  for (const { row, col } of cells) {
+    g.fillStyle(SLAB).fillRect(x0 + col * cell, y0 + row * cell, cell, cell);
+    g.lineStyle(2, SLAB_DARK).strokeRect(x0 + col * cell, y0 + row * cell, cell, cell);
+    bone(g, x0 + (col + 0.5) * cell, y0 + (row + 0.5) * cell, cell, (row + col) % 2 === 1);
+  }
+  return scene.add.container(0, 0, [g]);
+}
+
+// --- Piel de escamas -----------------------------------------------------------------------------
+
+/** Colores de las escamas (índice de `tile.color`); cada uno lleva además su marca blanca. */
+export const SKIN_PALETTE = [0x58c25a, 0xf28c28, 0x4da3ff, 0x8e6cf0, 0xffc93c] as const;
+
+/** Escama redonda de un color con su marca (punto, triángulo, cuadrado, rombo o aro). */
+function scale(g: G, color: number, x: number, y: number, r: number): void {
+  g.fillStyle(0x000000, 0.12).fillCircle(x, y + r * 0.12, r);
+  g.fillStyle(SKIN_PALETTE[color % SKIN_PALETTE.length]!).fillCircle(x, y, r);
+  g.fillStyle(COLORS.white, 0.9);
+  const m = r * 0.36;
+  switch (color % SKIN_PALETTE.length) {
+    case 0:
+      g.fillCircle(x, y, m * 0.8);
+      break;
+    case 1:
+      g.fillTriangle(x, y - m, x + m, y + m * 0.8, x - m, y + m * 0.8);
+      break;
+    case 2:
+      g.fillRect(x - m * 0.8, y - m * 0.8, m * 1.6, m * 1.6);
+      break;
+    case 3:
+      g.fillPoints([V(x, y - m), V(x + m * 0.8, y), V(x, y + m), V(x - m * 0.8, y)], true);
+      break;
+    default:
+      g.lineStyle(r * 0.14, COLORS.white, 0.9).strokeCircle(x, y, m);
+  }
+}
+
+/** Piel de dinosaurio: escamas en filas, con un hueco claro y punteado donde falta una. */
+export function drawMosaic(scene: Phaser.Scene, rows: number, cols: number, tiles: readonly number[], w: number, h: number): C {
+  const cell = Math.min(w / cols, h / rows) * 0.92;
+  const x0 = (-cols * cell) / 2;
+  const y0 = (-rows * cell) / 2;
+  const g = scene.add.graphics();
+  g.fillStyle(0x4f7432).fillRoundedRect(x0 - 8, y0 - 8, cols * cell + 16, rows * cell + 16, 18);
+  tiles.forEach((t, i) => {
+    const x = x0 + ((i % cols) + 0.5) * cell;
+    const y = y0 + (Math.floor(i / cols) + 0.5) * cell;
+    if (t < 0) {
+      g.fillStyle(COLORS.white, 0.85).fillCircle(x, y, cell * 0.42);
+      g.lineStyle(5, COLORS.coral).strokeCircle(x, y, cell * 0.42);
+    } else {
+      scale(g, t, x, y, cell * 0.42);
+    }
+  });
+  return scene.add.container(0, 0, [g]);
+}
+
+export function drawTile(scene: Phaser.Scene, color: number, size: number): C {
+  const g = scene.add.graphics();
+  scale(g, color, 0, 0, size / 2);
+  return scene.add.container(0, 0, [g]);
+}
+
+// --- Cuello que crece ----------------------------------------------------------------------------
+
+/** Dinosaurio de cuello largo con `length` trozos de cuello (de colores alternos, para contarlos). */
+export function drawNeck(scene: Phaser.Scene, length: number, size: number): C {
+  const g = scene.add.graphics();
+  const s = size;
+  const [body, dark, light] = DINO_COLORS.brachio;
+  // El cuerpo siempre en el mismo sitio: así se comparan los cuellos de un vistazo.
+  const bx = -s * 0.02;
+  const by = s * 0.28;
+  g.fillStyle(dark).fillRect(bx - s * 0.2, by, s * 0.08, s * 0.18).fillRect(bx + s * 0.08, by, s * 0.08, s * 0.18);
+  g.fillStyle(body).fillTriangle(bx - s * 0.48, by + s * 0.04, bx - s * 0.2, by - s * 0.08, bx - s * 0.2, by + s * 0.08);
+  g.fillEllipse(bx, by, s * 0.5, s * 0.26);
+  g.fillStyle(light).fillEllipse(bx, by + s * 0.06, s * 0.32, s * 0.08);
+  g.fillStyle(body).fillRect(bx - s * 0.12, by, s * 0.08, s * 0.2).fillRect(bx + s * 0.14, by, s * 0.08, s * 0.2);
+  // Trozos de cuello hacia arriba y a la derecha.
+  const seg = s * 0.085;
+  const dx = Math.cos(Phaser.Math.DegToRad(-62)) * seg;
+  const dy = Math.sin(Phaser.Math.DegToRad(-62)) * seg;
+  let x = bx + s * 0.18;
+  let y = by - s * 0.06;
+  for (let i = 0; i < length; i++) {
+    g.fillStyle(i % 2 === 0 ? body : dark).fillCircle(x, y, seg * 0.62);
+    x += dx;
+    y += dy;
+  }
+  g.fillStyle(body).fillEllipse(x + seg * 0.3, y, seg * 1.9, seg * 1.2);
+  g.fillStyle(COLORS.ink).fillCircle(x + seg * 0.5, y - seg * 0.15, seg * 0.16);
+  return scene.add.container(0, 0, [g]);
+}
+
+// --- Cuerpos y rampa -----------------------------------------------------------------------------
+
+/** Cuerpo geométrico con luces y sombras planas: los redondos se ven redondos y los de caras, planos. */
+export function drawSolid(scene: Phaser.Scene, solid: SolidId, size: number): C {
+  const g = scene.add.graphics();
+  const s = size;
+  g.fillStyle(0x000000, 0.12).fillEllipse(0, s * 0.4, s * 0.8, s * 0.1);
+  switch (solid) {
+    case 'ball':
+      g.fillStyle(0xff6b5e).fillCircle(0, 0, s * 0.38);
+      g.fillStyle(0xc2463b).fillEllipse(s * 0.08, s * 0.12, s * 0.56, s * 0.5);
+      g.fillStyle(0xff6b5e).fillCircle(-s * 0.04, -s * 0.04, s * 0.3);
+      g.fillStyle(COLORS.white, 0.7).fillEllipse(-s * 0.14, -s * 0.16, s * 0.14, s * 0.09);
+      break;
+    case 'cylinder':
+      // Tumbado: se ve la tapa redonda a un lado.
+      g.fillStyle(0x2f78c4).fillRect(-s * 0.3, -s * 0.24, s * 0.56, s * 0.48);
+      g.fillStyle(0x4da3ff).fillRect(-s * 0.3, -s * 0.24, s * 0.56, s * 0.2);
+      g.fillStyle(0x2f78c4).fillEllipse(-s * 0.3, 0, s * 0.2, s * 0.48);
+      g.fillStyle(0x8fc6ff).fillEllipse(s * 0.26, 0, s * 0.2, s * 0.48);
+      break;
+    case 'cone':
+      // Tumbado: la punta a la izquierda y la base redonda a la derecha.
+      g.fillStyle(0xe0a800).fillTriangle(-s * 0.4, s * 0.06, s * 0.24, -s * 0.28, s * 0.24, s * 0.36);
+      g.fillStyle(0xffd23f).fillTriangle(-s * 0.4, s * 0.06, s * 0.24, -s * 0.28, s * 0.24, s * 0.06);
+      g.fillStyle(0xfff2a8).fillEllipse(s * 0.24, s * 0.04, s * 0.2, s * 0.64);
+      break;
+    case 'cube':
+      g.fillStyle(0x58c25a).fillRect(-s * 0.32, -s * 0.18, s * 0.5, s * 0.5);
+      g.fillStyle(0x8fdc84).fillPoints([V(-s * 0.32, -s * 0.18), V(-s * 0.16, -s * 0.34), V(s * 0.34, -s * 0.34), V(s * 0.18, -s * 0.18)], true);
+      g.fillStyle(0x3f9a43).fillPoints([V(s * 0.18, -s * 0.18), V(s * 0.34, -s * 0.34), V(s * 0.34, s * 0.16), V(s * 0.18, s * 0.32)], true);
+      break;
+    case 'pyramid':
+      g.fillStyle(0x8e6cf0).fillTriangle(0, -s * 0.38, -s * 0.36, s * 0.32, s * 0.16, s * 0.32);
+      g.fillStyle(0x6a4bc4).fillTriangle(0, -s * 0.38, s * 0.16, s * 0.32, s * 0.36, s * 0.18);
+      break;
+    case 'brick':
+      g.fillStyle(0xff7a59).fillRect(-s * 0.4, -s * 0.06, s * 0.66, s * 0.36);
+      g.fillStyle(0xffa98f).fillPoints([V(-s * 0.4, -s * 0.06), V(-s * 0.26, -s * 0.2), V(s * 0.4, -s * 0.2), V(s * 0.26, -s * 0.06)], true);
+      g.fillStyle(0xc9573c).fillPoints([V(s * 0.26, -s * 0.06), V(s * 0.4, -s * 0.2), V(s * 0.4, s * 0.16), V(s * 0.26, s * 0.3)], true);
+      break;
+  }
+  return scene.add.container(0, 0, [g]);
+}
+
+/** Rampa de la consigna: con una bola fantasma que gira y baja (rodar) o un cubo fantasma con un tope (quedarse). */
+export function drawRamp(scene: Phaser.Scene, ask: 'roll' | 'stay', w: number, h: number): C {
+  const g = scene.add.graphics();
+  const rw = Math.min(w, h * 1.8) * 0.9;
+  const rh = rw * 0.42;
+  const left = -rw / 2;
+  const base = rh / 2;
+  g.fillStyle(0x8d5527).fillTriangle(left, base - rh + 6, left, base + 6, rw / 2, base + 6);
+  g.fillStyle(0xb9773e).fillTriangle(left, base - rh, left, base, rw / 2, base);
+  g.fillStyle(0x58c25a).fillRect(-rw / 2 - 10, base, rw + 20, 10);
+  const slope = Math.atan2(rh, rw);
+  const at = (t: number, lift: number): [number, number] => [left + rw * t + Math.sin(slope) * lift, base - rh * (1 - t) - Math.cos(slope) * lift];
+  const r = rh * 0.26;
+  if (ask === 'roll') {
+    // Tres bolas cada vez más abajo, de la más clara a la más fuerte, y una flecha que gira.
+    [0.2, 0.45, 0.7].forEach((t, i) => {
+      const [x, y] = at(t, r);
+      g.fillStyle(0xff6b5e, 0.3 + i * 0.35).fillCircle(x, y, r);
+    });
+    const [x, y] = at(0.7, r);
+    g.lineStyle(6, COLORS.ink).beginPath().arc(x, y, r * 1.5, Phaser.Math.DegToRad(200), Phaser.Math.DegToRad(340)).strokePath();
+    g.fillStyle(COLORS.ink).fillTriangle(x + r * 1.75, y - r * 0.55, x + r * 1.15, y - r * 0.45, x + r * 1.5, y - r * 0.05);
+  } else {
+    // Un cubo arriba de la rampa, quieto, con dos rayitas de «quieto» y sin estela.
+    const [x, y] = at(0.3, r);
+    g.save();
+    g.translateCanvas(x, y);
+    g.rotateCanvas(slope);
+    g.fillStyle(0x58c25a).fillRect(-r, -r, r * 2, r * 2);
+    g.fillStyle(0x3f9a43).fillRect(-r, r * 0.6, r * 2, r * 0.4);
+    g.restore();
+    g.lineStyle(6, COLORS.ink).lineBetween(x - r * 1.7, y - r * 1.6, x - r * 1.7, y - r * 0.4).lineBetween(x + r * 1.7, y - r * 2.1, x + r * 1.7, y - r * 0.9);
+  }
+  return scene.add.container(0, 0, [g]);
+}
+
+// --- Formas escondidas ---------------------------------------------------------------------------
+
+/** Dibujo de líneas con triángulos que se solapan, sobre fondo claro. */
+export function drawFigure(scene: Phaser.Scene, figure: FigureId, size: number): C {
+  const g = scene.add.graphics();
+  const h = size / 2;
+  const lw = Math.max(5, size * 0.03);
+  const tri: XY[] = [[0, -0.9], [0.95, 0.75], [-0.95, 0.75]];
+  const P = ([x, y]: XY): Phaser.Math.Vector2 => V(x * h * 0.9, y * h * 0.9);
+  const line = (a: XY, b: XY): void => {
+    g.lineBetween(P(a).x, P(a).y, P(b).x, P(b).y);
+  };
+  const mid = (a: XY, b: XY, t = 0.5): XY => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+  const square = figure === 'diagonal' || figure === 'two-diagonals';
+  const corners: XY[] = square ? [[-0.8, -0.8], [0.8, -0.8], [0.8, 0.8], [-0.8, 0.8]] : tri;
+  g.fillStyle(0xfff2a8).fillPoints(corners.map(P), true);
+  g.lineStyle(lw, COLORS.ink);
+  g.strokePoints(corners.map(P), true, true);
+  const [A, B, Cc] = tri as [XY, XY, XY];
+  switch (figure) {
+    case 'one':
+      break;
+    case 'cut-top':
+      line(mid(A, Cc), mid(A, B));
+      break;
+    case 'split-1':
+      line(A, mid(Cc, B));
+      break;
+    case 'split-2':
+      line(A, mid(Cc, B, 1 / 3));
+      line(A, mid(Cc, B, 2 / 3));
+      break;
+    case 'triforce':
+      line(mid(A, Cc), mid(A, B));
+      line(mid(A, B), mid(Cc, B));
+      line(mid(Cc, B), mid(A, Cc));
+      break;
+    case 'diagonal':
+      line(corners[0]!, corners[2]!);
+      break;
+    case 'two-diagonals':
+      line(corners[0]!, corners[2]!);
+      line(corners[1]!, corners[3]!);
+      break;
+  }
+  return scene.add.container(0, 0, [g]);
+}
+
+/** Formas sueltas (triángulos, círculos y cuadrados): en una fila si son pocas, en dos si son más. */
+export function drawMix(scene: Phaser.Scene, shapes: readonly { shape: ShapeId; color: number }[], w: number, h: number): C {
+  const g = scene.add.graphics();
+  const rows = shapes.length <= 4 ? 1 : 2;
+  const cols = Math.ceil(shapes.length / rows);
+  const cell = Math.min(w / cols, h / rows, 150) * 0.9;
+  shapes.forEach(({ shape, color }, i) => {
+    const row = Math.floor(i / cols);
+    const inRow = row === 0 ? Math.min(cols, shapes.length) : shapes.length - cols;
+    const x = ((i % cols) - (inRow - 1) / 2) * cell;
+    const y = (row - (rows - 1) / 2) * cell;
+    const r = cell * 0.36;
+    for (const [dy, c] of [[5, 0x000000], [0, color]] as const) {
+      g.fillStyle(c, dy ? 0.12 : 1);
+      if (shape === 'triangle') g.fillTriangle(x, y - r + dy, x + r, y + r * 0.8 + dy, x - r, y + r * 0.8 + dy);
+      else if (shape === 'circle') g.fillCircle(x, y + dy, r * 0.9);
+      else g.fillRect(x - r * 0.8, y - r * 0.8 + dy, r * 1.6, r * 1.6);
+    }
+  });
+  return scene.add.container(0, 0, [g]);
+}
+
 // --- Pictogramas ---------------------------------------------------------------------------------
 
 /** Contenido del pictograma de las pruebas de la isla (sobre el círculo amarillo), o `null` si no es una de ellas. */
@@ -464,6 +772,18 @@ export function drawIslandPictogram(scene: Phaser.Scene, kind: QuizKind, size: n
       return [drawPiece(scene, 'flag', 0, false, COLORS.coral, r * 0.8).setPosition(-r * 0.35, 0), drawPiece(scene, 'flag', 90, false, COLORS.coral, r * 0.8).setPosition(r * 0.38, 0)];
     case 'nest':
       return [drawPlace(scene, 'in', 'baby', 'nest', r * 1.6, r * 1.3).setPosition(0, -r * 0.02)];
+    case 'fossil':
+      return [drawBones(scene, [{ row: 0, col: 0 }, { row: 1, col: 0 }, { row: 1, col: 1 }], r * 2.2)];
+    case 'skin-mosaic':
+      return [drawMosaic(scene, 2, 2, [0, 1, 1, -1], r * 1.2, r * 1.2)];
+    case 'growing-neck':
+      return [drawNeck(scene, 2, r * 0.9).setPosition(-r * 0.4, r * 0.1), drawNeck(scene, 4, r * 0.9).setPosition(r * 0.35, r * 0.05)];
+    case 'roll-or-not':
+      return [drawSolid(scene, 'ball', r * 0.9).setPosition(-r * 0.4, 0), drawSolid(scene, 'cube', r * 0.9).setPosition(r * 0.4, 0)];
+    case 'hidden-triangles':
+      return [drawFigure(scene, 'triforce', r * 1.3)];
+    case 'island-review':
+      return [drawDino(scene, 'trici', false, false, r * 1.1).setPosition(0, -r * 0.1)];
     case 'odd-egg':
       return [drawEgg(scene, 0, 'spots', r * 0.75).setPosition(-r * 0.38, 0), drawEgg(scene, 0, 'spots', r * 0.75).setPosition(0, 0), drawEgg(scene, 1, 'stripes', r * 0.75).setPosition(r * 0.4, 0)];
     default:

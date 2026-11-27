@@ -6,6 +6,12 @@ import { createRng } from './rng';
 import { shapeThingsQuiz, THING_SHAPES } from './shape-things';
 import { CORNERS, stegoPlatesQuiz } from './stego-plates';
 import { turnedShapesQuiz } from './turned-shapes';
+import { FOSSIL_BOARD, fossilQuiz, normalize, orientations } from './fossil';
+import { skinIndex, skinMosaicQuiz } from './skin-mosaic';
+import { growingNeckQuiz, MAX_NECK } from './growing-neck';
+import { ROLLS, rollOrNotQuiz } from './roll-or-not';
+import { hiddenTrianglesQuiz, TRIANGLES } from './hidden-triangles';
+import { islandReviewQuiz } from './island-review';
 import { questionKey, THINGS, type AgeBand, type Question, type Visual } from './types';
 
 const BANDS: AgeBand[] = ['small', 'medium', 'big'];
@@ -136,6 +142,107 @@ describe('pruebas de la bandera de la isla (niveles 1 a 6)', () => {
           expect(fits(odd)).toBe(false);
           // Mayores: el raro comparte uno de los dos rasgos.
           if (band === 'big') expect(odd.color === nest[0]!.color || odd.pattern === nest[0]!.pattern).toBe(true);
+        }
+      }
+    }
+  });
+});
+
+describe('pruebas de la bandera de la isla (niveles 7 a 12)', () => {
+  it.each(BANDS)('%s: las cinco nuevas y el repaso generan tres preguntas válidas con cualquier semilla', (band) => {
+    for (const seed of SEEDS) {
+      for (const make of [fossilQuiz, skinMosaicQuiz, growingNeckQuiz, rollOrNotQuiz, hiddenTrianglesQuiz]) check(make(band, createRng(seed)));
+      const review = islandReviewQuiz(band, createRng(seed));
+      expect(review).toHaveLength(3);
+      expect(new Set(review.map((q) => q.kind)).size).toBe(3);
+    }
+  });
+
+  it.each(BANDS)('%s: el fósil se llena con la pieza del hueco, tal cual y sin girar', (band) => {
+    const { rows, cols, size } = FOSSIL_BOARD[band];
+    for (const seed of SEEDS) {
+      for (const q of fossilQuiz(band, createRng(seed))) {
+        const f = of(q.prompt.items[0], 'fossil');
+        expect([f.rows, f.cols, f.hole.length]).toEqual([rows, cols, size]);
+        for (const c of f.hole) expect(c.row >= 0 && c.row < rows && c.col >= 0 && c.col < cols).toBe(true);
+        expect(of(correct(q), 'bones').cells).toEqual(normalize(f.hole));
+        // Mayores: entre las falsas está la misma pieza girada.
+        if (band === 'big') {
+          const turned = q.options.filter((o) => o.visual.type === 'bones' && orientations(f.hole).some((p) => JSON.stringify(p) === JSON.stringify(o.visual.type === 'bones' ? o.visual.cells : [])));
+          expect(turned.length).toBe(2);
+        }
+      }
+    }
+  });
+
+  it.each(BANDS)('%s: a la piel le falta la escama que pide su dibujo', (band) => {
+    for (const seed of SEEDS) {
+      for (const q of skinMosaicQuiz(band, createRng(seed))) {
+        const m = of(q.prompt.items[0], 'mosaic');
+        const hole = m.tiles.indexOf(-1);
+        expect(m.tiles.filter((t) => t === -1)).toHaveLength(1);
+        // Alguna otra escama de la misma clase del dibujo tiene el color de la respuesta.
+        const answer = of(correct(q), 'tile').color;
+        const same = m.tiles.filter((t, i) => i !== hole && t === answer);
+        expect(same.length).toBeGreaterThan(0);
+        // El dibujo se cumple en todas las escamas: misma clase, mismo color.
+        const fits = (['rows', 'cols', 'checker', 'blocks', 'diagonal'] as const).some((pattern) => {
+          const byClass = new Map<number, number>();
+          const ok = m.tiles.every((t, i) => {
+            const k = skinIndex(pattern, Math.floor(i / m.cols), i % m.cols);
+            const color = i === hole ? answer : t;
+            if (!byClass.has(k)) byClass.set(k, color);
+            return byClass.get(k) === color;
+          });
+          return ok && new Set(byClass.values()).size === byClass.size;
+        });
+        expect(fits).toBe(true);
+      }
+    }
+  });
+
+  it.each(BANDS)('%s: el cuello crece siempre lo mismo y la respuesta es el que falta', (band) => {
+    for (const seed of SEEDS) {
+      for (const q of growingNeckQuiz(band, createRng(seed))) {
+        const lens = q.prompt.items.map((v) => of(v, 'neck').length);
+        const step = lens[1]! - lens[0]!;
+        expect(step).toBeGreaterThan(0);
+        lens.forEach((l, i) => expect(l).toBe(lens[0]! + i * step));
+        expect(Math.max(...lens)).toBeLessThanOrEqual(MAX_NECK);
+        expect(of(correct(q), 'neck').length).toBe(lens[q.prompt.holeIndex!]);
+        if (band !== 'big') expect(q.prompt.holeIndex).toBe(lens.length - 1);
+        if (band !== 'big') expect(step).toBe(1);
+      }
+    }
+  });
+
+  it.each(BANDS)('%s: en la rampa solo uno rueda (o solo uno se queda quieto)', (band) => {
+    for (const seed of SEEDS) {
+      for (const q of rollOrNotQuiz(band, createRng(seed))) {
+        const { ask } = of(q.prompt.items[0], 'ramp');
+        if (band === 'small') expect(ask).toBe('roll');
+        const good = q.options.filter((o) => o.visual.type === 'solid' && ROLLS[o.visual.solid] === (ask === 'roll'));
+        expect(good).toHaveLength(1);
+        expect(correct(q)).toBe(good[0]!.visual);
+        if (band !== 'big') expect(q.options.some((o) => o.visual.type === 'solid' && o.visual.solid === 'cone')).toBe(false);
+      }
+    }
+  });
+
+  it('formas escondidas: los triángulos de cada dibujo', () => {
+    expect(TRIANGLES).toEqual({ one: 1, 'cut-top': 2, diagonal: 2, 'split-1': 3, triforce: 5, 'split-2': 6, 'two-diagonals': 8 });
+  });
+
+  it.each(BANDS)('%s: la respuesta es el número de triángulos del dibujo', (band) => {
+    for (const seed of SEEDS) {
+      for (const q of hiddenTrianglesQuiz(band, createRng(seed))) {
+        const item = q.prompt.items[0]!;
+        const answer = correct(q);
+        if (band === 'small') {
+          const mix = of(item, 'mix');
+          expect(of(answer, 'dots').value).toBe(mix.shapes.filter((s) => s.shape === 'triangle').length);
+        } else {
+          expect(of(answer, 'digit').value).toBe(TRIANGLES[of(item, 'figure').figure]);
         }
       }
     }

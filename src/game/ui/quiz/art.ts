@@ -10,7 +10,24 @@ import { COLORS } from '../../config';
 import { halfPrims, type Prim } from '../../../learning/quiz/pictures';
 import type { Dir, LandmarkId, ObjectId, PictureId, QuizKind, Visual, WeightId } from '../../../learning/quiz/types';
 import { digits, fitImage } from '../round-button';
-import { drawDino, drawEgg, drawIslandPictogram, drawNest, drawPiece, drawPlace, drawThing } from './island-art';
+import {
+  drawBones,
+  drawDino,
+  drawEgg,
+  drawFigure,
+  drawFossil,
+  drawIslandPictogram,
+  drawMix,
+  drawMosaic,
+  drawNeck,
+  drawNest,
+  drawPiece,
+  drawPlace,
+  drawRamp,
+  drawSolid,
+  drawThing,
+  drawTile,
+} from './island-art';
 
 type G = Phaser.GameObjects.Graphics;
 type C = Phaser.GameObjects.Container;
@@ -257,6 +274,24 @@ export function drawExtraVisual(scene: Phaser.Scene, v: Visual, w: number, h: nu
       return drawEgg(scene, v.color, v.pattern, s * 0.8 * v.scale);
     case 'nest':
       return drawNest(scene, v.eggs, Math.min(w, h * 1.3) * 0.8);
+    case 'fossil':
+      return drawFossil(scene, v.rows, v.cols, v.hole, w * 0.9, h * 0.9);
+    case 'bones':
+      return drawBones(scene, v.cells, s * 0.9);
+    case 'mosaic':
+      return drawMosaic(scene, v.rows, v.cols, v.tiles, w * 0.9, h * 0.9);
+    case 'tile':
+      return drawTile(scene, v.color, s * 0.6);
+    case 'neck':
+      return drawNeck(scene, v.length, s);
+    case 'solid':
+      return drawSolid(scene, v.solid, s * 0.8);
+    case 'ramp':
+      return drawRamp(scene, v.ask, w, h);
+    case 'figure':
+      return drawFigure(scene, v.figure, s * 0.9);
+    case 'mix':
+      return drawMix(scene, v.shapes, w * 0.95, h * 0.9);
     default:
       return null;
   }

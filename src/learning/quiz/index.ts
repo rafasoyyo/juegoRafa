@@ -4,6 +4,12 @@ import { balanceQuiz } from './balance';
 import { dinoShadowsQuiz } from './dino-shadows';
 import { nestQuiz } from './nest';
 import { oddEggQuiz } from './odd-egg';
+import { fossilQuiz } from './fossil';
+import { skinMosaicQuiz } from './skin-mosaic';
+import { growingNeckQuiz } from './growing-neck';
+import { rollOrNotQuiz } from './roll-or-not';
+import { hiddenTrianglesQuiz } from './hidden-triangles';
+import { islandReviewQuiz } from './island-review';
 import { shapeThingsQuiz } from './shape-things';
 import { stegoPlatesQuiz } from './stego-plates';
 import { turnedShapesQuiz } from './turned-shapes';
@@ -96,6 +102,18 @@ export function generateQuiz(kind: QuizKind, band: AgeBand, rng: Rng, ctx: QuizC
       return nestQuiz(band, rng);
     case 'odd-egg':
       return oddEggQuiz(band, rng);
+    case 'fossil':
+      return fossilQuiz(band, rng);
+    case 'skin-mosaic':
+      return skinMosaicQuiz(band, rng);
+    case 'growing-neck':
+      return growingNeckQuiz(band, rng);
+    case 'roll-or-not':
+      return rollOrNotQuiz(band, rng);
+    case 'hidden-triangles':
+      return hiddenTrianglesQuiz(band, rng);
+    case 'island-review':
+      return islandReviewQuiz(band, rng);
   }
 }
 

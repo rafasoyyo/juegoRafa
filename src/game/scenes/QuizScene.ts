@@ -111,6 +111,13 @@ const AREAS: Record<QuizKind, { prompt: Area; options: Area; cell: [number, numb
   'turned-shapes': { prompt: { top: 140, bottom: 420 }, options: { top: 450, bottom: 700 }, cell: [190, 190] },
   nest: { prompt: { top: 140, bottom: 420 }, options: { top: 450, bottom: 700 }, cell: [250, 220] },
   'odd-egg': { prompt: { top: 140, bottom: 430 }, options: { top: 460, bottom: 700 }, cell: [160, 190] },
+  fossil: { prompt: { top: 140, bottom: 430 }, options: { top: 460, bottom: 700 }, cell: [200, 200] },
+  'skin-mosaic': { prompt: { top: 140, bottom: 430 }, options: { top: 460, bottom: 700 }, cell: [170, 170] },
+  'growing-neck': { prompt: { top: 150, bottom: 440 }, options: { top: 470, bottom: 700 }, cell: [170, 200] },
+  'roll-or-not': { prompt: { top: 140, bottom: 420 }, options: { top: 450, bottom: 700 }, cell: [190, 190] },
+  'hidden-triangles': { prompt: { top: 140, bottom: 440 }, options: { top: 470, bottom: 700 }, cell: [160, 160] },
+  // El repaso dibuja cada pregunta con las zonas de su propio tipo.
+  'island-review': { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 700 }, cell: [150, 150] },
 };
 
 interface OptionView {
@@ -477,7 +484,7 @@ export class QuizScene extends Phaser.Scene {
   private drawRow(q: Question, cx: number, cy: number, h: number): void {
     const items = q.prompt.items;
     const n = items.length;
-    const size = Math.min(q.kind === 'name-letters' ? 110 : 120, h * 0.6, (this.usefulW - 20) / n - 12);
+    const size = Math.min(q.kind === 'name-letters' ? 110 : q.kind === 'growing-neck' ? 150 : 120, h * 0.6, (this.usefulW - 20) / n - 12);
     const step = size + 12;
     const x0 = cx - ((n - 1) * step) / 2;
     const g = this.add.graphics();

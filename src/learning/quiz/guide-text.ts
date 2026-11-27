@@ -168,6 +168,36 @@ export const GUIDE_TEXT: Record<QuizKind, GuideText> = {
     goal: 'Clasificar por un rasgo (color o dibujo) y, los mayores, por dos a la vez.',
     how: '¿En qué se parecen los huevos del nido? ¿Cuál no es igual?',
   },
+  fossil: {
+    title: 'El fósil',
+    goal: 'Ver la forma de un hueco y buscar la pieza que lo llena, sin girarla.',
+    how: 'Mira el hueco: ¿cuántos huesos le faltan y cómo van?',
+  },
+  'skin-mosaic': {
+    title: 'La piel del dinosaurio',
+    goal: 'Descubrir el dibujo de un mosaico (rayas, damero, diagonales) y completarlo.',
+    how: 'Recorre la fila o la columna de la escama que falta: ¿qué color le toca?',
+  },
+  'growing-neck': {
+    title: 'El cuello que crece',
+    goal: 'Seguir una serie que crece: cada dinosaurio tiene el cuello un poco más largo.',
+    how: 'Cuenta los trozos de cuello de cada uno: ¿cuántos tendrá el siguiente?',
+  },
+  'roll-or-not': {
+    title: 'Pelota, caja y cono',
+    goal: 'Distinguir los cuerpos que ruedan (con partes curvas) de los que no (con caras planas).',
+    how: 'Si la flecha da vueltas, ¿cuál baja rodando? Si hay un tope, ¿cuál se queda quieto?',
+  },
+  'hidden-triangles': {
+    title: 'Formas escondidas',
+    goal: 'Contar triángulos, también los grandes que se forman juntando pequeños.',
+    how: 'Señala cada triángulo con el dedo, primero los pequeños y luego los grandes.',
+  },
+  'island-review': {
+    title: 'Repaso de la isla',
+    goal: 'Repasar tres pruebas de la isla.',
+    how: 'Cada pregunta es de una prueba distinta: recordad cómo se hacía.',
+  },
 };
 
 export function guideWordCount(t: GuideText): number {
