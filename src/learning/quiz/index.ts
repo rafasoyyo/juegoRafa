@@ -1,6 +1,12 @@
 /** La prueba de la bandera: genera las tres preguntas del tipo y la franja de edad que tocan. */
 
 import { balanceQuiz } from './balance';
+import { dinoShadowsQuiz } from './dino-shadows';
+import { nestQuiz } from './nest';
+import { oddEggQuiz } from './odd-egg';
+import { shapeThingsQuiz } from './shape-things';
+import { stegoPlatesQuiz } from './stego-plates';
+import { turnedShapesQuiz } from './turned-shapes';
 import { biggestQuiz } from './biggest';
 import { boatsQuiz } from './boats';
 import { frogJumpsQuiz } from './frog-jumps';
@@ -78,6 +84,18 @@ export function generateQuiz(kind: QuizKind, band: AgeBand, rng: Rng, ctx: QuizC
       return boatsQuiz(band, rng);
     case 'river-review':
       return riverReviewQuiz(band, rng);
+    case 'dino-shadows':
+      return dinoShadowsQuiz(band, rng);
+    case 'shape-things':
+      return shapeThingsQuiz(band, rng);
+    case 'stego-plates':
+      return stegoPlatesQuiz(band, rng);
+    case 'turned-shapes':
+      return turnedShapesQuiz(band, rng);
+    case 'nest':
+      return nestQuiz(band, rng);
+    case 'odd-egg':
+      return oddEggQuiz(band, rng);
   }
 }
 

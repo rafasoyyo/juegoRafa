@@ -31,6 +31,13 @@ export const QUIZ_KINDS = [
   'frog-jumps',
   'boats',
   'river-review',
+  // Mundo 3, la isla de los dinosaurios (`docs/MUNDO-3.md`).
+  'dino-shadows',
+  'shape-things',
+  'stego-plates',
+  'turned-shapes',
+  'nest',
+  'odd-egg',
 ] as const;
 export type QuizKind = (typeof QUIZ_KINDS)[number];
 
@@ -40,8 +47,41 @@ export type AgeBand = 'small' | 'medium' | 'big';
 /** Objetos del juego que pueden aparecer en las preguntas. */
 export type ObjectId = 'cookie' | 'hedgehog' | 'bee' | 'star' | 'snail';
 
-export const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'star', 'hexagon', 'rectangle'] as const;
+export const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'star', 'hexagon', 'rectangle', 'oval', 'pentagon'] as const;
 export type ShapeId = (typeof SHAPES)[number];
+
+/** Dinosaurios de la isla (estilo A documental). */
+export const DINOS = ['trex', 'brachio', 'trici', 'stego', 'ptero'] as const;
+export type DinoId = (typeof DINOS)[number];
+
+/** Cosas de todos los días con una forma clara, para «Formas en las cosas». */
+export const THINGS = {
+  wheel: 'circle',
+  clock: 'circle',
+  window: 'square',
+  gift: 'square',
+  pizza: 'triangle',
+  sail: 'triangle',
+  door: 'rectangle',
+  book: 'rectangle',
+  egg: 'oval',
+  starfish: 'star',
+  kite: 'diamond',
+  honeycomb: 'hexagon',
+  house: 'pentagon',
+} as const satisfies Record<string, ShapeId>;
+export type ThingId = keyof typeof THINGS;
+
+/** Piezas sin simetría para «Igual aunque gire»: girarlas cambia cómo se ven y voltearlas da otra pieza. */
+export const PIECES = ['ell', 'flag', 'boot', 'arrow'] as const;
+export type PieceId = (typeof PIECES)[number];
+
+/** Dónde está una cosa respecto a otra («El nido»). */
+export const PLACES = ['in', 'out', 'on', 'under', 'front', 'behind', 'left', 'right'] as const;
+export type PlaceRel = (typeof PLACES)[number];
+
+/** Dibujo de la cáscara de un huevo. */
+export type EggPattern = 'plain' | 'spots' | 'stripes';
 
 /** Iconos de consigna de «¿Te acuerdas?»: de qué trata la pregunta. */
 export type TopicIcon = 'landscape' | 'block' | 'path';
@@ -90,7 +130,18 @@ export type Visual =
   /** Calcetín del color `color` (índice de la paleta de calcetines) con su dibujo `pattern`. */
   | { type: 'sock'; color: number; pattern: number }
   /** Respuesta de pares y nones: todos con pareja o sobra uno. */
-  | { type: 'pairs'; odd: boolean };
+  | { type: 'pairs'; odd: boolean }
+  /** Dinosaurio de la isla, a color o como sombra; `flip` lo pone mirando a la izquierda. */
+  | { type: 'dino'; dino: DinoId; shadow: boolean; flip: boolean }
+  | { type: 'thing'; thing: ThingId }
+  /** Pieza sin simetría, girada `angle` grados y volteada si `mirrored`. */
+  | { type: 'piece'; piece: PieceId; angle: number; mirrored: boolean; color: number }
+  /** Escena de posición: `thing` (huevo o bebé) respecto a `holder` (nido, caja, cesto o cueva). */
+  | { type: 'place'; rel: PlaceRel; thing: 'egg' | 'baby'; holder: 'nest' | 'box' | 'basket' | 'cave' }
+  /** Huevo con color (índice de la paleta de huevos), dibujo y tamaño relativo. */
+  | { type: 'egg'; color: number; pattern: EggPattern; scale: number }
+  /** Nido con los huevos de la familia de ejemplo. */
+  | { type: 'nest'; eggs: { color: number; pattern: EggPattern }[] };
 
 /**
  * Cómo se dibuja la parte de arriba de la pregunta:
@@ -99,9 +150,10 @@ export type Visual =
  * - `model`: un marco con el modelo que hay que buscar.
  * - `think`: un globo de pensamiento de Lalo con el tema de la pregunta.
  * - `basket`: la cesta de «más» o «menos».
+ * - `picture`: un dibujo grande (`items[0]`), sin marco.
  * - `share`, `order`, `cable-car`, `tracks`, `balance`, `mirror`: escenas propias (ver `Prompt.scene`).
  */
-export type PromptLayout = 'scatter' | 'rows' | 'tenframes' | 'row' | 'model' | 'think' | 'basket' | SceneData['kind'];
+export type PromptLayout = 'scatter' | 'rows' | 'tenframes' | 'row' | 'model' | 'think' | 'basket' | 'picture' | SceneData['kind'];
 
 /** Datos de la escena de las pruebas nuevas: lo que no cabe en `items` y que la vista necesita para animar. */
 export type SceneData =
@@ -266,6 +318,18 @@ export function visualKey(v: Visual): string {
       return `sock:${v.color}:${v.pattern}`;
     case 'pairs':
       return `pairs:${v.odd ? 'odd' : 'even'}`;
+    case 'dino':
+      return `dino:${v.dino}:${v.shadow ? 's' : 'c'}:${v.flip ? 'l' : 'r'}`;
+    case 'thing':
+      return `thing:${v.thing}`;
+    case 'piece':
+      return `piece:${v.piece}:${v.mirrored ? 'm' : 'n'}:${(((v.angle % 360) + 360) % 360)}`;
+    case 'place':
+      return `place:${v.rel}:${v.thing}:${v.holder}`;
+    case 'egg':
+      return `egg:${v.color}:${v.pattern}:${v.scale}`;
+    case 'nest':
+      return `nest:${v.eggs.map((e) => `${e.color}${e.pattern}`).join(',')}`;
   }
 }
 

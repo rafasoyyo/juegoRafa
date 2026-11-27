@@ -138,6 +138,36 @@ export const GUIDE_TEXT: Record<QuizKind, GuideText> = {
     goal: 'Repasar lo aprendido en el río: cantidades, recta y comparar.',
     how: 'Recordad cómo lo hicisteis en los niveles anteriores.',
   },
+  'dino-shadows': {
+    title: 'Sombras de dinosaurios',
+    goal: 'Reconocer una figura por su silueta, aunque mire al otro lado.',
+    how: '¿Qué sombra es de este dinosaurio? Mira el cuello, la cola y las patas.',
+  },
+  'shape-things': {
+    title: 'Formas en las cosas',
+    goal: 'Ver las formas en los objetos de todos los días.',
+    how: '¿Qué forma tiene? Recorred el borde con el dedo.',
+  },
+  'stego-plates': {
+    title: 'Las placas del estegosaurio',
+    goal: 'Reconocer una forma aunque cambie de tamaño, color o giro; los mayores cuentan sus esquinas.',
+    how: '¿Cuál tiene la misma forma? ¿Cuántas esquinas tiene?',
+  },
+  'turned-shapes': {
+    title: 'Igual aunque gire',
+    goal: 'Ver que una pieza girada sigue siendo la misma, y que volteada ya no.',
+    how: 'Gira la pieza con la imaginación: ¿cuál es igual?',
+  },
+  nest: {
+    title: 'El nido',
+    goal: 'Situar cosas: dentro, fuera, encima, debajo, delante, detrás, izquierda y derecha.',
+    how: '¿Dónde está el bebé? ¿Dónde está el huevo en cada dibujo?',
+  },
+  'odd-egg': {
+    title: 'Los huevos de la familia',
+    goal: 'Clasificar por un rasgo (color o dibujo) y, los mayores, por dos a la vez.',
+    how: '¿En qué se parecen los huevos del nido? ¿Cuál no es igual?',
+  },
 };
 
 export function guideWordCount(t: GuideText): number {

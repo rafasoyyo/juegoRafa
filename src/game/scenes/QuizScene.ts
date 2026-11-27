@@ -104,6 +104,13 @@ const AREAS: Record<QuizKind, { prompt: Area; options: Area; cell: [number, numb
   boats: { prompt: { top: 150, bottom: 400 }, options: { top: 450, bottom: 690 }, cell: [140, 150] },
   // El repaso dibuja cada pregunta con las zonas de su propio tipo.
   'river-review': { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 700 }, cell: [150, 150] },
+  // Isla de los dinosaurios.
+  'dino-shadows': { prompt: { top: 140, bottom: 420 }, options: { top: 450, bottom: 700 }, cell: [220, 210] },
+  'shape-things': { prompt: { top: 140, bottom: 420 }, options: { top: 450, bottom: 700 }, cell: [190, 190] },
+  'stego-plates': { prompt: { top: 140, bottom: 420 }, options: { top: 450, bottom: 700 }, cell: [190, 190] },
+  'turned-shapes': { prompt: { top: 140, bottom: 420 }, options: { top: 450, bottom: 700 }, cell: [190, 190] },
+  nest: { prompt: { top: 140, bottom: 420 }, options: { top: 450, bottom: 700 }, cell: [250, 220] },
+  'odd-egg': { prompt: { top: 140, bottom: 430 }, options: { top: 460, bottom: 700 }, cell: [160, 190] },
 };
 
 interface OptionView {
@@ -375,19 +382,23 @@ export class QuizScene extends Phaser.Scene {
         break;
       }
       case 'model': {
-        const size = Math.min(h, 160);
+        // Las formas van en un marco pequeño; los dibujos (dinosaurios, cosas, escenas) en uno mayor.
+        const v = p.items[0]!;
+        const size = Math.min(h, v.type === 'shape' ? 160 : 240);
         const frame = this.add.graphics();
         frame.fillStyle(COLORS.shadow).fillRoundedRect(cx - size / 2, cy - size / 2 + 8, size, size, 30);
         frame.fillStyle(COLORS.white).fillRoundedRect(cx - size / 2, cy - size / 2, size, size, 30);
         frame.lineStyle(6, COLORS.coral).strokeRoundedRect(cx - size / 2, cy - size / 2, size, size, 30);
-        const v = p.items[0] as Extract<Visual, { type: 'shape' }>;
-        const shape = drawShape(this, v.shape, v.color, size * 0.62, v.angle).setPosition(cx, cy);
-        this.layer.add([frame, shape]);
+        const model = v.type === 'shape' ? drawShape(this, v.shape, v.color, size * 0.62, v.angle) : this.drawVisual(v, size * 0.86, size * 0.86);
+        this.layer.add([frame, model.setPosition(cx, cy)]);
         this.modelFrame = { x: cx, y: cy, size };
         break;
       }
       case 'row':
         this.drawRow(q, cx, cy, h);
+        break;
+      case 'picture':
+        this.layer.add(this.drawVisual(p.items[0]!, Math.min(this.usefulW * 0.5, 440), h).setPosition(cx, cy));
         break;
       case 'think': {
         const g = this.add.graphics();
