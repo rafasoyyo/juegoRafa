@@ -2,7 +2,7 @@
  * Final de la isla (`docs/MUNDO-3.md`, «El huevo y el final»), sin texto: en una viñeta grande, el huevo
  * con sus 12 manchas está en el nido del cráter; la mamá dinosaurio se asoma, el huevo se mueve, se abre
  * y sale un bebé que da un saltito. Mientras no exista el mundo 4, se queda ahí (sin la cueva de las
- * letras). Tiene la misma forma que `Finale`: `MapScene` lo lanza tras pintar la última mancha y un toque
+ * pinturas de la prehistoria). Tiene la misma forma que `Finale`: `MapScene` lo lanza tras pintar la última mancha y un toque
  * lo salta.
  */
 
