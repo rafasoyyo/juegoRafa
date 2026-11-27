@@ -226,3 +226,10 @@ Cuando el braquiosaurio se agacha para que suba Rufo SHALL sonar una llamada gra
 #### Scenario: Se agacha
 - **WHEN** se completa el emblema del braquiosaurio
 - **THEN** suena su llamada grave mientras se agacha
+
+### Requirement: Siseo y vapor del géiser
+Al hundirse una piedra en la lava SHALL sonar un siseo suave que se apaga despacio, sin golpe, y al llegar a la otra orilla, un soplido de vapor que sube. Los dos SHALL respetar el silencio.
+
+#### Scenario: Piedra que se hunde
+- **WHEN** Rufo pisa una piedra mala
+- **THEN** suena un siseo suave mientras se hunde
