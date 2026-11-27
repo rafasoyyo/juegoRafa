@@ -1,0 +1,35 @@
+{
+  "ambient": "cascada-templada",
+  "length": 180,
+  "steps": [
+    { "x": 88.4, "width": 4, "height": 1 }
+  ],
+  "platforms": [
+    { "x": 40.7, "width": 4, "height": 1.5 },
+    { "x": 137.3, "width": 4, "height": 1 }
+  ],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 42.7, "row": "low", "on": "platform" },
+    { "x": 52.2, "row": "high" },
+    { "x": 53.4, "row": "high" },
+    { "x": 90.4, "row": "high", "on": "step" },
+    { "x": 119.4, "row": "low" },
+    { "x": 120.6, "row": "low" },
+    { "x": 121.8, "row": "low" },
+    { "x": 139.3, "row": "low", "on": "platform" },
+    { "x": 168.3, "row": "low" },
+    { "x": 169.5, "row": "low" }
+  ],
+  "spikes": [
+    { "x": 80.4, "width": 1 },
+    { "x": 129.3, "width": 1 }
+  ],
+  "challenges": [
+    { "kind": "door", "x": 27.2 },
+    { "kind": "door", "x": 66.9 },
+    { "kind": "door", "x": 105.4 },
+    { "kind": "door", "x": 154.3 }
+  ]
+}

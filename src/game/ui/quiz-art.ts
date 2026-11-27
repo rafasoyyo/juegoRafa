@@ -16,7 +16,7 @@ import { fitImage } from './round-button';
 type G = Phaser.GameObjects.Graphics;
 
 /** Traza el contorno de una forma de lado `s` centrada en (0, 0). */
-function shapePoints(shape: ShapeId, s: number): Phaser.Math.Vector2[] | null {
+export function shapePoints(shape: ShapeId, s: number): Phaser.Math.Vector2[] | null {
   const h = s / 2;
   const P = (x: number, y: number): Phaser.Math.Vector2 => new Phaser.Math.Vector2(x, y);
   switch (shape) {
@@ -38,10 +38,17 @@ function shapePoints(shape: ShapeId, s: number): Phaser.Math.Vector2[] | null {
         const a = -Math.PI / 2 + (i * Math.PI) / 5;
         return P(Math.cos(a) * r, Math.sin(a) * r);
       });
+    case 'oval':
+      return Array.from({ length: 32 }, (_, i) => P(Math.cos((i * Math.PI) / 16) * h * 0.66, Math.sin((i * Math.PI) / 16) * h));
+    case 'pentagon':
+      return Array.from({ length: 5 }, (_, i) => {
+        const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+        return P(Math.cos(a) * h, Math.sin(a) * h + h * 0.1);
+      });
   }
 }
 
-function fillShape(g: G, shape: ShapeId, s: number, dy = 0): void {
+export function fillShape(g: G, shape: ShapeId, s: number, dy = 0): void {
   const pts = shapePoints(shape, s);
   if (!pts) {
     g.fillCircle(0, dy, s / 2);
@@ -115,10 +122,17 @@ const DECOR_ICON: Record<DecorKind, string | null> = {
   snow: 'decor-pine-snow',
   desert: 'decor-cactus',
   rainbow: 'decor-rainbow',
+  ferns: 'decor-fern',
+  geysers: 'decor-geyser',
+  ruins: 'decor-column',
+  fireflies: 'decor-moon',
+  basalt: 'decor-basalt',
+  crystals: 'decor-crystal',
+  embers: 'decor-basalt',
 };
 
 /** Decoraciones que van grandes y al fondo de la miniatura (sol, luna, picos y arcoíris). */
-const BIG_DECOR: readonly DecorKind[] = ['sunset', 'night', 'mountains', 'rainbow'];
+const BIG_DECOR: readonly DecorKind[] = ['sunset', 'night', 'fireflies', 'mountains', 'rainbow'];
 
 const cssColor = (css: string): number => Phaser.Display.Color.HexStringToColor(css).color;
 

@@ -1,0 +1,37 @@
+{
+  "ambient": "yacimiento",
+  "length": 229,
+  "steps": [
+    { "x": 76.4, "width": 4, "height": 1 }
+  ],
+  "platforms": [
+    { "x": 171.6, "width": 4, "height": 1.5 }
+  ],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 14.9, "row": "low" },
+    { "x": 78.4, "row": "high", "on": "step" },
+    { "x": 96.9, "row": "low" },
+    { "x": 98.1, "row": "low" },
+    { "x": 130.1, "row": "high" },
+    { "x": 131.3, "row": "high" },
+    { "x": 173.6, "row": "low", "on": "platform" },
+    { "x": 216, "row": "high" },
+    { "x": 217.2, "row": "high" },
+    { "x": 218.4, "row": "high" }
+  ],
+  "spikes": [
+    { "x": 48.9, "width": 1 },
+    { "x": 87.4, "width": 2 },
+    { "x": 163.6, "width": 1 },
+    { "x": 206.6, "width": 2 }
+  ],
+  "challenges": [
+    { "kind": "footprints", "x": 23.4 },
+    { "kind": "door", "x": 62.9 },
+    { "kind": "brachio", "x": 111.6 },
+    { "kind": "geyser", "x": 142.8, "demo": true },
+    { "kind": "brachio", "x": 188.6 }
+  ]
+}

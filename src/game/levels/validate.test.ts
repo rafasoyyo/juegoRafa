@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { LevelData } from './types';
+import { GRAVITY, JUMP_SPEED } from '../level-course';
+import { challengeZone, GEYSER_STEP, GEYSER_STONE_W, geyserStoneX, RUN_SPEED, TILE, type LevelData } from './types';
 import { RULES, validateLevel } from './validate';
 
 /** Nivel corto y válido: salida en la baldosa 6, bandera en la 56. */
@@ -235,5 +236,90 @@ describe('barcas', () => {
 
   it('un escalón en el muelle de la barca falla', () => {
     expectError(withBoat(60, (l) => l.steps.push({ x: 55, width: 2, height: 1 })), 'challenges[0]', /steps\[/);
+  });
+});
+
+describe('caminos de huellas (isla)', () => {
+  const withFootprints = (x: number, extra: (l: LevelData) => void = () => undefined): LevelData =>
+    withChanges((l) => {
+      l.length = 100;
+      l.blocks.push({ x: 82, row: 'low' });
+      l.challenges.push({ kind: 'footprints', x, show: 'dots', reverse: false, demo: false });
+      extra(l);
+    });
+
+  it('ocupan lo mismo que un puente: sobre suelo llano y libre es válido', () => {
+    expect(validateLevel(withFootprints(54))).toEqual([]);
+    expect(challengeZone({ kind: 'footprints', x: 54 })).toEqual(challengeZone({ kind: 'bridge', x: 54 }));
+  });
+
+  it('con un escalón encima falla', () => {
+    expectError(withFootprints(54, (l) => l.steps.push({ x: 60, width: 3, height: 1 })), 'challenges[0]', /steps/);
+  });
+});
+
+describe('puertas de la cueva (isla)', () => {
+  const withDoor = (x: number, extra: (l: LevelData) => void = () => undefined): LevelData =>
+    withChanges((l) => {
+      l.length = 100;
+      l.blocks.push({ x: 82, row: 'low' });
+      l.challenges.push({ kind: 'door', x, show: 'dots', reverse: false, demo: false });
+      extra(l);
+    });
+
+  it('ocupan lo de unos bloques que cuentan y sitio para el triceratops detrás', () => {
+    expect(validateLevel(withDoor(54))).toEqual([]);
+    expect(challengeZone({ kind: 'door', x: 54 })).toEqual({ from: challengeZone({ kind: 'count', x: 54 }).from, to: challengeZone({ kind: 'count', x: 54 }).to + 2.5 });
+  });
+
+  it('con un foso en el sitio del triceratops falla', () => {
+    expectError(withDoor(54, (l) => l.spikes.push({ x: 60, width: 1 })), 'challenges[0]', /spikes/);
+  });
+});
+
+describe('paseos en braquiosaurio (isla)', () => {
+  const withBrachio = (x: number, extra: (l: LevelData) => void = () => undefined): LevelData =>
+    withChanges((l) => {
+      l.length = 100;
+      l.blocks.push({ x: 82, row: 'low' });
+      l.challenges.push({ kind: 'brachio', x, show: 'dots', reverse: false, demo: false });
+      extra(l);
+    });
+
+  it('ocupan lo mismo que una barca: con su orilla y su río sobre suelo llano y libre es válido', () => {
+    expect(validateLevel(withBrachio(60))).toEqual([]);
+    expect(challengeZone({ kind: 'brachio', x: 60 })).toEqual(challengeZone({ kind: 'boat', x: 60 }));
+  });
+
+  it('un escalón en la orilla falla', () => {
+    expectError(withBrachio(60, (l) => l.steps.push({ x: 55, width: 2, height: 1 })), 'challenges[0]', /steps\[/);
+  });
+});
+
+describe('piedras del géiser (isla)', () => {
+  const withGeyser = (x: number, extra: (l: LevelData) => void = () => undefined): LevelData =>
+    withChanges((l) => {
+      l.length = 100;
+      l.blocks.push({ x: 82, row: 'low' });
+      l.challenges.push({ kind: 'geyser', x, show: 'dots', reverse: false, demo: false });
+      extra(l);
+    });
+
+  it('el tótem, el lago y el géiser sobre suelo llano y libre es válido', () => {
+    expect(validateLevel(withGeyser(54))).toEqual([]);
+    expect(challengeZone({ kind: 'geyser', x: 54 })).toEqual({ from: 50, to: 54 + 11.25 + 2.5 });
+  });
+
+  it('un foso en el sitio del tótem falla', () => {
+    expectError(withGeyser(54, (l) => l.spikes.push({ x: 51, width: 1 })), 'challenges[0]', /spikes/);
+  });
+
+  it('saltar de piedra buena a piedra buena por encima de una hundida cabe en un salto', () => {
+    // Salto a ras de suelo: subir y bajar a la misma altura a toda velocidad.
+    const reach = (RUN_SPEED * 2 * JUMP_SPEED) / GRAVITY;
+    const gap = (2 * GEYSER_STEP - GEYSER_STONE_W) * TILE;
+    expect(gap).toBeLessThan(reach * 0.8);
+    // Y de la orilla a la segunda piedra, si la primera es mala.
+    expect((geyserStoneX(1) - GEYSER_STONE_W / 2) * TILE).toBeLessThan(reach * 0.8);
   });
 });

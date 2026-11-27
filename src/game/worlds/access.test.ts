@@ -3,6 +3,7 @@ import type { Flags } from '../flags';
 import { completeLevel, createGameState, worldProgress, type GameState } from '../state';
 import { opensAfter, worldAccess } from './access';
 import { ARCOIRIS } from './arcoiris';
+import { ISLA } from './isla';
 import { RIO } from './rio';
 
 /** Pendiente de un perfil antiguo (antes de las estrellas por objetivos ya no se crean). */
@@ -10,8 +11,8 @@ function legacyPending(s: GameState, world: string, level: number): void {
   worldProgress(s, world).pending.add(level);
 }
 
-const ON: Flags = { 'mundo-2-rio': true };
-const OFF: Flags = { 'mundo-2-rio': false };
+const ON: Flags = { 'mundo-2-rio': true, 'mundo-3-isla': true };
+const OFF: Flags = { 'mundo-2-rio': false, 'mundo-3-isla': false };
 
 describe('puerta de los mundos', () => {
   it('el mundo 1 no tiene puerta: siempre abierto', () => {
@@ -72,5 +73,17 @@ describe('mundos que abre el final de otro', () => {
     expect(opensAfter(RIO, RIO.id, 5, ON)).toBe(false);
     expect(opensAfter(ARCOIRIS, ARCOIRIS.id, 5, ON)).toBe(false);
     expect(opensAfter({ ...RIO, gate: { ...RIO.gate, flag: 'mundo-2-rio' } }, ARCOIRIS.id, 5, OFF)).toBe(false);
+  });
+
+  it('la isla, sin interruptor: abierta con 7 años o al llegar al nivel 12 del río, también en el juego publicado', () => {
+    expect(ISLA.gate).toEqual({ openAge: 7, after: { world: 'rio', level: 12 } });
+    expect(worldAccess(ISLA, createGameState(), 8, OFF)).toBe('open');
+    expect(worldAccess(ISLA, createGameState(), 7, OFF)).toBe('open');
+    expect(worldAccess(ISLA, createGameState(), 6, OFF)).toBe('locked');
+    const s = createGameState();
+    worldProgress(s, 'rio').stars.set(12, 1);
+    expect(worldAccess(ISLA, s, 5, OFF)).toBe('open');
+    expect(opensAfter(ISLA, RIO.id, 6, OFF)).toBe(true);
+    expect(opensAfter(ISLA, RIO.id, 7, OFF)).toBe(false);
   });
 });

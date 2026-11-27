@@ -1,0 +1,37 @@
+{
+  "ambient": "cristales",
+  "length": 222,
+  "steps": [
+    { "x": 118, "width": 4, "height": 1 }
+  ],
+  "platforms": [
+    { "x": 166.8, "width": 4, "height": 1.5 }
+  ],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 14.9, "row": "low" },
+    { "x": 75.4, "row": "high" },
+    { "x": 76.6, "row": "high" },
+    { "x": 77.8, "row": "high" },
+    { "x": 120, "row": "high", "on": "step" },
+    { "x": 129.6, "row": "low" },
+    { "x": 130.8, "row": "low" },
+    { "x": 168.8, "row": "low", "on": "platform" },
+    { "x": 210.2, "row": "low" },
+    { "x": 211.4, "row": "low" }
+  ],
+  "spikes": [
+    { "x": 41.9, "width": 2 },
+    { "x": 110, "width": 1 },
+    { "x": 157.8, "width": 2 },
+    { "x": 201.8, "width": 1 }
+  ],
+  "challenges": [
+    { "kind": "door", "x": 28.4 },
+    { "kind": "brachio", "x": 56.9 },
+    { "kind": "geyser", "x": 89.3 },
+    { "kind": "door", "x": 144.2 },
+    { "kind": "brachio", "x": 183.8 }
+  ]
+}

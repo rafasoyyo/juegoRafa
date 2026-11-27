@@ -37,8 +37,9 @@ const MIN_DELTA_E = 30;
 const FOX = 0xf28c28;
 
 describe('ambientes', () => {
-  it('existen los 24 ambientes (12 por mundo) y cada uno se llama como su clave', () => {
-    expect(AMBIENT_IDS).toHaveLength(24);
+  it('existen los ambientes de los mundos 1 y 2 (12 por mundo), los de la isla, y cada uno se llama como su clave', () => {
+    expect(AMBIENT_IDS.slice(0, 24)).toHaveLength(24);
+    expect(AMBIENT_IDS).toContain('playa-negra');
     expect(Object.keys(AMBIENTS).sort()).toEqual([...AMBIENT_IDS].sort());
     for (const id of AMBIENT_IDS) expect(AMBIENTS[id].id).toBe(id);
   });
