@@ -44,7 +44,7 @@ describe('shouldPlayPrologue', () => {
 });
 
 describe('shouldPlayFinale', () => {
-  const W = { id: 'arcoiris', levelCount: 12, finale: true };
+  const W = { id: 'arcoiris', levelCount: 12, finale: 'rain' as const };
   const finishAll = (s = createGameState()) => {
     for (let l = 1; l <= 12; l++) completeLevel(s, W.id, l, 2, 0);
     return s;
@@ -68,6 +68,17 @@ describe('shouldPlayFinale', () => {
     const s = createGameState();
     for (let l = 1; l <= 11; l++) completeLevel(s, W.id, l, 2, 0);
     worldProgress(s, W.id).pending.add(12);
+    expect(shouldPlayFinale(s, W)).toBe(true);
+  });
+
+  it('el final de la isla (el huevo que se abre) sale igual, una vez y por mundo', () => {
+    const isla = { id: 'isla', levelCount: 12, finale: 'hatch' as const };
+    const s = finishAll();
+    expect(shouldPlayFinale(s, isla)).toBe(false);
+    for (let l = 1; l <= 12; l++) completeLevel(s, 'isla', l, 2, 0);
+    expect(shouldPlayFinale(s, isla)).toBe(true);
+    markSeen(s, 'final', 'isla');
+    expect(shouldPlayFinale(s, isla)).toBe(false);
     expect(shouldPlayFinale(s, W)).toBe(true);
   });
 

@@ -63,6 +63,8 @@ function quizFor(level: number): QuizKind {
 const MAP: WorldMap = {
   sky: 'sky-map',
   screens: LEVELS.length <= 6 ? 1 : 2,
+  // El huevo de 12 manchas, arriba, encima del camino (paso 9: su sitio en el mapa definitivo).
+  egg: { center: [430, 215], size: 240 },
   nodes: [
     [150, 560],
     [330, 470],
@@ -83,7 +85,7 @@ const MAP: WorldMap = {
     { at: [610, 690], key: 'tree', size: 0 },
   ],
   clouds: [
-    { x: 0.3, y: 160, scale: 1 },
+    { x: 0.62, y: 150, scale: 1 },
     { x: 1.5, y: 140, scale: 0.9 },
   ],
 };
@@ -96,6 +98,8 @@ export const ISLA: WorldDef = {
   enemies: ENEMIES,
   course: COURSE,
   horizonRainbow: false,
+  // Al pintar la última mancha: el huevo se abre en el nido del cráter.
+  finale: 'hatch',
   map: MAP,
   selector: { color: 0xe4f4e8, shadow: 0xbfe0c6, icon: 'icon-shapes', iconSize: 88 },
   // Abierta con 7 años o más; con menos, al llegar al nivel 12 del río.
