@@ -124,7 +124,7 @@ export const ARCOIRIS: WorldDef = {
   course: COURSE,
   horizonRainbow: true,
   prologue: true,
-  finale: true,
+  finale: 'rain',
   map: MAP,
   selector: { color: 0xffe9e6, shadow: 0xf2c4bd, label: '123' },
   castle: CASTLE,

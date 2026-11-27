@@ -52,6 +52,11 @@ export interface WorldMap {
    * artboard escalados con el alto, para que sea un semicírculo en cualquier pantalla).
    */
   rainbow?: { center: readonly [number, number]; radius: number; band: number };
+  /**
+   * Huevo de 12 manchas, una por nivel, que se pintan al hacer los niveles (`map/egg-spots.ts`): centro en
+   * el artboard y alto en px del artboard escalados con el alto.
+   */
+  egg?: { center: readonly [number, number]; size: number };
   /** Pantallas de ancho que mide el camino. */
   screens: number;
   /** Posición de cada nivel (`nodes[0]` es el nivel 1) y, tras el último, la del castillo si lo hay. */
@@ -101,11 +106,11 @@ export interface WorldDef extends WorldShape {
    */
   prologue?: boolean;
   /**
-   * Final al volver al mapa con todos los niveles jugados, una vez por perfil (`story/finale.ts`): la
-   * lluvia sobre la montaña hace nacer el río. Abre con una animación los mundos cuya puerta depende de
-   * terminar este (`gate.after`).
+   * Final al volver al mapa con todos los niveles jugados, una vez por perfil (`story/finale.ts`): `rain`,
+   * la lluvia sobre la montaña hace nacer el río (mundo 1); `hatch`, el huevo se abre en el nido del
+   * cráter (mundo 3). Abre con una animación los mundos cuya puerta depende de terminar este (`gate.after`).
    */
-  finale?: boolean;
+  finale?: 'rain' | 'hatch';
   map: WorldMap;
   selector: SelectorButton;
   gate?: WorldGate;

@@ -100,6 +100,14 @@ describe('registro de mundos', () => {
     ]);
   });
 
+  it('la isla tiene el huevo de 12 manchas en el mapa y su final es la eclosión', () => {
+    const isla = worldDef('isla');
+    expect(isla.map.egg).toBeDefined();
+    expect(isla.map.rainbow).toBeUndefined();
+    expect(isla.finale).toBe('hatch');
+    expect(worldDef('arcoiris').finale).toBe('rain');
+  });
+
   it('pruebas de la bandera de la isla: una propia en cada nivel y el repaso en el 12', () => {
     const isla = worldDef('isla');
     const kinds = Array.from({ length: 12 }, (_, i) => isla.quizFor(i + 1));
