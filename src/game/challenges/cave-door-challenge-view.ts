@@ -11,6 +11,7 @@ import type { CaveDoorChallenge, DoorShape } from '../../learning/challenges/cav
 import { audio } from '../audio/audio-engine';
 import { BLOCK_SIZE, GROUND_TOP } from '../level-course';
 import { CHALLENGE_BLOCK_XS, CHALLENGE_GATE_X, TILE, type ChallengeData } from '../levels/types';
+import { bakePiece } from '../ui/bake';
 import { shapePoints } from '../ui/quiz-art';
 import { drawDino, piecePoints } from '../ui/quiz/island-art';
 import { ChallengeView, CHALLENGE_DEPTH as DEPTH, type ChallengeHooks } from './challenge-view';
@@ -38,18 +39,19 @@ function outline(d: DoorShape, size: number): Phaser.Math.Vector2[] {
   return shapePoints(d.shape, size) ?? Array.from({ length: 28 }, (_, i) => new Phaser.Math.Vector2(Math.cos((i * Math.PI) / 14) * size * 0.5, Math.sin((i * Math.PI) / 14) * size * 0.5));
 }
 
-/** Pieza de piedra ámbar (la del bloque, que luego vuela), centrada en (0, 0). */
-function drawPiece(scene: Phaser.Scene, d: DoorShape, size: number): Phaser.GameObjects.Graphics {
+/** Pieza de piedra ámbar (la del bloque, que luego vuela), centrada en (0, 0). Horneada. */
+function drawPiece(scene: Phaser.Scene, d: DoorShape, size: number): Phaser.GameObjects.Image {
   const pts = outline(d, size);
   const g = scene.add.graphics();
   g.fillStyle(STONE.groove, 0.6).fillPoints(pts.map((p) => new Phaser.Math.Vector2(p.x, p.y + 4)), true);
   g.fillStyle(PIECE).fillPoints(pts, true);
-  return g;
+  // Holgado: las piezas caben en su lado `size` y el surco baja 4 px.
+  return bakePiece(scene, g, { x: -size * 0.75, y: -size * 0.75, width: size * 1.5, height: size * 1.5 + 4 });
 }
 
 export class CaveDoorChallengeView extends ChallengeView {
   private readonly slab: Phaser.GameObjects.Container;
-  private readonly rim: Phaser.GameObjects.Graphics;
+  private readonly rim: Phaser.GameObjects.Image;
   private readonly trici: Phaser.GameObjects.Container;
   private readonly gate: Phaser.GameObjects.Zone;
   private readonly gx: number;
@@ -75,6 +77,7 @@ export class CaveDoorChallengeView extends ChallengeView {
     facade.fillStyle(ROCK).fillRoundedRect(gx - DOOR_W / 2 - 60, top - 60, DOOR_W + 120, DOOR_H + 60, { tl: 80, tr: 80, bl: 0, br: 0 });
     facade.fillStyle(CAVE).fillRoundedRect(gx - DOOR_W / 2 - 6, top - 10, DOOR_W + 12, DOOR_H + 10, { tl: 60, tr: 60, bl: 0, br: 0 });
     facade.fillStyle(GOLD).fillRect(gx - 40, top - 48, 80, 10);
+    bakePiece(scene, facade, { x: gx - DOOR_W / 2 - 70, y: top - 70, width: DOOR_W + 140, height: DOOR_H + 70 });
 
     // La losa con el hueco tallado y su borde (que se ilumina).
     const hole = challenge.hole;
@@ -88,13 +91,18 @@ export class CaveDoorChallengeView extends ChallengeView {
     const hy = HOLE_Y - GROUND_TOP;
     slab.fillStyle(STONE.light).fillCircle(0, hy, HOLE * 0.72);
     slab.fillStyle(STONE.groove).fillPoints(this.holePts.map((p) => new Phaser.Math.Vector2(p.x, p.y + hy)), true);
-    this.rim = scene.add.graphics();
-    this.rim.lineStyle(6, GOLD).strokePoints(this.holePts.map((p) => new Phaser.Math.Vector2(p.x, p.y + hy)), true, true);
-    this.rim.setAlpha(0.35);
-    this.slab = scene.add.container(gx, GROUND_TOP, [slab, this.rim]).setDepth(DEPTH);
+    const slabImg = bakePiece(scene, slab, { x: -DOOR_W / 2, y: -DOOR_H, width: DOOR_W, height: DOOR_H + 6 });
+    const rim = scene.add.graphics();
+    rim.lineStyle(6, GOLD).strokePoints(this.holePts.map((p) => new Phaser.Math.Vector2(p.x, p.y + hy)), true, true);
+    // Holgado: el hueco gira dentro de un círculo de lado `HOLE` (más el grosor del borde).
+    this.rim = bakePiece(scene, rim, { x: -HOLE, y: hy - HOLE, width: HOLE * 2, height: HOLE * 2 }).setAlpha(0.35);
+    this.slab = scene.add.container(gx, GROUND_TOP, [slabImg, this.rim]).setDepth(DEPTH);
 
     // El triceratops, al otro lado, mirando a la losa.
-    this.trici = scene.add.container(gx + DOOR_W / 2 + TRICI * 0.38, GROUND_TOP - TRICI * 0.42, [drawDino(scene, 'trici', false, true, TRICI)]).setDepth(DEPTH - 1);
+    const trici = drawDino(scene, 'trici', false, true, TRICI);
+    const body = trici.list[0];
+    if (body instanceof Phaser.GameObjects.Graphics) bakePiece(scene, body, { x: -TRICI * 0.75, y: -TRICI * 0.75, width: TRICI * 1.5, height: TRICI * 1.5 });
+    this.trici = scene.add.container(gx + DOOR_W / 2 + TRICI * 0.38, GROUND_TOP - TRICI * 0.42, [trici]).setDepth(DEPTH - 1);
 
     this.addBlockViews(
       CHALLENGE_BLOCK_XS.map((bx) => x + bx * TILE),
