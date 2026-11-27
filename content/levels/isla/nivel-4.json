@@ -1,33 +1,32 @@
 {
-  "ambient": "playa-negra",
-  "length": 162,
-  "steps": [],
+  "ambient": "huellas",
+  "length": 181.2,
+  "steps": [
+    { "x": 84.4, "width": 4, "height": 1 }
+  ],
   "platforms": [],
   "blocks": [
     { "x": 12.5, "row": "low" },
     { "x": 13.7, "row": "low" },
-    { "x": 21.5, "row": "high" },
-    { "x": 22.7, "row": "high" },
-    { "x": 56.0, "row": "low" },
-    { "x": 57.2, "row": "low" },
-    { "x": 58.4, "row": "low" },
-    { "x": 66.5, "row": "high" },
-    { "x": 67.7, "row": "high" },
-    { "x": 100.5, "row": "low" },
-    { "x": 101.7, "row": "low" },
-    { "x": 110.0, "row": "high" },
-    { "x": 111.2, "row": "high" },
-    { "x": 145.5, "row": "low" },
-    { "x": 146.7, "row": "low" },
-    { "x": 147.9, "row": "low" }
+    { "x": 56.2, "row": "high" },
+    { "x": 57.4, "row": "high" },
+    { "x": 86.4, "row": "high", "on": "step" },
+    { "x": 95.9, "row": "low" },
+    { "x": 97.1, "row": "low" },
+    { "x": 139.6, "row": "low" },
+    { "x": 140.8, "row": "low" },
+    { "x": 142, "row": "low" },
+    { "x": 169.5, "row": "high" },
+    { "x": 170.7, "row": "high" }
   ],
   "spikes": [
-    { "x": 62, "width": 1 },
-    { "x": 115, "width": 1 }
+    { "x": 47.7, "width": 1 },
+    { "x": 131.1, "width": 1 }
   ],
   "challenges": [
-    { "kind": "geyser", "x": 36, "demo": true },
-    { "kind": "geyser", "x": 80 },
-    { "kind": "geyser", "x": 125 }
+    { "kind": "footprints", "x": 22.2 },
+    { "kind": "door", "x": 70.9, "demo": true },
+    { "kind": "footprints", "x": 105.6 },
+    { "kind": "door", "x": 155.5 }
   ]
 }

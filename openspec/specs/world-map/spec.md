@@ -347,14 +347,14 @@ Con la medalla del arcoíris ganada, el botón 123 del selector SHALL mostrarla 
 - **THEN** el botón 123 muestra la medalla en su esquina
 
 ### Requirement: La isla en construcción
-El tercer botón del selector (formas) SHALL abrir el mundo 3, «La isla de los dinosaurios», solo cuando el interruptor de desarrollo `mundo-3-isla` está activo; en el juego publicado SHALL seguir temblando como un mundo que aún no existe. Con el interruptor activo, la isla SHALL abrirse con 7 años o más o al llegar al nivel 12 del río, y con candado en otro caso.
+El tercer botón del selector (formas) SHALL abrir el mundo 3, «La isla de los dinosaurios», también en el juego publicado, sin depender de ningún interruptor: con 7 años o más, o al llegar al nivel 12 del río, y con candado en otro caso.
 
 #### Scenario: Juego publicado
 - **WHEN** un niño de 8 años toca el botón de formas en el juego publicado
-- **THEN** el botón tiembla y no se abre ningún mundo
+- **THEN** se abre el mapa de la isla
 
-#### Scenario: En desarrollo con 6 años
-- **WHEN** en desarrollo un perfil de 6 años que no ha llegado al nivel 12 del río toca el botón de formas
+#### Scenario: Con 6 años
+- **WHEN** un perfil de 6 años que no ha llegado al nivel 12 del río toca el botón de formas
 - **THEN** el botón tiembla con candado
 
 ### Requirement: Huevo de manchas de la isla
@@ -377,3 +377,10 @@ El mapa de la isla SHALL mostrar el castillo como la parada siguiente a su últi
 #### Scenario: Medalla en el selector
 - **WHEN** un perfil gana el castillo de la isla y vuelve al mapa
 - **THEN** el botón de formas del selector lleva la medalla de la huella
+
+### Requirement: Mapa del volcán
+El mapa de la isla SHALL tener dos pantallas en las que el camino sube de la playa negra al gran volcán, con el paisaje de cada tramo, el huevo de 12 manchas encima de los niveles del medio sin que ningún nodo lo tape, y el castillo dibujado como el nido del cráter en la cima del volcán. El nido SHALL verse también al final del recorrido del castillo y en su prueba.
+
+#### Scenario: El nido en el cráter
+- **WHEN** se abre el mapa de la isla a 844×390 y se desplaza hasta el final
+- **THEN** el nido queda sobre el cráter, tras el nivel 12, sin que el selector tape las estrellas

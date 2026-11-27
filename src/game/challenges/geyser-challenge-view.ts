@@ -12,13 +12,12 @@ import { hitBlock } from '../../learning/challenges/ladder';
 import { audio } from '../audio/audio-engine';
 import { GROUND_TOP } from '../level-course';
 import { GEYSER_LAKE, GEYSER_STONE_W, GEYSER_TOTEM_X, geyserStoneX, TILE, type ChallengeData, type WorldSpike } from '../levels/types';
+import { LAVA as LAVA_COLORS } from '../levels/spikes';
 import { fillShape } from '../ui/quiz-art';
 import { ChallengeView, CHALLENGE_DEPTH as DEPTH, type ChallengeHooks } from './challenge-view';
 import { drawGlyph, GLYPH_HEX, GOLD, lightGlyph, STONE, type GlyphView } from './glyphs';
 
-const LAVA = 0xe8642c;
-const LAVA_LIGHT = 0xffa23f;
-const LAVA_DARK = 0xa83a1c;
+const { mid: LAVA, light: LAVA_LIGHT, dark: LAVA_DARK } = LAVA_COLORS;
 const BASALT = 0x3a3540;
 const BASALT_LIGHT = 0x524b58;
 const STEAM = 0xf1f6f5;

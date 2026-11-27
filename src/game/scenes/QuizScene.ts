@@ -23,7 +23,7 @@ import { VIEW_KINDS, type DrawResult, type QuizView, type ViewState } from '../u
 import { digits, fitImage, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
 import { addSky } from '../ui/widgets';
-import { castleQuizPools } from '../castle/castle';
+import { castleQuizPools, castleTexture } from '../castle/castle';
 import { clampLevel, worldDef } from '../worlds/registry';
 import type { WorldDef, WorldId } from '../worlds/types';
 import {
@@ -253,7 +253,7 @@ export class QuizScene extends Phaser.Scene {
     });
 
     // En el castillo, el castillo en lugar del dibujo de la prueba.
-    if (this.castle) fitImage(this.add.image(width - 32 - 48, 24 + 48, 'castle'), 96);
+    if (this.castle) fitImage(this.add.image(width - 32 - 48, 24 + 48, castleTexture(this.def.castle)), 96);
     else drawQuizPictogram(this, this.kind, 96).setPosition(width - 32 - 48, 24 + 48);
 
     this.layer = this.add.container(0, 0);

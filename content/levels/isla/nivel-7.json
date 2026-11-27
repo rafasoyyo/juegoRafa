@@ -1,0 +1,36 @@
+{
+  "ambient": "cuellos-largos",
+  "length": 203.4,
+  "steps": [
+    { "x": 92.3, "width": 4, "height": 1 }
+  ],
+  "platforms": [
+    { "x": 144.5, "width": 4, "height": 1.5 }
+  ],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 14.9, "row": "low" },
+    { "x": 55.9, "row": "high" },
+    { "x": 57.1, "row": "high" },
+    { "x": 58.3, "row": "high" },
+    { "x": 94.3, "row": "high", "on": "step" },
+    { "x": 111.8, "row": "low" },
+    { "x": 113, "row": "low" },
+    { "x": 146.5, "row": "low", "on": "platform" },
+    { "x": 190.5, "row": "low" },
+    { "x": 191.7, "row": "low" },
+    { "x": 192.9, "row": "low" }
+  ],
+  "spikes": [
+    { "x": 46.4, "width": 2 },
+    { "x": 103.3, "width": 1 },
+    { "x": 182, "width": 1 }
+  ],
+  "challenges": [
+    { "kind": "brachio", "x": 28.4, "demo": true },
+    { "kind": "footprints", "x": 66.8 },
+    { "kind": "brachio", "x": 126.5 },
+    { "kind": "footprints", "x": 156.5 }
+  ]
+}

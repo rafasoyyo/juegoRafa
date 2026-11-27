@@ -1,0 +1,38 @@
+{
+  "ambient": "rios-lava",
+  "length": 239.7,
+  "steps": [
+    { "x": 82.6, "width": 4, "height": 1 }
+  ],
+  "platforms": [
+    { "x": 173.6, "width": 4, "height": 1.5 }
+  ],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 14.9, "row": "low" },
+    { "x": 84.6, "row": "high", "on": "step" },
+    { "x": 103.2, "row": "low" },
+    { "x": 104.4, "row": "low" },
+    { "x": 131.9, "row": "high" },
+    { "x": 133, "row": "high" },
+    { "x": 175.6, "row": "low", "on": "platform" },
+    { "x": 226.8, "row": "low" },
+    { "x": 228, "row": "low" },
+    { "x": 229.2, "row": "low" }
+  ],
+  "spikes": [
+    { "x": 48.9, "width": 2 },
+    { "x": 93.6, "width": 2 },
+    { "x": 140.6, "width": 2 },
+    { "x": 184.6, "width": 1 },
+    { "x": 217.3, "width": 2 }
+  ],
+  "challenges": [
+    { "kind": "footprints", "x": 23.4 },
+    { "kind": "geyser", "x": 61.9 },
+    { "kind": "door", "x": 117.8 },
+    { "kind": "brachio", "x": 155.6 },
+    { "kind": "geyser", "x": 196.6 }
+  ]
+}
