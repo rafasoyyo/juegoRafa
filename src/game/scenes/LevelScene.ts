@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { boatChallenge, type BoatChallenge } from '../../learning/challenges/boat';
 import { bridgeChallenge, type BridgeChallenge } from '../../learning/challenges/bridge';
 import { countChallenge, countRange, type CountChallenge } from '../../learning/challenges/count-blocks';
+import { footprintsChallenge, type FootprintsChallenge } from '../../learning/challenges/footprints';
 import { ageBand } from '../../learning/quiz/age';
 import { createRng } from '../../learning/quiz/rng';
 import { audio } from '../audio/audio-engine';
@@ -9,6 +10,7 @@ import { BoatChallengeView } from '../challenges/boat-challenge-view';
 import { BridgeChallengeView, bridgeHole } from '../challenges/bridge-challenge-view';
 import type { ChallengeView } from '../challenges/challenge-view';
 import { CountChallengeView } from '../challenges/count-challenge-view';
+import { FootprintsChallengeView } from '../challenges/footprints-challenge-view';
 import { LaloFlyer } from '../challenges/lalo-flyer';
 import { COLORS, GAME_H } from '../config';
 import { castleCourse } from '../castle/castle';
@@ -160,7 +162,7 @@ export class LevelScene extends Phaser.Scene {
   private nextDustAt = 0;
   private enemies: EnemyView[] = [];
   /** Erizos y abejas del nivel, para «¿Te acuerdas?». */
-  private enemyCounts: Record<EnemyKind, number> = { hedgehog: 0, bee: 0, frog: 0, crab: 0 };
+  private enemyCounts: Record<EnemyKind, number> = { hedgehog: 0, bee: 0, frog: 0, crab: 0, ptero: 0, volcano: 0, trex: 0 };
   private knockUntil = -Infinity;
   private protectedUntil = -Infinity;
   private hitAt = -Infinity;
@@ -189,7 +191,7 @@ export class LevelScene extends Phaser.Scene {
   /** Retos del recorrido (mundo 2) y Lalo volando para ayudar en ellos. */
   private challenges: ChallengeView[] = [];
   /** Retos generados para esta partida (con la edad del perfil), antes de dibujarlos. */
-  private plannedChallenges: (CountChallenge | BridgeChallenge | BoatChallenge)[] = [];
+  private plannedChallenges: (CountChallenge | BridgeChallenge | BoatChallenge | FootprintsChallenge)[] = [];
   /**
    * Agua que cortan los retos en el suelo (hueco del puente y lago de la barca), para el escenario. La
    * que hace rebotar en cada momento la da `water()`.
@@ -447,7 +449,7 @@ export class LevelScene extends Phaser.Scene {
   /** Enemigos al azar en zonas seguras (suelo llano); cambian cada vez que se entra en el nivel. */
   private buildEnemies(): void {
     const spawns = this.castle ? [] : layoutEnemies(this.def.enemies, this.level, courseFor(this.world));
-    this.enemyCounts = { hedgehog: 0, bee: 0, frog: 0, crab: 0 };
+    this.enemyCounts = { hedgehog: 0, bee: 0, frog: 0, crab: 0, ptero: 0, volcano: 0, trex: 0 };
     for (const spawn of spawns) this.enemyCounts[spawn.kind] += 1;
     this.enemies = spawns.map((spawn) => createEnemyView(this, spawn, GROUND_TOP));
     for (const enemy of this.enemies) enemy.update(this.time.now);
@@ -468,12 +470,13 @@ export class LevelScene extends Phaser.Scene {
     let next = 0;
     this.plannedChallenges = data.map((c) => {
       if (c.kind === 'bridge') return bridgeChallenge(band, rng);
+      if (c.kind === 'footprints') return footprintsChallenge(band, rng);
       if (c.kind === 'boat') return boatChallenge(band, rng);
       return countChallenge(band, rng, c, pool[next++ % pool.length]!);
     });
     this.waterHoles = data.flatMap((c, i) => {
       const plan = this.plannedChallenges[i]!;
-      if (plan.kind === 'bridge') return [bridgeHole(c.x, plan)];
+      if (plan.kind === 'bridge' || plan.kind === 'footprints') return [bridgeHole(c.x, plan)];
       if (plan.kind === 'boat') return [{ index: -1, x: c.x, width: BOAT_LAKE * TILE }];
       return [];
     });
@@ -498,6 +501,7 @@ export class LevelScene extends Phaser.Scene {
     this.challenges = data.map((c, i) => {
       const plan = this.plannedChallenges[i]!;
       if (plan.kind === 'bridge') return new BridgeChallengeView(this, this.fox, c, plan, hooks);
+      if (plan.kind === 'footprints') return new FootprintsChallengeView(this, this.fox, c, plan, hooks);
       if (plan.kind === 'boat') return new BoatChallengeView(this, this.fox, c, plan, hooks);
       return new CountChallengeView(this, this.fox, c, plan, hooks);
     });
@@ -541,7 +545,7 @@ export class LevelScene extends Phaser.Scene {
   private touchingEnemies(): EnemyView[] {
     const body = this.fox.body;
     const fox = { x: body.x, y: body.y, w: body.width, h: body.height };
-    return this.enemies.filter((e) => overlaps(fox, e.box()));
+    return this.enemies.filter((e) => e.boxes().some((b) => overlaps(fox, b)));
   }
 
   /**
@@ -563,7 +567,8 @@ export class LevelScene extends Phaser.Scene {
 
   /** Pinchazo de un enemigo: brinco corto hacia el lado contrario al enemigo. */
   private onEnemyHit(enemy: EnemyView, time: number): void {
-    const box = enemy.box();
+    const fox = { x: this.fox.body.x, y: this.fox.body.y, w: this.fox.body.width, h: this.fox.body.height };
+    const box = enemy.boxes().find((b) => overlaps(fox, b)) ?? enemy.boxes()[0]!;
     let side = Math.sign(this.fox.x - (box.x + box.w / 2));
     if (side === 0) side = this.faceLeft ? 1 : -1;
     enemy.gesture();

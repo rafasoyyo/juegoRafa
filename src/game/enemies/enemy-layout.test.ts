@@ -9,6 +9,7 @@ import {
   FLAG_CLEAR,
   freeStretches,
   layoutEnemies,
+  spawnReach,
   START_CLEAR,
   type Course,
   type EnemySpawn,
@@ -39,9 +40,7 @@ const HALF_BODY = 50;
 
 /** Intervalo horizontal que puede ocupar el centro del enemigo en algún momento. */
 function reach(e: EnemySpawn): { from: number; to: number } {
-  if (e.kind === 'hedgehog' || e.kind === 'crab') return { from: e.minX, to: e.maxX };
-  if (e.kind === 'frog') return { from: e.x, to: e.x };
-  return { from: e.x - BEE_DRIFT, to: e.x + BEE_DRIFT };
+  return spawnReach(e);
 }
 
 describe('layoutEnemies', () => {
@@ -213,5 +212,41 @@ describe('enemigos del río', () => {
         }
       }
     });
+  });
+});
+
+describe('enemigos de la isla', () => {
+  /** Las reglas de `docs/MUNDO-3.md`: pterosaurios desde el 3, volcancito desde el 5 y tiranosaurio desde el 7. */
+  const ISLA_RULES = {
+    perLevel: [2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10],
+    kinds: [
+      { kind: 'hedgehog' as const, fromLevel: 1 },
+      { kind: 'ptero' as const, fromLevel: 3 },
+      { kind: 'volcano' as const, fromLevel: 5 },
+      { kind: 'trex' as const, fromLevel: 7 },
+    ],
+  };
+  const open: Course = { startX: 0, flagX: 12000, keepClear: Array.from({ length: 12 }, (_, i) => ({ x: 1200 + i * 850, width: 84 })) };
+
+  it('cada uno cabe en su tramo con su medio cuerpo, también la fila de pterosaurios y el tiranosaurio', () => {
+    const tight: Course = { startX: 0, flagX: 3000, keepClear: [{ x: 1300, width: 84 }, { x: 1700, width: 84 }] };
+    for (const c of [open, tight]) {
+      for (const seed of SEEDS) {
+        for (const e of layoutEnemies(ISLA_RULES, 7, c, seeded(seed))) {
+          const r = spawnReach(e);
+          expect(r.from - r.half, e.kind).toBeGreaterThanOrEqual(e.stretch.from - 0.001);
+          expect(r.to + r.half, e.kind).toBeLessThanOrEqual(e.stretch.to + 0.001);
+          if (e.kind === 'ptero') expect([2, 3]).toContain(e.of);
+        }
+      }
+    }
+  });
+
+  it('salen por orden: pterosaurios desde el 3, volcancito desde el 5 y tiranosaurio desde el 7; una fila cuenta como uno', () => {
+    const kinds = (level: number): Set<string> => new Set(SEEDS.flatMap((seed) => layoutEnemies(ISLA_RULES, level, open, seeded(seed)).map((e) => e.kind)));
+    expect([...kinds(3)].sort()).toEqual(['hedgehog', 'ptero']);
+    expect([...kinds(5)].sort()).toEqual(['hedgehog', 'ptero', 'volcano']);
+    expect([...kinds(7)].sort()).toEqual(['hedgehog', 'ptero', 'trex', 'volcano']);
+    for (const seed of SEEDS) expect(layoutEnemies(ISLA_RULES, 7, open, seeded(seed))).toHaveLength(7);
   });
 });

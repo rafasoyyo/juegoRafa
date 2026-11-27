@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { LevelData } from './types';
+import { challengeZone, type LevelData } from './types';
 import { RULES, validateLevel } from './validate';
 
 /** Nivel corto y válido: salida en la baldosa 6, bandera en la 56. */
@@ -235,5 +235,24 @@ describe('barcas', () => {
 
   it('un escalón en el muelle de la barca falla', () => {
     expectError(withBoat(60, (l) => l.steps.push({ x: 55, width: 2, height: 1 })), 'challenges[0]', /steps\[/);
+  });
+});
+
+describe('caminos de huellas (isla)', () => {
+  const withFootprints = (x: number, extra: (l: LevelData) => void = () => undefined): LevelData =>
+    withChanges((l) => {
+      l.length = 100;
+      l.blocks.push({ x: 82, row: 'low' });
+      l.challenges.push({ kind: 'footprints', x, show: 'dots', reverse: false, demo: false });
+      extra(l);
+    });
+
+  it('ocupan lo mismo que un puente: sobre suelo llano y libre es válido', () => {
+    expect(validateLevel(withFootprints(54))).toEqual([]);
+    expect(challengeZone({ kind: 'footprints', x: 54 })).toEqual(challengeZone({ kind: 'bridge', x: 54 }));
+  });
+
+  it('con un escalón encima falla', () => {
+    expectError(withFootprints(54, (l) => l.steps.push({ x: 60, width: 3, height: 1 })), 'challenges[0]', /steps/);
   });
 });

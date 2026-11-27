@@ -32,8 +32,8 @@ const ROPE = 0x8a5a2e;
 const COUNT_STEP_MS = 420;
 const DEMO_TRIGGER_TILES = 8;
 
-/** Hueco del puente en px del mundo para el reto `bridge` que empieza en `left` (px). */
-export function bridgeHole(left: number, challenge: BridgeChallenge): WorldSpike {
+/** Hueco del puente (también el de huellas de la isla) en px del mundo para el puente que empieza en `left` (px). */
+export function bridgeHole(left: number, challenge: { gap: number }): WorldSpike {
   const s = BRIDGE_SECTION * TILE;
   return { index: -1, x: left + challenge.gap * s, width: s };
 }

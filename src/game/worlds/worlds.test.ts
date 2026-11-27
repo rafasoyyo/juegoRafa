@@ -51,16 +51,32 @@ describe('registro de mundos', () => {
     expect(WORLDS.length + UPCOMING.length).toBe(4);
   });
 
-  it('selector: 123, el río, formas y Aa', () => {
-    expect(WORLDS.map((w) => w.id)).toEqual(['arcoiris', 'rio']);
+  it('selector: 123, el río, formas (la isla) y Aa', () => {
+    expect(WORLDS.map((w) => w.id)).toEqual(['arcoiris', 'rio', 'isla']);
     expect(WORLDS[0]!.selector.label).toBe('123');
     expect(WORLDS[1]!.selector.icon).toBe('icon-ten-frame');
-    expect(UPCOMING.map((b) => b.icon ?? b.label)).toEqual(['icon-shapes', 'Aa']);
+    expect(WORLDS[2]!.selector.icon).toBe('icon-shapes');
+    expect(UPCOMING.map((b) => b.icon ?? b.label)).toEqual(['Aa']);
   });
 
   it('el río se abre con 6 años o al llegar al nivel 12 del mundo 1, sin interruptor de desarrollo', () => {
     expect(worldDef('rio').gate).toEqual({ openAge: 6, after: { world: 'arcoiris', level: 12 } });
     expect(WORLDS[0]!.gate).toBeUndefined();
+  });
+
+  it('el nivel 1 de la isla lleva 3 caminos de huellas y el primero es la demostración', () => {
+    const challenges = worldDef('isla').levels[0]!.challenges;
+    expect(challenges.map((c) => [c.kind, c.demo])).toEqual([
+      ['footprints', true],
+      ['footprints', false],
+      ['footprints', false],
+    ]);
+  });
+
+  it('pruebas de la bandera de la isla: una propia en cada nivel y el repaso en el 12', () => {
+    const isla = worldDef('isla');
+    const kinds = Array.from({ length: 12 }, (_, i) => isla.quizFor(i + 1));
+    expect(kinds).toEqual(['dino-shadows', 'shape-things', 'stego-plates', 'turned-shapes', 'nest', 'odd-egg', 'fossil', 'skin-mosaic', 'growing-neck', 'roll-or-not', 'hidden-triangles', 'island-review']);
   });
 
   it('el mundo 1 no tiene retos del recorrido', () => {
@@ -80,7 +96,7 @@ describe('registro de mundos', () => {
   it('los 12 tramos del río siguen la tabla de docs/MUNDO-2.md: retos, paisajes y novedades', () => {
     const rio = worldDef('rio');
     expect(rio.levelCount).toBe(12);
-    const K = { count: 'A', bridge: 'B', boat: 'C' } as const;
+    const K = { count: 'A', bridge: 'B', boat: 'C', footprints: '-' } as const;
     const mix = rio.levels.map((l) => l.challenges.map((c) => K[c.kind]).sort().join(''));
     expect(mix).toEqual(['AAA', 'AAA', 'AAA', 'AABB', 'BBBB', 'AABB', 'AACC', 'BBCC', 'ABBCC', 'BBBCC', 'ABBCC', 'ABBCC']);
     expect(rio.levels.map((l) => l.ambient)).toEqual([

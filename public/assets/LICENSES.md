@@ -59,6 +59,10 @@ Licencia: la del repositorio.
 | `svg/icon-speaker.svg` | lienzo de diseño |
 | `svg/frog.svg` | propio: rana saltarina (enemigo del río), en la paleta y el estilo del lienzo |
 | `svg/crab.svg` | propio: cangrejo que anda de lado (enemigo del río), en la paleta y el estilo del lienzo |
+| `svg/trex.svg` | propio: tiranosaurio (enemigo de la isla, mundo 3) en el estilo A documental de la hoja de diseño de los dinosaurios del proyecto |
+| `svg/ptero.svg` | propio: pterosaurio (enemigo de la isla, mundo 3) en el estilo A documental de la hoja de diseño de los dinosaurios del proyecto |
+| `svg/volcano-small.svg` | propio: volcancito del camino (enemigo de la isla, mundo 3), plano y sin contornos |
+| `svg/lava-rock.svg` | propio: piedra de lava que lanza el volcancito, plana y sin contornos |
 | `svg/castle.svg` | propio: castillo del final de cada mundo (mapa, recorrido y prueba), en la paleta y el estilo del lienzo |
 | `svg/medal.svg` | propio: medalla que da el castillo (fin del castillo y selector de mundos), en la paleta y el estilo del lienzo |
 | `svg/icon-ten-frame.svg` | propio: marco de diez (2×5 casillas con 7 fichas), icono del mundo del río, en la paleta del lienzo |
