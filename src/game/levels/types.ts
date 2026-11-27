@@ -24,7 +24,11 @@ export const RUN_SPEED = 110 * SCALE;
 
 export { GROUND_TOP };
 
-export const AMBIENT_IDS = ['prado', 'flores', 'bosque', 'otono', 'atardecer', 'noche', 'playa', 'selva', 'montana', 'nieve', 'desierto', 'nubes'] as const;
+/** Los 12 paisajes del mundo 1 y, después, los 12 tramos del río (mundo 2). */
+export const AMBIENT_IDS = [
+  'prado', 'flores', 'bosque', 'otono', 'atardecer', 'noche', 'playa', 'selva', 'montana', 'nieve', 'desierto', 'nubes',
+  'manantial', 'arroyo', 'cascada', 'molino', 'canaveral', 'lago', 'embarcadero', 'puente', 'huertas', 'lluvia', 'puerto', 'desembocadura',
+] as const;
 export type AmbientId = (typeof AMBIENT_IDS)[number];
 
 export type BlockRow = keyof typeof ROW_BASE;
@@ -63,6 +67,64 @@ export interface SpikeData {
   width: number;
 }
 
+/**
+ * Mecánicas de reto del recorrido (`docs/MUNDO-2.md`): A, «Bloques que cuentan»; B, «El puente de los
+ * números», y C, «La barca de diez».
+ */
+export const CHALLENGE_KINDS = ['count', 'bridge', 'boat'] as const;
+export type ChallengeKind = (typeof CHALLENGE_KINDS)[number];
+export const QUANTITY_SHOWS = ['dots', 'tenframe'] as const;
+export type QuantityShowId = (typeof QUANTITY_SHOWS)[number];
+
+/**
+ * Reto del recorrido, siempre sobre el suelo. En `count`, `x` es el centro del bloque central y ocupa de
+ * `x + CHALLENGE_ZONE.from` (cartel) a `x + CHALLENGE_ZONE.to` (compuerta). En `bridge`, `x` es el borde
+ * izquierdo del puente y en `boat`, el borde izquierdo del lago. Su zona la da `challengeZone`.
+ */
+export interface ChallengeData {
+  kind: ChallengeKind;
+  x: number;
+  /** Cómo se muestra la cantidad (los pequeños siempre ven puntos y los mayores, marcos). */
+  show: QuantityShowId;
+  /** Al revés: el cartel lleva la cifra y los bloques, la cantidad. */
+  reverse: boolean;
+  /** Lalo hace la demostración en este reto; no cuenta para las estrellas. */
+  demo: boolean;
+}
+
+/** Geometría de un reto respecto a su `x`, en baldosas. */
+export const CHALLENGE_ZONE = { from: -6, to: 4 } as const;
+export const CHALLENGE_SIGN_X = -4.5;
+export const CHALLENGE_BLOCK_XS = [-1.5, 0, 1.5] as const;
+export const CHALLENGE_GATE_X = 3;
+
+/** Puente: tramos de 3,5 baldosas (más de lo que alcanza un salto, también desde un bloque). */
+export const BRIDGE_SECTION = 3.5;
+export const BRIDGE_SECTIONS = 5;
+/** Margen de suelo llano a cada lado del puente, en baldosas. */
+export const BRIDGE_MARGIN = 1;
+/** Centros de los bloques del puente respecto al borde izquierdo del hueco, en baldosas. */
+export const BRIDGE_BLOCK_XS = [-4.5, -3, -1.5] as const;
+
+/**
+ * Barca: un lago de `BOAT_LAKE` baldosas con la barca (`BOAT_LENGTH`) en la orilla izquierda. El agua libre
+ * que queda es más que un salto, también desde la barca o desde un bloque.
+ */
+export const BOAT_LAKE = 10;
+export const BOAT_LENGTH = 3.5;
+/** Centros de los bloques de la barca (en el muelle) respecto al borde izquierdo del lago, en baldosas. */
+export const BOAT_BLOCK_XS = [-4.5, -3, -1.5] as const;
+/** Muelle libre antes del lago y margen tras él, en baldosas. */
+export const BOAT_DOCK = 6;
+export const BOAT_MARGIN = 1;
+
+/** Tramo que ocupa un reto, en baldosas. */
+export function challengeZone(c: { kind: ChallengeKind; x: number }): { from: number; to: number } {
+  if (c.kind === 'boat') return { from: c.x - BOAT_DOCK, to: c.x + BOAT_LAKE + BOAT_MARGIN };
+  if (c.kind === 'bridge') return { from: c.x - BRIDGE_MARGIN, to: c.x + BRIDGE_SECTIONS * BRIDGE_SECTION + BRIDGE_MARGIN };
+  return { from: c.x + CHALLENGE_ZONE.from, to: c.x + CHALLENGE_ZONE.to };
+}
+
 /** Un nivel tal como está en el JSON (en baldosas), con su nombre para los mensajes de error. */
 export interface LevelData {
   id: string;
@@ -74,6 +136,8 @@ export interface LevelData {
   blocks: BlockData[];
   /** Zonas de pinchos (opcional en el JSON: si falta, no hay ninguna). */
   spikes: SpikeData[];
+  /** Retos del recorrido (opcional en el JSON). */
+  challenges: ChallengeData[];
 }
 
 /** Escalón en el mundo: `x` es el borde izquierdo, `height` px sobre el suelo y `top` la `y` de su cara superior. */
@@ -124,6 +188,8 @@ export interface WorldLevel {
   platforms: WorldPlatform[];
   blocks: WorldBlock[];
   spikes: WorldSpike[];
+  /** Retos con `x` (centro del bloque central) en px. */
+  challenges: (ChallengeData & { index: number })[];
 }
 
 /** `y` del mundo de algo que está `height` px sobre el suelo. */

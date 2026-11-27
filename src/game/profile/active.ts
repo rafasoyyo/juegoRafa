@@ -67,6 +67,7 @@ function fill(progress: GameState): void {
   session.cookies = progress.cookies;
   session.ownedHats = progress.ownedHats;
   session.hat = progress.hat;
+  session.seen = progress.seen;
 }
 
 /** Elige un perfil guardado y carga su progreso. Devuelve `false` si ya no se puede leer. */

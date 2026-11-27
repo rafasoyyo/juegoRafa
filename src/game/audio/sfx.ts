@@ -51,9 +51,17 @@ export type SfxName =
   | 'power-off'
   | 'prize'
   | 'star'
-  | 'goal';
+  | 'goal'
+  | 'gate'
+  | 'tick'
+  | 'scale'
+  | 'horn'
+  | 'band';
 export interface SfxOptions {
-  /** Para `star`: 0, 1 o 2; cada una más aguda. */
+  /**
+   * Para `star`: 0, 1 o 2; cada una más aguda. Para `tick`: el número que se cuenta (1, 2…), cada uno más agudo.
+   * Para `band`: la banda del gajo del arcoíris, de 0 (fuera) a 5 (dentro), cada una más aguda.
+   */
   index?: number;
 }
 
@@ -70,6 +78,8 @@ const tone = (start: number, dur: number, wave: Wave, freq: ToneLayer['freq'], g
 });
 
 const STAR_NOTES = ['C6', 'E6', 'G6'];
+/** Notas de las 6 bandas de un gajo del arcoíris del mapa, de fuera adentro: una escala que sube. */
+export const BAND_NOTES = ['C5', 'D5', 'E5', 'G5', 'A5', 'C6'];
 
 /** Jingle de victoria a partir de la partitura `victory`. */
 function victoryRecipe(): Recipe {
@@ -159,6 +169,38 @@ export function recipe(name: SfxName, opts: SfxOptions = {}): Recipe {
     }
     case 'goal':
       return VICTORY;
+    case 'gate':
+      // Compuerta que se levanta: madera que cruje hacia arriba y cuatro notas que suben.
+      return {
+        layers: [
+          tone(0, 0.5, 'triangle', [[0, 160], [0.45, 320]], 0.22, 0.02),
+          ...['G5', 'C6', 'E6', 'G6'].map((n, i) => tone(0.1 + i * 0.08, 0.24, 'triangle', hz(n), 0.24, 0.006)),
+        ],
+      };
+    case 'scale':
+      // Tabla del puente en su sitio: escala de Do que sube, una nota por tramo y la última más larga.
+      return {
+        layers: ['C5', 'D5', 'E5', 'F5', 'G5', 'A5', 'B5', 'C6'].map((n, i) => tone(i * 0.07, i === 7 ? 0.4 : 0.14, 'triangle', hz(n), 0.24, 0.006)),
+      };
+    case 'band': {
+      // Banda del gajo del arcoíris: campana corta y clara, más aguda de fuera adentro.
+      const i = Math.max(0, Math.min(BAND_NOTES.length - 1, Math.round(opts.index ?? 0)));
+      const f = hz(BAND_NOTES[i]!);
+      return { layers: [tone(0, 0.32, 'sine', f, 0.26, 0.005), tone(0, 0.2, 'triangle', f * 2, 0.08, 0.005)] };
+    }
+    case 'horn':
+      // Bocina de la barca: dos toques graves y redondos (una quinta), el segundo más largo.
+      return {
+        layers: [0, 0.3].flatMap((start, i) => {
+          const dur = i === 0 ? 0.2 : 0.55;
+          return [tone(start, dur, 'triangle', hz('G3'), 0.32, 0.03), tone(start, dur, 'sine', hz('D4'), 0.18, 0.03), tone(start, dur, 'square', hz('G2'), 0.06, 0.03)];
+        }),
+      };
+    case 'tick': {
+      // «Tic» de contar: corto, más agudo con cada número (una escala que sube).
+      const k = Math.max(0, Math.min(20, Math.round(opts.index ?? 1) - 1));
+      return { layers: [tone(0, 0.09, 'sine', 523 * Math.pow(2, k / 12), 0.3, 0.006)] };
+    }
   }
 }
 
@@ -196,4 +238,9 @@ export const SFX_NAMES: readonly SfxName[] = [
   'prize',
   'star',
   'goal',
+  'gate',
+  'tick',
+  'scale',
+  'horn',
+  'band',
 ];

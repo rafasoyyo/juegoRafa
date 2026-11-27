@@ -20,9 +20,10 @@ import {
 import { drawExtraVisual } from '../ui/quiz/art';
 import { createView } from '../ui/quiz/views';
 import { VIEW_KINDS, type DrawResult, type QuizView, type ViewState } from '../ui/quiz/view';
-import { digits, RoundButton } from '../ui/round-button';
+import { digits, fitImage, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
 import { addSky } from '../ui/widgets';
+import { castleQuizPools } from '../castle/castle';
 import { clampLevel, worldDef } from '../worlds/registry';
 import type { WorldDef, WorldId } from '../worlds/types';
 import {
@@ -32,6 +33,7 @@ import {
   currentQuestion,
   dimmedOptions,
   fillLevels,
+  generateCastleQuiz,
   generateQuiz,
   GUIDE_TEXT,
   type HintKind,
@@ -51,7 +53,13 @@ import {
 import type { LevelCompleteData } from './LevelCompleteScene';
 
 /** Datos con los que se abre la prueba: el mundo del nivel y lo que pasó en él. */
-export type QuizData = Partial<LevelRecap> & { world?: WorldId };
+export type QuizData = Partial<LevelRecap> & {
+  world?: WorldId;
+  /** Galletas que se podían ganar en la fase (bloques «?» y premios de los retos). */
+  cookiesTotal?: number;
+  /** Prueba del castillo del mundo: una pregunta de cada paso de su lista y, al acabar, la medalla. */
+  castle?: boolean;
+};
 
 /** Ancho útil como mucho: en pantallas muy alargadas la prueba se centra. */
 const MAX_USEFUL_W = 1200;
@@ -82,6 +90,20 @@ const AREAS: Record<QuizKind, { prompt: Area; options: Area; cell: [number, numb
   tracks: { prompt: { top: 150, bottom: 690 }, options: { top: 190, bottom: 690 }, cell: [400, 120] },
   balance: { prompt: { top: 150, bottom: 580 }, options: { top: 590, bottom: 705 }, cell: [150, 108] },
   mirror: { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 705 }, cell: [200, 190] },
+  // Río de los números.
+  fingers: { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 700 }, cell: [150, 150] },
+  'ten-frame': { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 700 }, cell: [150, 150] },
+  memory: { prompt: { top: 150, bottom: 440 }, options: { top: 470, bottom: 700 }, cell: [130, 156] },
+  neighbor: { prompt: { top: 170, bottom: 420 }, options: { top: 470, bottom: 690 }, cell: [160, 160] },
+  'number-line': { prompt: { top: 150, bottom: 560 }, options: { top: 560, bottom: 700 }, cell: [96, 150] },
+  biggest: { prompt: { top: 130, bottom: 260 }, options: { top: 300, bottom: 690 }, cell: [200, 200] },
+  'ten-friends': { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 700 }, cell: [150, 150] },
+  train: { prompt: { top: 150, bottom: 600 }, options: { top: 600, bottom: 700 }, cell: [120, 120] },
+  socks: { prompt: { top: 150, bottom: 450 }, options: { top: 470, bottom: 700 }, cell: [200, 200] },
+  'frog-jumps': { prompt: { top: 150, bottom: 560 }, options: { top: 560, bottom: 700 }, cell: [96, 150] },
+  boats: { prompt: { top: 150, bottom: 400 }, options: { top: 450, bottom: 690 }, cell: [140, 150] },
+  // El repaso dibuja cada pregunta con las zonas de su propio tipo.
+  'river-review': { prompt: { top: 150, bottom: 480 }, options: { top: 500, bottom: 700 }, cell: [150, 150] },
 };
 
 interface OptionView {
@@ -99,7 +121,12 @@ interface OptionView {
 export class QuizScene extends Phaser.Scene {
   private def!: WorldDef;
   private recap!: LevelRecap;
+  /** Retos del recorrido acertados a la primera, para las estrellas (se pasa tal cual). */
+  private cookiesTotal = 0;
   private kind: QuizKind = 'count';
+  private castle = false;
+  /** Tipo de la pregunta en pantalla: el de la prueba salvo en el repaso, que mezcla varios. */
+  private qkind: QuizKind = 'count';
   private run!: QuizRun;
   private seed = 1;
   private width = 0;
@@ -148,14 +175,22 @@ export class QuizScene extends Phaser.Scene {
       blocksHit: data?.blocksHit ?? 0,
       blocksTotal: data?.blocksTotal ?? 0,
     };
-    this.kind = this.def.quizFor(level);
+    this.cookiesTotal = data?.cookiesTotal ?? this.recap.blocksTotal;
+    const castle = data?.castle ? this.def.castle : undefined;
+    this.castle = castle !== undefined;
     this.seed = (Date.now() ^ (level * 7919)) >>> 0;
-    const questions = generateQuiz(this.kind, ageBand(activeAge()), createRng(this.seed), {
+    const ctx = {
       alias: activeAlias(),
       recap: this.recap,
       // «¿Te acuerdas?» pregunta por los paisajes de este mundo.
       ambients: [...new Set(this.def.levels.map((l) => l.ambient))],
-    });
+    };
+    const band = ageBand(activeAge());
+    const questions = castle
+      ? generateCastleQuiz(castleQuizPools(castle), band, createRng(this.seed), ctx)
+      : generateQuiz(this.def.quizFor(level), band, createRng(this.seed), ctx);
+    // En el castillo cada pregunta es de su prueba; la escena toma la primera como la suya.
+    this.kind = castle ? (questions[0]?.kind ?? 'count') : this.def.quizFor(level);
     this.run = createRun(questions);
     this.busy = false;
     this.guideOpen = false;
@@ -203,8 +238,9 @@ export class QuizScene extends Phaser.Scene {
       if (!this.busy && !this.guideOpen && !isFinished(this.run)) this.openGuide();
     });
 
-    const picto = drawQuizPictogram(this, this.kind, 96);
-    picto.setPosition(width - 32 - 48, 24 + 48);
+    // En el castillo, el castillo en lugar del dibujo de la prueba.
+    if (this.castle) fitImage(this.add.image(width - 32 - 48, 24 + 48, 'castle'), 96);
+    else drawQuizPictogram(this, this.kind, 96).setPosition(width - 32 - 48, 24 + 48);
 
     this.layer = this.add.container(0, 0);
     this.drawMarks();
@@ -217,13 +253,18 @@ export class QuizScene extends Phaser.Scene {
       },
       onReplay: () => this.demo(),
     });
-    if (this.guideOpen) this.bubble.open(GUIDE_TEXT[this.kind]);
+    if (this.guideOpen) this.bubble.open(this.guideText());
   }
 
   private openGuide(): void {
     this.guideOpen = true;
     this.stopDemo();
-    this.bubble?.open(GUIDE_TEXT[this.kind]);
+    this.bubble?.open(this.guideText());
+  }
+
+  /** Texto para el adulto: el de la prueba o, en el castillo, el de la prueba de la pregunta en pantalla. */
+  private guideText(): (typeof GUIDE_TEXT)[QuizKind] {
+    return GUIDE_TEXT[this.castle ? this.qkind : this.kind];
   }
 
   private drawMarks(): void {
@@ -231,7 +272,7 @@ export class QuizScene extends Phaser.Scene {
     const y = 24 + 48;
     ms.forEach((m, i) => {
       const mark = drawProgressMark(this, m, i === this.run.index && m === 'pending');
-      mark.setPosition(this.width / 2 + (i - 1) * 80, y);
+      mark.setPosition(this.width / 2 + (i - (ms.length - 1) / 2) * 80, y);
       mark.setName('mark');
     });
   }
@@ -273,10 +314,11 @@ export class QuizScene extends Phaser.Scene {
     this.shownIndex = this.run.index;
     this.willDemo = firstTime && !this.demoDone.has(this.run.index);
     const rng = createRng(this.seed + this.run.index * 101);
-    if (VIEW_KINDS.includes(this.kind)) {
+    this.qkind = q.kind;
+    if (VIEW_KINDS.includes(q.kind)) {
       const top = this.add.container(0, 0);
       this.viewTopLayer = top;
-      this.view = createView(this.kind, { scene: this, layer: this.layer, top, width: this.width, usefulW: this.usefulW, state: () => this.viewState() });
+      this.view = createView(q.kind, { scene: this, layer: this.layer, top, width: this.width, usefulW: this.usefulW, state: () => this.viewState() });
     }
     this.drawPrompt(q, rng);
     this.drawOptions(q);
@@ -288,7 +330,7 @@ export class QuizScene extends Phaser.Scene {
 
     if (firstTime && !this.demoDone.has(this.run.index)) {
       this.demoDone.add(this.run.index);
-      this.speak(this.kind);
+      this.speak(this.qkind);
       // Pequeña pausa para que el niño vea la pregunta antes de la demostración.
       this.busy = true;
       this.time.delayedCall(350, () => this.demo());
@@ -311,7 +353,7 @@ export class QuizScene extends Phaser.Scene {
       this.promptAnchor = this.drawResult.anchor;
       return;
     }
-    const area = AREAS[this.kind].prompt;
+    const area = AREAS[this.qkind].prompt;
     const cx = this.width / 2;
     const cy = (area.top + area.bottom) / 2;
     const h = area.bottom - area.top;
@@ -499,7 +541,7 @@ export class QuizScene extends Phaser.Scene {
   private drawRowOptions(opts: Question['options'], rowArea?: DrawResult['rowArea']): void {
     const n = opts.length;
     if (n === 0) return;
-    const base = AREAS[this.kind];
+    const base = AREAS[this.qkind];
     const area = rowArea ?? base.options;
     const availW = rowArea?.w ?? this.usefulW;
     const centerX = rowArea?.cx ?? this.width / 2;
@@ -660,7 +702,7 @@ export class QuizScene extends Phaser.Scene {
   private finish(): void {
     if (!isFinished(this.run)) return;
     this.busy = true;
-    const { passed } = result(this.run);
+    const { correct, total } = result(this.run);
     this.time.delayedCall(END_MS, () => {
       const data: LevelCompleteData = {
         world: this.def.id,
@@ -668,7 +710,10 @@ export class QuizScene extends Phaser.Scene {
         blocksHit: this.recap.blocksHit,
         blocksTotal: this.recap.blocksTotal,
         cookies: this.recap.cookies,
-        passed,
+        cookiesTotal: this.cookiesTotal,
+        quizCorrect: correct,
+        quizTotal: total,
+        castle: this.castle,
       };
       goTo(this, 'LevelComplete', data);
     });

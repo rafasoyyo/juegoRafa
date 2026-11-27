@@ -143,7 +143,7 @@ describe('intentos, pistas y resultado', () => {
     expect(marks(run).slice(0, 2)).toEqual(['correct', 'correct']);
   });
 
-  it('dos aciertos de tres: superada', () => {
+  it('cuenta los aciertos: dos de tres', () => {
     const run = createRun([choiceQ(), choiceQ(), choiceQ()]);
     tap(run, 1);
     tap(run, 0);
@@ -151,15 +151,15 @@ describe('intentos, pistas y resultado', () => {
     tap(run, 0);
     tap(run, 1);
     expect(isFinished(run)).toBe(true);
-    expect(result(run)).toEqual({ correct: 2, total: 3, passed: true });
+    expect(result(run)).toEqual({ correct: 2, total: 3 });
   });
 
-  it('un acierto: no superada', () => {
+  it('un acierto y la prueba acabada no admite más toques', () => {
     const run = createRun([choiceQ(), choiceQ(), choiceQ()]);
     tap(run, 1);
     for (let i = 0; i < 6; i++) tap(run, 0);
     expect(isFinished(run)).toBe(true);
-    expect(result(run).passed).toBe(false);
+    expect(result(run).correct).toBe(1);
     expect(tap(run, 1)).toEqual({ type: 'ignored' });
   });
 

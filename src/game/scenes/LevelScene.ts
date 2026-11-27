@@ -1,7 +1,18 @@
 import Phaser from 'phaser';
+import { boatChallenge, type BoatChallenge } from '../../learning/challenges/boat';
+import { bridgeChallenge, type BridgeChallenge } from '../../learning/challenges/bridge';
+import { countChallenge, countRange, type CountChallenge } from '../../learning/challenges/count-blocks';
+import { ageBand } from '../../learning/quiz/age';
+import { createRng } from '../../learning/quiz/rng';
 import { audio } from '../audio/audio-engine';
+import { BoatChallengeView } from '../challenges/boat-challenge-view';
+import { BridgeChallengeView, bridgeHole } from '../challenges/bridge-challenge-view';
+import type { ChallengeView } from '../challenges/challenge-view';
+import { CountChallengeView } from '../challenges/count-challenge-view';
+import { LaloFlyer } from '../challenges/lalo-flyer';
 import { COLORS, GAME_H } from '../config';
-import { courseFor, layoutEnemies } from '../enemies/enemy-layout';
+import { castleCourse } from '../castle/castle';
+import { courseFor, layoutEnemies, type EnemyKind } from '../enemies/enemy-layout';
 import { overlaps } from '../enemies/enemy-motion';
 import { createEnemyView, type EnemyView } from '../enemies/enemy-views';
 import { BLOCK_SIZE, GROUND_TOP, JUMP_SPEED, KNOCK_VY, MAX_VELOCITY, SCALE } from '../level-course';
@@ -21,9 +32,12 @@ import {
   SPIKE_PLATE_H,
   STEEL,
 } from '../levels/spikes';
-import { RUN_SPEED, TILE, type WorldLevel } from '../levels/types';
+import { BOAT_LAKE, RUN_SPEED, TILE, type WorldLevel, type WorldSpike } from '../levels/types';
 import { FRUIT_SIZE, FRUIT_VX, FRUIT_VY, loseCookie, pickFruitBlock, powerPhase, type PowerPhase } from '../power/power';
+import { activeAge, saveActive } from '../profile/active';
 import { session } from '../state';
+import { Prologue } from '../story/prologue';
+import { markSeen, shouldPlayPrologue } from '../story/story';
 import { clampLevel, levelData, showWorld, worldDef } from '../worlds/registry';
 import type { WorldDef, WorldId } from '../worlds/types';
 import type { QuizData } from './QuizScene';
@@ -105,6 +119,10 @@ interface LevelData {
   /** Mundo del nivel; sin dato, el primero. */
   world?: WorldId;
   level?: number;
+  /** Se juega el castillo del mundo (tras su último nivel) en lugar de un nivel. */
+  castle?: boolean;
+  /** Empieza con el prólogo aunque ya se haya visto (al tocar la madriguera del mapa). */
+  prologue?: boolean;
 }
 
 /**
@@ -116,6 +134,8 @@ export class LevelScene extends Phaser.Scene {
   /** Mundo al que pertenece el nivel: sus enemigos, su escenario y su número de niveles. */
   private def!: WorldDef;
   private level = 1;
+  /** Recorrido del castillo: sin enemigos, con el castillo tras la bandera y su prueba de varias preguntas. */
+  private castle = false;
   private world!: WorldLevel;
   private ambient!: Ambient;
   private fox!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
@@ -140,7 +160,7 @@ export class LevelScene extends Phaser.Scene {
   private nextDustAt = 0;
   private enemies: EnemyView[] = [];
   /** Erizos y abejas del nivel, para «¿Te acuerdas?». */
-  private enemyCounts = { hedgehog: 0, bee: 0 };
+  private enemyCounts: Record<EnemyKind, number> = { hedgehog: 0, bee: 0, frog: 0, crab: 0 };
   private knockUntil = -Infinity;
   private protectedUntil = -Infinity;
   private hitAt = -Infinity;
@@ -166,9 +186,24 @@ export class LevelScene extends Phaser.Scene {
   private nextSparkleAt = 0;
   private glowing = false;
 
+  /** Retos del recorrido (mundo 2) y Lalo volando para ayudar en ellos. */
+  private challenges: ChallengeView[] = [];
+  /** Retos generados para esta partida (con la edad del perfil), antes de dibujarlos. */
+  private plannedChallenges: (CountChallenge | BridgeChallenge | BoatChallenge)[] = [];
+  /**
+   * Agua que cortan los retos en el suelo (hueco del puente y lago de la barca), para el escenario. La
+   * que hace rebotar en cada momento la da `water()`.
+   */
+  private waterHoles: WorldSpike[] = [];
+  /** Rufo va en la barca: sin control hasta llegar. */
+  private held = false;
+  private hudLalo?: Phaser.GameObjects.Image;
+
   private home!: RoundButton;
   private progress!: { container: Phaser.GameObjects.Container; fill: Phaser.GameObjects.Graphics; face: Phaser.GameObjects.Image; barW: number };
   private counter!: CookieCounter;
+  /** Se pidió el prólogo desde el mapa. */
+  private forcePrologue = false;
 
   constructor() {
     super('Level');
@@ -177,8 +212,11 @@ export class LevelScene extends Phaser.Scene {
   init(data: LevelData): void {
     this.def = worldDef(data?.world);
     showWorld(this.def.id);
-    this.level = clampLevel(this.def, data?.level);
-    this.world = toWorld(levelData(this.def, this.level));
+    const castle = data?.castle ? this.def.castle : undefined;
+    this.castle = castle !== undefined;
+    // El castillo va tras el último nivel: su paisaje (y el arcoíris del horizonte) son los del final.
+    this.level = castle ? this.def.levelCount : clampLevel(this.def, data?.level);
+    this.world = toWorld(castle ? castleCourse(castle) : levelData(this.def, this.level));
     this.ambient = AMBIENTS[this.world.ambient];
     this.cookies = 0;
     this.blocksHit = 0;
@@ -210,6 +248,12 @@ export class LevelScene extends Phaser.Scene {
     this.sparkles = [];
     this.nextSparkleAt = 0;
     this.glowing = false;
+    this.challenges = [];
+    this.plannedChallenges = [];
+    this.waterHoles = [];
+    this.held = false;
+    this.hudLalo = undefined;
+    this.forcePrologue = data?.prologue === true && !this.castle;
   }
 
   create(): void {
@@ -219,10 +263,14 @@ export class LevelScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, worldW, GAME_H);
     this.cameras.main.setBounds(0, 0, worldW, GAME_H);
 
-    const spans = groundSpans(worldW, this.world.spikes);
-    const pits = this.world.spikes.map((z) => ({ from: z.x, to: z.x + z.width }));
+    this.planChallenges();
+    const gaps = [...this.world.spikes, ...this.waterHoles].sort((a, b) => a.x - b.x);
+    const spans = groundSpans(worldW, gaps);
+    const pits = gaps.map((z) => ({ from: z.x, to: z.x + z.width }));
     const horizon = this.def.horizonRainbow ? { level: this.level, lastLevel: this.def.levelCount } : null;
-    addScenery(this, this.ambient, worldW, GROUND_TOP, horizon, this.scale.width, { spans, pits });
+    const scenery = addScenery(this, this.ambient, worldW, GROUND_TOP, horizon, this.scale.width, { spans, pits });
+    // En el nivel 1 de un mundo con prólogo, Rufo sale de su madriguera.
+    const burrow = this.def.prologue && this.level === 1 && !this.castle ? this.add.image(this.world.startX - 60, GROUND_TOP + 10, 'decor-burrow').setOrigin(0.5, 1).setScale(1.2).setDepth(3) : undefined;
     // Suelo por tramos entre los fosos y, en cada foso, un fondo a la altura de las puntas.
     const ground = spans.map((span) => this.staticZone(span.from, GROUND_TOP, span.to - span.from, 100));
     const pitFloors = pits.map((pit) => this.staticZone(pit.from, GROUND_TOP + PIT_TIP, pit.to - pit.from, 100 - PIT_TIP));
@@ -235,6 +283,7 @@ export class LevelScene extends Phaser.Scene {
     this.buildFox();
     this.buildGoal();
     this.buildEnemies();
+    this.buildChallenges();
 
     this.physics.add.collider(this.fox, ground, undefined, () => this.groundIsSolid(), this);
     this.physics.add.collider(this.fox, pitFloors);
@@ -249,6 +298,32 @@ export class LevelScene extends Phaser.Scene {
     this.buildHud();
     this.layout(this.scale.width, this.scale.height);
     onResize(this, (w, h) => this.layout(w, h));
+    if (burrow && !this.castle && shouldPlayPrologue(session, this.def, this.level, this.forcePrologue)) this.playPrologue(burrow, scenery.rainbow);
+  }
+
+  /** Prólogo del mundo: el niño no mueve a Rufo hasta que acaba o lo salta con un toque. */
+  private playPrologue(burrow: Phaser.GameObjects.Image, rainbow?: Phaser.GameObjects.Image): void {
+    markSeen(session, 'prologo', this.def.id);
+    saveActive();
+    this.held = true;
+    const prologue = new Prologue(this, {
+      fox: this.fox,
+      hat: this.hat,
+      hatId: session.hat,
+      foxSize: FOX_SIZE,
+      burrowMouth: { x: burrow.x + 10, y: burrow.y - 40 },
+      lalo: new LaloFlyer(this, () => this.hudLalo),
+      rainbow,
+      hop: () => {
+        this.fox.setVelocityY(-JUMP_SPEED * 0.75);
+        audio.sfx('jump');
+      },
+      done: () => {
+        this.held = false;
+      },
+    });
+    this.input.on(Phaser.Input.Events.POINTER_DOWN, () => prologue.tap());
+    prologue.play();
   }
 
   override update(time: number, delta: number): void {
@@ -273,19 +348,19 @@ export class LevelScene extends Phaser.Scene {
 
     // Durante el rebote se ignoran las flechas y el salto: si no, volvería a chocar.
     const knocked = time < this.knockUntil;
-    const dir = knocked ? 0 : (input.right ? 1 : 0) - (input.left ? 1 : 0);
+    const dir = knocked || this.held ? 0 : (input.right ? 1 : 0) - (input.left ? 1 : 0);
     if (this.spikeRebound && grounded && !knocked) this.spikeRebound = false;
     // Tras el rebote de los pinchos, si el niño no toca nada, Rufo acaba el arco fuera de la zona.
     const coasting = this.spikeRebound && dir === 0;
     if (!knocked && !coasting) this.fox.setVelocityX(dir * RUN_SPEED);
     // Parado en el borde de un foso casi sobre el hueco: se desliza hacia el suelo firme.
-    if (!knocked && !this.spikeRebound && dir === 0 && grounded && Math.abs(body.bottom - GROUND_TOP) <= 2) {
-      const nudge = lipNudge(body.x, body.width, this.world.spikes);
+    if (!knocked && !this.held && !this.spikeRebound && dir === 0 && grounded && Math.abs(body.bottom - GROUND_TOP) <= 2) {
+      const nudge = lipNudge(body.x, body.width, [...this.world.spikes, ...this.water()]);
       if (nudge !== 0) this.fox.setVelocityX(nudge * LIP_NUDGE_SPEED);
     }
     if (dir !== 0) this.faceLeft = dir < 0;
 
-    if (input.jump && !this.prevJump && !knocked) this.jumpBufferedAt = time;
+    if (input.jump && !this.prevJump && !knocked && !this.held) this.jumpBufferedAt = time;
     this.prevJump = input.jump;
 
     const wantsJump = time - this.jumpBufferedAt <= BUFFER_MS;
@@ -302,6 +377,7 @@ export class LevelScene extends Phaser.Scene {
     this.tickPower(time);
     this.checkEnemies(time);
     this.checkSpikes(time, grounded);
+    for (const c of this.challenges) c.update(this.fox.x);
     this.animateFox(time, delta, grounded, dir);
     this.updateProgress();
   }
@@ -370,11 +446,95 @@ export class LevelScene extends Phaser.Scene {
 
   /** Enemigos al azar en zonas seguras (suelo llano); cambian cada vez que se entra en el nivel. */
   private buildEnemies(): void {
-    const spawns = layoutEnemies(this.def.enemies, this.level, courseFor(this.world));
-    this.enemyCounts = { hedgehog: 0, bee: 0 };
+    const spawns = this.castle ? [] : layoutEnemies(this.def.enemies, this.level, courseFor(this.world));
+    this.enemyCounts = { hedgehog: 0, bee: 0, frog: 0, crab: 0 };
     for (const spawn of spawns) this.enemyCounts[spawn.kind] += 1;
     this.enemies = spawns.map((spawn) => createEnemyView(this, spawn, GROUND_TOP));
     for (const enemy of this.enemies) enemy.update(this.time.now);
+  }
+
+  /**
+   * Retos del recorrido: sus valores salen de la franja de edad del perfil y cambian en cada partida.
+   * Fallar no quita galletas; abrir la compuerta da `GATE_COOKIES`.
+   */
+  private planChallenges(): void {
+    const data = this.world.challenges;
+    if (data.length === 0) return;
+    const rng = createRng((Date.now() ^ (this.level * 104729)) >>> 0);
+    const band = ageBand(activeAge());
+    // Respuestas distintas entre los retos A del nivel mientras quepan en el rango.
+    const [min, max] = countRange(band);
+    const pool = rng.shuffle(Array.from({ length: max - min + 1 }, (_, i) => min + i));
+    let next = 0;
+    this.plannedChallenges = data.map((c) => {
+      if (c.kind === 'bridge') return bridgeChallenge(band, rng);
+      if (c.kind === 'boat') return boatChallenge(band, rng);
+      return countChallenge(band, rng, c, pool[next++ % pool.length]!);
+    });
+    this.waterHoles = data.flatMap((c, i) => {
+      const plan = this.plannedChallenges[i]!;
+      if (plan.kind === 'bridge') return [bridgeHole(c.x, plan)];
+      if (plan.kind === 'boat') return [{ index: -1, x: c.x, width: BOAT_LAKE * TILE }];
+      return [];
+    });
+  }
+
+  private buildChallenges(): void {
+    const data = this.world.challenges;
+    if (data.length === 0) return;
+    const lalo = new LaloFlyer(this, () => this.hudLalo);
+    const hooks = {
+      lalo,
+      reward: (count: number, x: number, y: number) => this.rainCookies(count, x, y),
+      closeHole: (hole: WorldSpike) => this.closeHole(hole),
+      hold: (on: boolean) => {
+        this.held = on;
+        if (on) this.fox.setVelocityX(0);
+      },
+      carry: (dx: number) => {
+        this.fox.x += dx;
+      },
+    };
+    this.challenges = data.map((c, i) => {
+      const plan = this.plannedChallenges[i]!;
+      if (plan.kind === 'bridge') return new BridgeChallengeView(this, this.fox, c, plan, hooks);
+      if (plan.kind === 'boat') return new BoatChallengeView(this, this.fox, c, plan, hooks);
+      return new CountChallengeView(this, this.fox, c, plan, hooks);
+    });
+  }
+
+  /** Agua de los retos que hace rebotar ahora mismo (cambia al cerrar el puente o al cruzar la barca). */
+  private water(): WorldSpike[] {
+    return this.challenges.flatMap((c) => c.holes());
+  }
+
+  /** Tabla del puente colocada: el hueco pasa a ser suelo firme. */
+  private closeHole(hole: WorldSpike): void {
+    const plank = this.staticZone(hole.x, GROUND_TOP, hole.width, 100);
+    this.physics.add.collider(this.fox, plank);
+    this.surfaces.push(plank);
+  }
+
+  /** Lluvia de galletas que suben del punto (x, y) y se suman al contador. */
+  private rainCookies(count: number, x: number, y: number): void {
+    for (let i = 0; i < count; i++) {
+      const cookie = this.add.image(x, y, 'cookie').setDepth(6);
+      this.tweens.add({
+        targets: cookie,
+        x: x + (i - (count - 1) / 2) * 70,
+        y: y - 90,
+        alpha: 0,
+        delay: i * 120,
+        duration: 600,
+        ease: 'Quad.easeOut',
+        onStart: () => audio.sfx('cookie'),
+        onComplete: () => cookie.destroy(),
+      });
+    }
+    this.cookies += count;
+    this.counter.setValue(this.cookies);
+    this.layout(this.scale.width, this.scale.height);
+    bump(this, this.counter.container);
   }
 
   /** Enemigos que tocan ahora la caja del zorro. */
@@ -450,9 +610,17 @@ export class LevelScene extends Phaser.Scene {
    * (suelo, escalón o plataforma) se recuerda dónde, para rebotar hacia ese lado.
    */
   private checkSpikes(time: number, grounded: boolean): void {
-    const zone = grounded ? pitUnder(this.fox.body.bottom, this.fox.x, this.world.spikes) : undefined;
+    const water = this.water();
+    const zone = grounded ? pitUnder(this.fox.body.bottom, this.fox.x, [...this.world.spikes, ...water]) : undefined;
     if (grounded && !zone) this.lastSafeX = this.fox.x;
     if (!zone) return;
+    if (water.includes(zone)) {
+      // Agua del puente o del lago: rebote fuera por donde entró, sin galleta ni parpadeo.
+      const side = exitSide(zone, this.lastSafeX, this.fox.x);
+      this.knock(time, side, reboundVelocity(zone, side, this.fox.x), 'bump', false);
+      this.spikeRebound = true;
+      return;
+    }
     const costsCookie = powerPhase(time, this.powerStartedAt) === 'off' && time >= this.protectedUntil;
     const side = exitSide(zone, this.lastSafeX, this.fox.x);
     this.knock(time, side, reboundVelocity(zone, side, this.fox.x), 'spikes', costsCookie);
@@ -763,6 +931,8 @@ export class LevelScene extends Phaser.Scene {
 
   private buildGoal(): void {
     const flagX = this.world.flagX;
+    // En el castillo, la bandera está a sus puertas.
+    if (this.castle) this.add.image(flagX + 150, GROUND_TOP + 6, 'castle').setOrigin(0.5, 1).setDepth(4);
     this.add.image(flagX, GROUND_TOP + 4, 'flag').setOrigin(0.1, 1).setDepth(5);
     const zone = this.add.zone(flagX, GROUND_TOP - 20 * SCALE, 24 * SCALE, 40 * SCALE);
     this.physics.add.existing(zone, true);
@@ -805,12 +975,14 @@ export class LevelScene extends Phaser.Scene {
       goTo(this, 'Quiz', {
         world: this.def.id,
         level: this.level,
+        castle: this.castle,
         ambient: this.world.ambient,
         hedgehogs: this.enemyCounts.hedgehog,
         bees: this.enemyCounts.bee,
         cookies: this.cookies,
         blocksHit: this.blocksHit,
         blocksTotal: this.world.blocks.length,
+        cookiesTotal: this.world.blocks.length + this.challenges.reduce((sum, c) => sum + c.cookieReward(), 0),
       } satisfies QuizData),
     );
   }
@@ -844,6 +1016,7 @@ export class LevelScene extends Phaser.Scene {
 
     this.counter = cookieCounter(this, 0, 0, 0);
     const lalo = drawLalo(this, 32, 140);
+    this.hudLalo = lalo.list[0] as Phaser.GameObjects.Image;
 
     for (const obj of [this.home, container, this.counter.container, lalo]) fixToCamera(obj.setDepth(HUD_DEPTH));
     this.updateProgress();

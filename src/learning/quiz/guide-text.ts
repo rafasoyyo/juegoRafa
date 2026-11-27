@@ -78,6 +78,66 @@ export const GUIDE_TEXT: Record<QuizKind, GuideText> = {
     goal: 'Reconocer la simetría.',
     how: 'Si doblamos el dibujo por la mitad, ¿cómo quedaría el otro lado?',
   },
+  fingers: {
+    title: '¿Cuántos dedos?',
+    goal: 'Ver cantidades sin contar: una mano entera son 5.',
+    how: 'Enséñale tus manos. ¿Cuántos dedos hay sin contarlos uno a uno?',
+  },
+  'ten-frame': {
+    title: 'El marco de diez',
+    goal: 'Ver cantidades en el marco de diez y cuánto falta para llenarlo.',
+    how: '¿Cuántas fichas hay? ¿Cuántas casillas quedan vacías?',
+  },
+  memory: {
+    title: 'Parejas',
+    goal: 'Relacionar una cantidad con su número y recordar dónde estaba.',
+    how: '¿Dónde viste ese número? Miradlo juntos antes de que se den la vuelta.',
+  },
+  neighbor: {
+    title: 'El vecino',
+    goal: 'El número anterior y el siguiente.',
+    how: '¿Qué número va justo después? ¿Y justo antes? Contad en voz alta.',
+  },
+  'number-line': {
+    title: '¿Dónde va?',
+    goal: 'Cada número tiene su sitio en la recta numérica.',
+    how: 'Contad desde el principio de la recta. ¿Dónde está este número?',
+  },
+  biggest: {
+    title: 'El número más grande',
+    goal: 'Comparar números sin contar objetos.',
+    how: '¿Cuál es más grande? ¿Cuál viene después al contar?',
+  },
+  'ten-friends': {
+    title: 'Los amigos del 10',
+    goal: 'Descomponer el 10 (o el 5, o el 20): cuánto falta para completarlo.',
+    how: '¿Cuántas fichas hay? ¿Cuántas faltan para llenar el marco?',
+  },
+  train: {
+    title: 'El tren',
+    goal: 'Los ordinales: primero, segundo, tercero…',
+    how: 'Contad los vagones desde la locomotora: primero, segundo…',
+  },
+  socks: {
+    title: 'Calcetines',
+    goal: 'Emparejar y descubrir los números pares e impares.',
+    how: 'Juntad los calcetines de dos en dos. ¿Sobra alguno?',
+  },
+  'frog-jumps': {
+    title: 'Saltos de rana',
+    goal: 'Contar a saltos sobre la recta numérica.',
+    how: '¿Dónde está la rana? Contad cada salto con ella.',
+  },
+  boats: {
+    title: 'Los barcos del puerto',
+    goal: 'Ordenar números de menor a mayor.',
+    how: '¿Qué barco lleva el número más pequeño? ¿Y después?',
+  },
+  'river-review': {
+    title: 'Repaso del río',
+    goal: 'Repasar lo aprendido en el río: cantidades, recta y comparar.',
+    how: 'Recordad cómo lo hicisteis en los niveles anteriores.',
+  },
 };
 
 export function guideWordCount(t: GuideText): number {

@@ -1,6 +1,30 @@
 import { describe, expect, it } from 'vitest';
 import { GROUND_TOP } from '../level-course';
-import { BEE_PERIOD_MS, beeBox, beePosition, HEDGEHOG_BOX, HEDGEHOG_SPEED, hedgehogBox, hedgehogX, overlaps, type Rect } from './enemy-motion';
+import {
+  BEE_PERIOD_MS,
+  beeBox,
+  beePosition,
+  CRAB_BOX,
+  CRAB_SPEED,
+  crabBox,
+  crabX,
+  FROG_AIR_MS,
+  FROG_BOX,
+  FROG_CROUCH_MS,
+  FROG_JUMP_H,
+  FROG_PERIOD_MS,
+  FROG_SIT_MS,
+  frogBox,
+  frogState,
+  HEDGEHOG_BOX,
+  HEDGEHOG_SPEED,
+  hedgehogBox,
+  hedgehogX,
+  overlaps,
+  type Rect,
+} from './enemy-motion';
+
+const GROUND = GROUND_TOP;
 
 /** Cuerpo del zorro de pie (56×87), con la parte de arriba en y ≈ 528 como en el diseño. */
 const FOX_STANDING: Rect = { x: 1000 - 28, y: 528, w: 56, h: GROUND_TOP - 528 };
@@ -87,5 +111,63 @@ describe('overlaps', () => {
 
   it('cajas separadas no chocan', () => {
     expect(overlaps(a, { x: 30, y: 30, w: 5, h: 5 })).toBe(false);
+  });
+});
+
+describe('rana', () => {
+  const at = (t: number) => frogState(t, { phase: 0 });
+
+  it('quieta, luego agachada (el aviso) y luego en el aire, siempre en el mismo ciclo', () => {
+    expect(at(0).pose).toBe('sit');
+    expect(at(FROG_SIT_MS - 1).pose).toBe('sit');
+    expect(at(FROG_SIT_MS + 10).pose).toBe('crouch');
+    expect(at(FROG_SIT_MS + FROG_CROUCH_MS + 10).pose).toBe('air');
+    expect(at(FROG_PERIOD_MS).pose).toBe('sit');
+  });
+
+  it('siempre se agacha antes de saltar, al menos 400 ms', () => {
+    expect(FROG_CROUCH_MS).toBeGreaterThanOrEqual(400);
+    let prev = at(0).pose;
+    for (let t = 0; t < FROG_PERIOD_MS * 3; t += 10) {
+      const pose = at(t).pose;
+      if (pose === 'air' && prev !== 'air') expect(prev).toBe('crouch');
+      prev = pose;
+    }
+  });
+
+  it('en lo alto del salto el zorro pasa andando por debajo; quieta, se salta por encima', () => {
+    const FOX_H = 87;
+    const top = FROG_SIT_MS + FROG_CROUCH_MS + FROG_AIR_MS / 2;
+    const s = at(top);
+    expect(s.height).toBeCloseTo(FROG_JUMP_H);
+    const fox = { x: 500 - 28, y: GROUND - FOX_H, w: 56, h: FOX_H };
+    expect(overlaps(fox, frogBox(500, s.height, GROUND))).toBe(false);
+    expect(overlaps(fox, frogBox(500, 0, GROUND))).toBe(true);
+    // Ventana para pasar por debajo: más de lo que tarda el zorro en cruzarla (100 px a 352 px/s).
+    let clearMs = 0;
+    for (let t = 0; t < FROG_PERIOD_MS; t += 5) if (!overlaps(fox, frogBox(500, at(t).height, GROUND))) clearMs += 5;
+    expect(clearMs).toBeGreaterThan((100 / 352) * 1000 + 150);
+    // Quieta mide menos que un salto bajo.
+    expect(FROG_BOX.h).toBeLessThan(60);
+  });
+});
+
+describe('cangrejo', () => {
+  it('va y vuelve entre sus límites, más despacio que el erizo', () => {
+    expect(CRAB_SPEED).toBeLessThan(HEDGEHOG_SPEED);
+    const patrol = { minX: 100, maxX: 300, phase: 0 };
+    expect(crabX(0, patrol).x).toBe(100);
+    expect(crabX(((300 - 100) / CRAB_SPEED) * 1000, patrol).x).toBeCloseTo(300);
+    for (let t = 0; t < 20000; t += 97) {
+      const { x } = crabX(t, patrol);
+      expect(x).toBeGreaterThanOrEqual(100);
+      expect(x).toBeLessThanOrEqual(300);
+    }
+  });
+
+  it('su caja está en el suelo', () => {
+    const b = crabBox(200, GROUND);
+    expect(b.y + b.h).toBe(GROUND);
+    expect(b.w).toBe(CRAB_BOX.w);
   });
 });

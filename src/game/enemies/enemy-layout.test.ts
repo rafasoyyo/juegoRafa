@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { toWorld } from '../levels/parse';
+import { challengeZone, TILE } from '../levels/types';
 import { ARCOIRIS, ENEMIES } from '../worlds/arcoiris';
+import { ENEMIES as RIO_ENEMIES, RIO } from '../worlds/rio';
 import {
   BLOCK_CLEAR,
   courseFor,
@@ -11,7 +13,7 @@ import {
   type Course,
   type EnemySpawn,
 } from './enemy-layout';
-import { BEE_DRIFT } from './enemy-motion';
+import { BEE_DRIFT, CRAB_PATROL_MAX } from './enemy-motion';
 
 /** Generador con semilla (mulberry32) para repetir los repartos. */
 function seeded(seed: number): () => number {
@@ -37,7 +39,9 @@ const HALF_BODY = 50;
 
 /** Intervalo horizontal que puede ocupar el centro del enemigo en algún momento. */
 function reach(e: EnemySpawn): { from: number; to: number } {
-  return e.kind === 'hedgehog' ? { from: e.minX, to: e.maxX } : { from: e.x - BEE_DRIFT, to: e.x + BEE_DRIFT };
+  if (e.kind === 'hedgehog' || e.kind === 'crab') return { from: e.minX, to: e.maxX };
+  if (e.kind === 'frog') return { from: e.x, to: e.x };
+  return { from: e.x - BEE_DRIFT, to: e.x + BEE_DRIFT };
 }
 
 describe('layoutEnemies', () => {
@@ -169,5 +173,45 @@ describe('layoutEnemies', () => {
     const [left, right] = freeStretches(withStep);
     expect(left!.to).toBe(1500 - 210 - BLOCK_CLEAR);
     expect(right!.from).toBe(1500 + 210 + BLOCK_CLEAR);
+  });
+});
+
+describe('enemigos del río', () => {
+  const open: Course = { startX: 0, flagX: 12000, keepClear: Array.from({ length: 12 }, (_, i) => ({ x: 1200 + i * 850, width: 84 })) };
+  const kindsAt = (level: number): Set<string> =>
+    new Set(SEEDS.flatMap((seed) => layoutEnemies(RIO_ENEMIES, level, open, seeded(seed)).map((e) => e.kind)));
+
+  it('la rana sale desde el nivel 3 y el cangrejo desde el 7, junto al erizo y la abeja', () => {
+    expect([...kindsAt(2)].sort()).toEqual(['bee', 'hedgehog']);
+    expect([...kindsAt(3)].sort()).toEqual(['bee', 'frog', 'hedgehog']);
+    expect([...kindsAt(7)].sort()).toEqual(['bee', 'crab', 'frog', 'hedgehog']);
+  });
+
+  it('el cangrejo anda menos trecho que el erizo y la rana salta en un punto de su tramo', () => {
+    for (const seed of SEEDS) {
+      for (const e of layoutEnemies(RIO_ENEMIES, 7, open, seeded(seed))) {
+        if (e.kind === 'crab') expect(e.maxX - e.minX).toBeLessThanOrEqual(CRAB_PATROL_MAX);
+        if (e.kind === 'frog') {
+          expect(e.x).toBeGreaterThanOrEqual(e.stretch.from + HALF_BODY);
+          expect(e.x).toBeLessThanOrEqual(e.stretch.to - HALF_BODY);
+        }
+      }
+    }
+  });
+
+  it('nunca junto a un reto: los niveles del río no ponen enemigos en la zona de un reto ni a menos de su margen', () => {
+    RIO.levels.forEach((level, i) => {
+      const world = toWorld(level);
+      const zones = world.challenges.map((c) => challengeZone({ kind: c.kind, x: c.x / TILE }));
+      for (const seed of SEEDS) {
+        for (const e of layoutEnemies(RIO_ENEMIES, i + 1, courseFor(world), seeded(seed))) {
+          const r = reach(e);
+          for (const z of zones) {
+            const near = r.to > z.from * TILE - BLOCK_CLEAR && r.from < z.to * TILE + BLOCK_CLEAR;
+            expect(near, `nivel ${i + 1}, ${e.kind}`).toBe(false);
+          }
+        }
+      }
+    });
   });
 });

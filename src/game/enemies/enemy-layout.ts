@@ -9,10 +9,10 @@
  */
 
 import { BLOCK_SIZE } from '../level-course';
-import type { WorldLevel } from '../levels/types';
-import { BEE_DRIFT } from './enemy-motion';
+import { challengeZone, TILE, type WorldLevel } from '../levels/types';
+import { BEE_DRIFT, CRAB_PATROL_MAX } from './enemy-motion';
 
-export type EnemyKind = 'hedgehog' | 'bee';
+export type EnemyKind = 'hedgehog' | 'bee' | 'frog' | 'crab';
 
 /** Zona a evitar: `x` es su centro y `width` su ancho, en px. */
 export interface ClearZone {
@@ -37,6 +37,11 @@ export function courseFor(world: WorldLevel): Course {
       ...world.steps.map((s) => ({ x: s.x + s.width / 2, width: s.width })),
       ...world.platforms.map((p) => ({ x: p.x + p.width / 2, width: p.width })),
       ...world.spikes.map((z) => ({ x: z.x + z.width / 2, width: z.width })),
+      // Los retos se piensan con calma: ningún enemigo en su zona.
+      ...world.challenges.map((c) => {
+        const zone = challengeZone({ kind: c.kind, x: c.x / TILE });
+        return { x: ((zone.from + zone.to) / 2) * TILE, width: (zone.to - zone.from) * TILE };
+      }),
     ],
   };
 }
@@ -63,14 +68,34 @@ export interface BeeSpawn {
   phase: number;
 }
 
-export type EnemySpawn = HedgehogSpawn | BeeSpawn;
+/** Rana: salta en el sitio sobre `x`. `phase` (0-1) es el punto inicial de su ciclo. */
+export interface FrogSpawn {
+  kind: 'frog';
+  stretch: Stretch;
+  x: number;
+  phase: number;
+}
+
+/** Cangrejo: anda de lado entre `minX` y `maxX`, como el erizo pero más despacio y menos trecho. */
+export interface CrabSpawn {
+  kind: 'crab';
+  stretch: Stretch;
+  minX: number;
+  maxX: number;
+  phase: number;
+}
+
+export type EnemySpawn = HedgehogSpawn | BeeSpawn | FrogSpawn | CrabSpawn;
 
 /** Enemigos de un mundo (los fija su definición en `src/game/worlds/`). */
 export interface EnemyRules {
   /** Enemigos de cada nivel (`perLevel[0]` es el nivel 1). */
   perLevel: readonly number[];
-  /** Nivel desde el que puede salir la abeja. */
-  beeFromLevel: number;
+  /**
+   * Tipos que pueden salir y desde qué nivel. Cada enemigo elige al azar entre los que ya han llegado,
+   * con la misma probabilidad.
+   */
+  kinds: readonly { kind: EnemyKind; fromLevel: number }[];
 }
 
 /** Margen sin enemigos tras la salida. */
@@ -81,6 +106,11 @@ export const FLAG_CLEAR = 400;
 export const BLOCK_CLEAR = 150;
 /** Tramo libre más corto en el que cabe un enemigo. */
 export const MIN_STRETCH = 200;
+/** Tipos que pueden salir en el nivel `level`, en el orden de las reglas. */
+export function kindsAt(rules: EnemyRules, level: number): EnemyKind[] {
+  return rules.kinds.filter((k) => level >= k.fromLevel).map((k) => k.kind);
+}
+
 /** Recorrido máximo de la patrulla del erizo. */
 export const PATROL_MAX = 320;
 /** Lo que se descuenta del tramo para que el cuerpo del enemigo no salga de él (medio cuerpo por lado). */
@@ -114,8 +144,8 @@ export function freeStretches(course: Course): Stretch[] {
 }
 
 /**
- * Elige al azar los enemigos del nivel según las reglas del mundo: tramos sin repetir, tipo (solo
- * erizo antes de `beeFromLevel`), posición y punto de partida. Si hay menos tramos que enemigos,
+ * Elige al azar los enemigos del nivel según las reglas del mundo: tramos sin repetir, tipo (entre los
+ * que ya han llegado en ese nivel), posición y punto de partida. Si hay menos tramos que enemigos,
  * devuelve los que caben.
  */
 export function layoutEnemies(rules: EnemyRules, level: number, course: Course, rng: Rng = Math.random): EnemySpawn[] {
@@ -128,11 +158,19 @@ export function layoutEnemies(rules: EnemyRules, level: number, course: Course, 
   }
   const chosen = stretches.slice(0, count).sort((a, b) => a.from - b.from);
 
-  return chosen.map((stretch) => {
-    const bee = level >= rules.beeFromLevel && rng() < 0.5;
+  const kinds = kindsAt(rules, level);
+  return chosen.map((stretch): EnemySpawn => {
+    // Con un solo tipo no se gasta azar (así el reparto de un mundo no cambia al añadir tipos a otro).
+    const kind = kinds.length > 1 ? kinds[Math.floor(rng() * kinds.length)]! : (kinds[0] ?? 'hedgehog');
     const lo = stretch.from + BODY_INSET;
     const hi = stretch.to - BODY_INSET;
-    if (bee) {
+    if (kind === 'frog') return { kind, stretch, x: lo + rng() * (hi - lo), phase: rng() };
+    if (kind === 'crab') {
+      const width = Math.min(CRAB_PATROL_MAX, hi - lo);
+      const minX = lo + rng() * (hi - lo - width);
+      return { kind, stretch, minX, maxX: minX + width, phase: rng() };
+    }
+    if (kind === 'bee') {
       // La abeja deriva a los lados: su punto central deja sitio para la deriva.
       const x = lo + BEE_DRIFT + rng() * (hi - lo - 2 * BEE_DRIFT);
       return { kind: 'bee', stretch, x, phase: rng() };

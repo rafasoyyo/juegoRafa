@@ -10,7 +10,7 @@ Plataformas 2D web para niños de 4 a 6 años que no leen ni suman. Rufo el zorr
 
 1. **Móvil y táctil primero**, horizontal. El teclado es solo para desarrollar.
 2. **Nada que el niño deba leer**: consignas con dibujo (y voz cuando exista). Los textos para adultos van en el bocadillo de Lalo.
-3. **Sin vidas ni «game over»**. Fallar = rebote suave + pista. Estrellas de 1 a 3, nunca 0. El pinchazo solo resta una galleta del nivel (nunca baja de 0).
+3. **Sin vidas ni «game over»**. Fallar = rebote suave + pista. Estrellas de 0 a 3 por objetivos (galletas y prueba de la bandera); con 0 se vuelve a empezar la fase, sin pantalla de derrota. El pinchazo solo resta una galleta del nivel (nunca baja de 0).
 4. **Sin material de terceros con copyright** (ni Nintendo, ni Mario). Arte propio o CC0, anotado en `public/assets/LICENSES.md` en el mismo commit que lo añade.
 5. **Se publica y es para menores**: sin publicidad, sin analítica con identificadores personales, datos mínimos (alias, edad, avatar, progreso), sin enlaces externos ni chat. RGPD (menores de 14) y COPPA (menores de 13).
 6. **`src/learning/` es TypeScript puro**: no importa `phaser` ni `firebase`.
@@ -60,7 +60,7 @@ Reglas de `openspec/config.yaml`: artefactos en español, encabezados estructura
 
 ## Qué no hacer
 
-- No añadir vidas, pantallas de derrota, puntuaciones de 0 ni textos obligatorios para el niño.
+- No añadir vidas, pantallas de derrota ni textos obligatorios para el niño. Las 0 estrellas solo llevan a la pantalla de ánimo para volver a empezar.
 - No importar Phaser o Firebase en `src/learning/`.
 - No subir recursos sin licencia registrada ni claves o `.env` (están ignorados).
 - No tocar `dist/` ni `.firebase/` (generados).

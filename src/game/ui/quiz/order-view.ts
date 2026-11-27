@@ -4,6 +4,7 @@ import Phaser from 'phaser';
 import { COLORS } from '../../config';
 import type { HintKind, Question, Visual } from '../../../learning/quiz/types';
 import { digits } from '../round-button';
+import { drawDots } from '../quiz-art';
 import { drawExtraVisual, drawStairs } from './art';
 import { ViewBase, type DrawResult, type HintContext, type Point, type QuizView, type SceneSlot, type ViewHost } from './view';
 
@@ -21,6 +22,7 @@ export class OrderView extends ViewBase implements QuizView {
   /** Copia de un elemento para la fila o la comparación, dentro de una caja de `box`. */
   private copy(v: Visual, box: number): Phaser.GameObjects.Container {
     if (v.type === 'digit') return this.scene.add.container(0, 0, [digits(this.scene, 0, 0, String(v.value), box * 0.62)]);
+    if (v.type === 'dots') return drawDots(this.scene, v.value, box * 0.8);
     return drawExtraVisual(this.scene, v, box, box) ?? this.scene.add.container();
   }
 

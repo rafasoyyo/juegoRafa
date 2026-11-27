@@ -29,7 +29,7 @@ Cada mundo termina abriendo el siguiente con algo que el niño ve, sin leer nada
 
 Es tan ancho como los de los mundos 1 y 2 y también se desplaza. El camino sube desde la playa, donde llega la barca, hasta el cráter del volcán. El nido del cráter es el castillo, en un nodo propio después del nivel 12. Los tramos son playa de arena negra, bosque de helechos, charcas y géiseres, huellas gigantes, cascada templada, pantano de noche, valle de los cuellos largos, columnas de roca, yacimiento de fósiles, cueva de cristales, ríos de lava y borde del cráter; después, el nido. El juego no muestra esos nombres.
 
-Arriba hay un **huevo** con 12 manchas, que hace el papel de los gajos del arcoíris: cada nivel terminado le pinta una mancha siguiendo un patrón, aunque la prueba de la bandera quede pendiente.
+Arriba hay un **huevo** con 12 manchas, que hace el papel de los gajos del arcoíris: cada nivel terminado le pinta una mancha siguiendo un patrón.
 
 ## Decisiones
 
@@ -47,7 +47,7 @@ Respuestas del usuario:
 Propuestas del boceto, aceptadas al aprobarlo (se ajustan si la prueba con niños dice otra cosa):
 
 - **Mismo motor que el río**: los retos cortan el paso, nunca atascan (al tercer fallo, Lalo lo resuelve) y fallar no quita galletas. Solo el pinchazo cuesta una.
-- **Estrellas por retos** acertados a la primera, con los mismos umbrales que el río (75 % y 40 %). La prueba de la bandera y los bloques «?» no dan estrellas.
+- **Estrellas como en todos los mundos**: por las galletas de la fase y los aciertos de la prueba de la bandera (`estrellas-por-objetivos`, ver `docs/PROPUESTA.md`).
 - **Siguen los bloques «?»** con galletas y fresa entre reto y reto.
 - **Demostración de Lalo** la primera vez que aparece cada reto.
 - **De 3 a 5 retos por nivel** y niveles de 90 a 150 s.
@@ -157,11 +157,7 @@ Cada reto se presenta solo, con demostración de Lalo, y después se mezcla con 
 
 ## Estrellas
 
-Igual que en el río: cuenta la proporción de retos del recorrido acertados a la primera (incluido el D, que cuenta si se cruza sin pisar ninguna piedra mala).
-
-- **3 estrellas** con el 75 % o más.
-- **2 estrellas** con el 40 % o más.
-- **1 estrella** en el resto de casos. Terminar siempre da al menos una.
+Como en todos los mundos (`estrellas-por-objetivos`, detalle en `docs/PROPUESTA.md`): 1 estrella por llegar a la bandera con al menos el 50 % de las galletas de la fase, otra por acertar al menos 1 de las 3 preguntas de la prueba, y las 3 con el 80 % de las galletas y las 3 preguntas. Con 0 se repite la fase. Los retos del recorrido (también el D) dan galletas si su mecánica las da, pero acertarlos a la primera no da estrellas.
 
 ## Final, castillo, enemigos y desbloqueo
 
@@ -181,7 +177,7 @@ La pieza `world-castle` del río, con 5 retos seguidos: uno de cada reto A, B y 
 
 ### Tiranosaurio, pterosaurios y volcancitos
 
-Se suman al erizo, la abeja, la rana y el cangrejo y siguen sus reglas: tocarlos es un pinchazo que resta una galleta del nivel, nunca baja de 0 y no cambia las estrellas. Los tres se mueven con un ritmo que se ve venir y avisan antes: el tiranosaurio con su rugido, el pterosaurio con su sombra en el suelo y el volcancito temblando.
+Se suman al erizo, la abeja, la rana y el cangrejo y siguen sus reglas: tocarlos es un pinchazo que resta una galleta del nivel y nunca baja de 0. Los tres se mueven con un ritmo que se ve venir y avisan antes: el tiranosaurio con su rugido, el pterosaurio con su sombra en el suelo y el volcancito temblando.
 
 - **Pterosaurios** (desde el nivel 3): vuelan en fila de dos o tres, en ondas regulares, siempre igual de altas. Se pasa por debajo cuando suben.
 - **Volcancito** (desde el nivel 5): un volcán pequeño en el suelo que lanza una piedra grande hacia arriba; la piedra sube y vuelve a caer en el mismo volcán, siempre en vertical. Antes de lanzarla tiembla y echa humo. Se salta el volcancito mientras la piedra está arriba.
@@ -193,7 +189,7 @@ Se suman al erizo, la abeja, la rana y el cangrejo y siguen sus reglas: tocarlos
 El botón de formas (triángulo y círculo), el tercero del selector, deja de temblar. La isla se abre según la edad del perfil:
 
 - **7 años o más**: abierta desde el principio.
-- **3 a 6 años**: con candado hasta completar el nivel 12 del río, aunque alguna prueba haya quedado pendiente. Al tocarlo, el botón tiembla como ahora.
+- **3 a 6 años**: con candado hasta completar el nivel 12 del río. Al tocarlo, el botón tiembla como ahora.
 
 Cada mundo guarda su propio progreso.
 

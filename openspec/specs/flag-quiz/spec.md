@@ -98,28 +98,6 @@ Cada pregunta SHALL permitir 3 intentos. Un fallo SHALL dar un rebote suave y un
 - **WHEN** el niño acierta en el segundo o el tercer intento
 - **THEN** la pregunta cuenta como acertada
 
-### Requirement: Prueba superada con dos de tres
-La prueba SHALL superarse con al menos 2 preguntas acertadas de 3, con cualquier número de intentos. Superarla completa el nivel. Si no se supera, el nivel no queda completado, aunque el siguiente nivel sí se desbloquea.
-
-#### Scenario: Dos aciertos
-- **WHEN** el niño acierta la primera y la tercera pregunta y falla la segunda
-- **THEN** la prueba está superada y se abre la celebración de nivel completado
-
-#### Scenario: Un acierto
-- **WHEN** el niño acierta solo una pregunta
-- **THEN** la prueba no está superada y se abre la pantalla de prueba no superada
-
-#### Scenario: Repetir un nivel ya hecho y fallar
-- **WHEN** el niño repite el nivel 1, que ya estaba hecho con 2 estrellas, y no supera la prueba
-- **THEN** el nivel 1 sigue hecho con 2 estrellas
-
-### Requirement: La prueba no da estrellas
-La prueba SHALL NOT sumar ni quitar estrellas ni galletas. Las estrellas del nivel SHALL seguir dependiendo solo de los bloques «?» golpeados.
-
-#### Scenario: Prueba perfecta sin bloques
-- **WHEN** el niño llega a la meta sin golpear ningún bloque y acierta las tres preguntas a la primera
-- **THEN** la celebración muestra 1 estrella
-
 ### Requirement: Prueba «¿Cuántos hay?»
 Se ven unos objetos del juego (galletas, erizos, abejas o estrellas) y se toca cuántos hay. Pequeños: de 1 a 3 objetos, con 3 respuestas en puntos de dado. Medianos: de 1 a 10, con 3 respuestas en cifras. Mayores: de 8 a 20, ordenados en marcos de 10, con 4 respuestas en cifras. La pista de Lalo SHALL iluminar los objetos uno a uno, de izquierda a derecha.
 
@@ -428,3 +406,109 @@ Se ve la mitad de un dibujo junto a una línea de espejo, y hay que completar la
 #### Scenario: Pista de doblar
 - **WHEN** el niño falla dos veces una pregunta de «La otra mitad»
 - **THEN** la mitad dibujada se dobla por la línea como una hoja de papel y se queda en transparente sobre el lado donde va la respuesta
+
+### Requirement: Pruebas del río por nivel
+Cada mundo SHALL tener su propio catálogo de pruebas de la bandera. En el río, cada nivel SHALL tener siempre la misma: nivel 1, «¿Cuántos dedos?»; nivel 2, «El marco de diez»; nivel 3, «Parejas»; nivel 4, «El vecino»; nivel 5, «¿Dónde va?»; nivel 6, «El número más grande»; nivel 7, «Los amigos del 10»; nivel 8, «El tren»; nivel 9, «Calcetines»; nivel 10, «Saltos de rana»; nivel 11, «Los barcos del puerto»; nivel 12, «Repaso del río».
+
+#### Scenario: Nivel 4 del río
+- **WHEN** el niño llega a la bandera del nivel 4 del río
+- **THEN** la prueba es «El vecino»
+
+#### Scenario: Nivel 12 del río
+- **WHEN** el niño llega a la bandera del nivel 12 del río
+- **THEN** la prueba es «Repaso del río»
+
+### Requirement: Prueba «¿Cuántos dedos?»
+La prueba SHALL mostrar una o dos manos con dedos levantados y pedir cuántos hay: de 3 a 4 años, una mano (1 a 5) y respuestas con puntos de dado; de 5 a 6 años, hasta 10 llenando primero una mano; de 7 a 8 años, hasta 10 repartidos entre las dos manos. La pista SHALL iluminar los dedos levantados de uno en uno.
+
+#### Scenario: Dos manos
+- **WHEN** un perfil de 6 años ve una mano entera y otra con tres dedos
+- **THEN** la respuesta buena es 8
+
+### Requirement: Prueba «El marco de diez»
+La prueba SHALL mostrar un marco con fichas: de 5 casillas de 3 a 4 años y de 10 desde los 5. Hasta los 6 años se pregunta cuántas fichas hay; de 7 a 8 años, cuántas faltan para llenarlo, con las casillas vacías marcadas. La pista SHALL iluminar de una en una lo que hay que contar.
+
+#### Scenario: Cuántas faltan
+- **WHEN** un perfil de 8 años ve un marco de diez con 6 fichas
+- **THEN** la respuesta buena es 4
+
+### Requirement: Prueba «Parejas»
+La prueba SHALL mostrar una cantidad de objetos y varias cartas con números (con puntos de dado de 3 a 4 años) que se ven al menos 2,5 s y se dan la vuelta. Tocar una carta la destapa; la buena es la que tiene el número de la cantidad. La pista SHALL destapar todas las cartas un momento.
+
+#### Scenario: Carta equivocada
+- **WHEN** el niño toca una carta que no es la pareja
+- **THEN** la carta se destapa, se ve su número y se vuelve a tapar
+
+### Requirement: Prueba «El vecino»
+La prueba SHALL mostrar una fila de números con un hueco: de 3 a 4 años, el siguiente del 1 al 5 con puntos; de 5 a 6 años, el anterior o el siguiente del 1 al 10; de 7 a 8 años, además el de en medio, del 1 al 20.
+
+#### Scenario: El anterior
+- **WHEN** la fila muestra un hueco y después el 7
+- **THEN** la respuesta buena es 6
+
+### Requirement: Prueba «¿Dónde va?»
+La prueba SHALL mostrar una tarjeta con un número y una recta con algunos números a la vista: del 1 al 5 con puntos de 3 a 4 años, del 0 al 10 de 5 a 6 años y del 0 al 20 de 2 en 2 de 7 a 8 años. El niño SHALL tocar el sitio del número entre varios marcados, separados lo bastante para el dedo. La pista SHALL saltar marca a marca desde el principio, contando, hasta el sitio.
+
+#### Scenario: Colocar el 3
+- **WHEN** la tarjeta lleva el 3 en la recta del 0 al 10
+- **THEN** el sitio bueno es la tercera marca después del 0
+
+### Requirement: Prueba «El número más grande»
+La prueba SHALL mostrar la cesta llena (el más grande) o casi vacía (el más pequeño) y varios números sin objetos que contar: dos dados de 3 a 4 años (siempre el más grande), tres cifras del 1 al 10 de 5 a 6 años y del 1 al 20 de 7 a 8 años.
+
+#### Scenario: El más pequeño
+- **WHEN** la cesta está casi vacía y los números son 12, 5 y 9
+- **THEN** la respuesta buena es 5
+
+### Requirement: Prueba «Los amigos del 10»
+La prueba SHALL mostrar la meta (5 de 3 a 4 años, 10 de 5 a 6 y 20 de 7 a 8) y un marco con fichas y casillas vacías marcadas, y pedir cuántas faltan para completarlo. La pista SHALL iluminar las casillas vacías de una en una.
+
+#### Scenario: Completar el 10
+- **WHEN** el marco de diez tiene 7 fichas
+- **THEN** la respuesta buena es 3
+
+### Requirement: Prueba «El tren»
+La prueba SHALL mostrar una tarjeta con un puesto (con puntos de 3 a 4 años) y un tren con su locomotora y 3, 5 o 7 vagones según la edad, cada uno con un pasajero. El niño SHALL tocar el vagón de ese puesto contando desde la locomotora. La pista SHALL recorrer los vagones desde el primero, contando, hasta el puesto.
+
+#### Scenario: El tercero
+- **WHEN** la tarjeta dice 3
+- **THEN** el vagón bueno es el tercero empezando por el pegado a la locomotora
+
+### Requirement: Prueba «Calcetines»
+De 3 a 4 años, la prueba SHALL mostrar un calcetín y pedir su pareja (mismo color y mismo dibujo) entre tres. Desde los 5 años SHALL mostrar una fila de calcetines (hasta 10, o hasta 20 de 7 a 8 años) y dos respuestas, «todos con pareja» y «sobra uno». La pista SHALL unir los calcetines de dos en dos y hacer brillar el que sobra.
+
+#### Scenario: Nones
+- **WHEN** hay 7 calcetines en la cuerda
+- **THEN** la respuesta buena es «sobra uno»
+
+### Requirement: Prueba «Saltos de rana»
+La prueba SHALL mostrar una recta con la rana en la salida y, arriba, un arco por cada salto con su tamaño (sin número cuando es 1). El niño SHALL tocar dónde acaba la rana: de 1 en 1 hasta 5 de 3 a 4 años, de 1 o de 2 hasta 10 de 5 a 6 años y de 2, 3 o 5 hasta 20 de 7 a 8 años. La pista SHALL hacer saltar a la rana contando.
+
+#### Scenario: Dos saltos de 5
+- **WHEN** la rana sale del 7 y da dos saltos de 5
+- **THEN** el sitio bueno es el 17
+
+### Requirement: Prueba «Los barcos del puerto»
+La prueba SHALL mostrar números (con puntos de 3 a 4 años) que se tocan de menor a mayor: 3 de 3 a 4 años, 4 hasta 10 de 5 a 6 años y 5 hasta 20 de 7 a 8 años.
+
+#### Scenario: Ordenar
+- **WHEN** salen 9, 2 y 5
+- **THEN** hay que tocar 2, 5 y 9 en ese orden
+
+### Requirement: Repaso del río
+La prueba del nivel 12 del río SHALL hacer una pregunta de cada una de tres pruebas anteriores del río, distintas entre sí, y cada pregunta SHALL verse y tener la pista de su prueba.
+
+#### Scenario: Tres pruebas distintas
+- **WHEN** el niño llega a la bandera del nivel 12 del río
+- **THEN** las tres preguntas son de tres pruebas distintas del río
+
+### Requirement: Los aciertos de la prueba dan estrellas
+La prueba SHALL contar sus preguntas acertadas, con cualquier número de intentos, y pasarlas a la pantalla final: acertar al menos 1 SHALL dar una estrella y acertar las 3 SHALL ser condición para las 3 estrellas (ver `level-complete`). La prueba SHALL NOT sumar ni quitar galletas.
+
+#### Scenario: Una pregunta acertada
+- **WHEN** el niño acierta solo la segunda pregunta y llega con menos de la mitad de las galletas
+- **THEN** la pantalla final muestra 1 estrella
+
+#### Scenario: Ninguna acertada
+- **WHEN** el niño no acierta ninguna pregunta y llega con menos de la mitad de las galletas
+- **THEN** se abre la pantalla de ánimo sin estrellas

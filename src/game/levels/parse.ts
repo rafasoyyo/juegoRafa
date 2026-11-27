@@ -6,6 +6,11 @@
 import {
   AMBIENT_IDS,
   BLOCK_ROWS,
+  CHALLENGE_KINDS,
+  QUANTITY_SHOWS,
+  type ChallengeData,
+  type ChallengeKind,
+  type QuantityShowId,
   FLAG_TILES_FROM_END,
   ROW_BASE,
   START_TILE,
@@ -98,7 +103,21 @@ export function parseLevel(id: string, json: unknown): LevelData {
     return { x: num(z, 'x', where, false), width: num(z, 'width', where) };
   });
 
-  return { id, ambient: ambient as AmbientId, length, steps, platforms, blocks, spikes };
+  const challenges: ChallengeData[] = list('challenges', true).map((c, i) => {
+    const where = `challenges[${i}]`;
+    if (typeof c.kind !== 'string' || !(CHALLENGE_KINDS as readonly string[]).includes(c.kind)) fail(`${where}.kind`, `debe ser ${CHALLENGE_KINDS.join(', ')}`);
+    const show = c.show ?? 'dots';
+    if (typeof show !== 'string' || !(QUANTITY_SHOWS as readonly string[]).includes(show)) fail(`${where}.show`, `debe ser ${QUANTITY_SHOWS.join(' o ')}`);
+    const flag = (key: string): boolean => {
+      const v = c[key];
+      if (v === undefined) return false;
+      if (typeof v !== 'boolean') return fail(`${where}.${key}`, 'debe ser true o false');
+      return v;
+    };
+    return { kind: c.kind as ChallengeKind, x: num(c, 'x', where), show: show as QuantityShowId, reverse: flag('reverse'), demo: flag('demo') };
+  });
+
+  return { id, ambient: ambient as AmbientId, length, steps, platforms, blocks, spikes, challenges };
 }
 
 /** Superficie sobre la que se puede estar: tramo horizontal en baldosas y altura en px sobre el suelo. */
@@ -178,5 +197,6 @@ export function toWorld(level: LevelData): WorldLevel {
     platforms,
     blocks,
     spikes: level.spikes.map((z, index): WorldSpike => ({ index, x: z.x * TILE, width: z.width * TILE })),
+    challenges: level.challenges.map((c, index) => ({ ...c, index, x: c.x * TILE })),
   };
 }

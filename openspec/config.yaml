@@ -17,7 +17,7 @@ context: |
 
   - **Móvil y táctil primero**, horizontal. Escritorio es solo para desarrollar (teclado).
   - **Sin texto que el niño deba leer**: toda consigna es voz + dibujo. Idiomas de voz: español e inglés.
-  - **Sin vidas ni «game over»**; un fallo = rebote suave + pista. Estrellas de 1 a 3, nunca 0.
+  - **Sin vidas ni «game over»**; un fallo = rebote suave + pista. Estrellas de 0 a 3 por objetivos (galletas y prueba de la bandera); con 0 se vuelve a empezar la fase, sin pantalla de derrota.
   - **Sin assets, personajes, nombres, logos ni música de terceros con copyright** (Nintendo incluida:
     nada de Mario ni goombas). Personaje propio (Rufo el zorro, con Lalo el búho como guía); arte propio o CC0 con licencia anotada.
   - **Se publica y es para menores**: sin publicidad, sin analítica con identificadores personales,

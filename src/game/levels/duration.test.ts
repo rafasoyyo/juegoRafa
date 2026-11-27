@@ -27,6 +27,7 @@ describe('estimateDuration', () => {
         { x: 120, row: 'low' },
       ],
       spikes: [],
+    challenges: [],
     };
     const { fastS, calmS } = estimateDuration(level);
     expect(fastS).toBeCloseTo(10920 / 352, 6);
@@ -36,7 +37,7 @@ describe('estimateDuration', () => {
   });
 
   it('cada zona de pinchos suma 1 s con calma y nada a tope', () => {
-    const base: LevelData = { id: 'x', ambient: 'prado', length: 140, steps: [], platforms: [], blocks: [], spikes: [] };
+    const base: LevelData = { id: 'x', ambient: 'prado', length: 140, steps: [], platforms: [], blocks: [], spikes: [], challenges: [] };
     const spiky: LevelData = { ...base, spikes: [{ x: 40, width: 1 }, { x: 60, width: 2 }] };
     expect(estimateDuration(spiky).fastS).toBe(estimateDuration(base).fastS);
     expect(estimateDuration(spiky).calmS).toBeCloseTo(estimateDuration(base).calmS + 2, 6);
