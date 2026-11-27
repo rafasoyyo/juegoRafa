@@ -15,6 +15,7 @@ import { drawIslandEgg, drawSpot, SPOT_HEX } from '../ui/island-egg';
 import { digits, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
 import { cookieCounter, fixToCamera } from '../ui/widgets';
+import { medalTexture } from '../castle/castle';
 import { opensAfter, worldAccess, type WorldAccess } from '../worlds/access';
 import { showWorld, shownWorld, UPCOMING, WORLDS, worldDef } from '../worlds/registry';
 import type { SelectorButton, WorldDef, WorldId } from '../worlds/types';
@@ -674,7 +675,7 @@ export class MapScene extends Phaser.Scene {
       btn.add([this.add.circle(40, -40, 24, COLORS.white), this.add.image(40, -41, 'icon-lock').setDisplaySize(30, 30)]);
     }
     if (status === 'done') {
-      const medal = this.add.image(p.x + 64, p.y + 40, 'medal').setDisplaySize(64, 64);
+      const medal = this.add.image(p.x + 64, p.y + 40, medalTexture(this.def.castle)).setDisplaySize(64, 64);
       this.tweens.add({ targets: medal, angle: { from: -8, to: 8 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
   }
@@ -722,7 +723,7 @@ export class MapScene extends Phaser.Scene {
       if (w.access !== 'open') btn.face.setAlpha(0.7);
       if (w.id && session.worlds.get(w.id)?.medal) {
         // La medalla del castillo del mundo, en la esquina de su botón.
-        btn.add(this.add.image(-bw / 2 + 14, -bh / 2 + 12, 'medal').setDisplaySize(42, 42));
+        btn.add(this.add.image(-bw / 2 + 14, -bh / 2 + 12, medalTexture(worldDef(w.id).castle)).setDisplaySize(42, 42));
       }
       if (w.access === 'locked') {
         // Candado pequeño en la esquina: se abrirá más adelante.

@@ -370,3 +370,10 @@ Al volver al mapa con todos los niveles de la isla hechos o pendientes, una vez 
 #### Scenario: Se ve una vez
 - **WHEN** un perfil que ya vio el final de la isla vuelve a abrir su mapa
 - **THEN** el mapa se abre sin la viñeta
+
+### Requirement: Medalla de la huella en el mapa
+El mapa de la isla SHALL mostrar el castillo como la parada siguiente a su último nivel y, ganada su medalla, la medalla de la huella junto a él y en la esquina del botón de formas del selector.
+
+#### Scenario: Medalla en el selector
+- **WHEN** un perfil gana el castillo de la isla y vuelve al mapa
+- **THEN** el botón de formas del selector lleva la medalla de la huella

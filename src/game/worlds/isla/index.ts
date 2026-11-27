@@ -9,6 +9,7 @@
 import type { QuizKind } from '../../../learning/quiz';
 import type { EnemyRules } from '../../enemies/enemy-layout';
 import type { DurationLimits } from '../../levels/duration';
+import type { CastleDef } from '../../castle/castle';
 import { levelsFrom } from '../load-levels';
 import type { CourseRules, WorldDef, WorldMap } from '../types';
 
@@ -53,6 +54,21 @@ const QUIZ_BY_LEVEL: Record<number, QuizKind> = {
   10: 'roll-or-not',
   11: 'hidden-triangles',
   12: 'island-review',
+};
+
+/**
+ * El nido del cráter (`docs/MUNDO-3.md`, «El castillo»): uno de cada reto que se resuelve golpeando
+ * bloques (A, B y C) y dos preguntas de las pruebas de la bandera de la isla (sin el repaso), distintas
+ * entre sí. Da la medalla de la huella.
+ */
+const CASTLE_QUIZZES: readonly QuizKind[] = [
+  'dino-shadows', 'shape-things', 'stego-plates', 'turned-shapes', 'nest', 'odd-egg', 'fossil', 'skin-mosaic', 'growing-neck', 'roll-or-not', 'hidden-triangles',
+];
+
+export const CASTLE: CastleDef = {
+  ambient: 'playa-negra',
+  steps: [{ challenge: 'footprints' }, { challenge: 'door' }, { challenge: 'brachio' }, { quiz: CASTLE_QUIZZES }, { quiz: CASTLE_QUIZZES }],
+  medal: 'medal-footprint',
 };
 
 function quizFor(level: number): QuizKind {
@@ -102,6 +118,7 @@ export const ISLA: WorldDef = {
   finale: 'hatch',
   map: MAP,
   selector: { color: 0xe4f4e8, shadow: 0xbfe0c6, icon: 'icon-shapes', iconSize: 88 },
+  castle: CASTLE,
   // Abierta con 7 años o más; con menos, al llegar al nivel 12 del río.
   gate: { flag: 'mundo-3-isla', openAge: 7, after: { world: 'rio', level: 12 } },
 };
