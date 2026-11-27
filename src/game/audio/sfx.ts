@@ -61,7 +61,9 @@ export type SfxName =
   | 'rumble'
   | 'stone'
   | 'glyph'
-  | 'brachio';
+  | 'brachio'
+  | 'hiss'
+  | 'steam';
 export interface SfxOptions {
   /**
    * Para `star`: 0, 1 o 2; cada una más aguda. Para `tick`: el número que se cuenta (1, 2…), cada uno más agudo.
@@ -243,6 +245,22 @@ export function recipe(name: SfxName, opts: SfxOptions = {}): Recipe {
           tone(0, 0.85, 'triangle', [[0, 196], [0.35, 262], [0.8, 220]], 0.1, 0.12),
         ],
       };
+    case 'hiss':
+      // Piedra que se hunde en la lava: siseo suave que se apaga despacio, sin golpe.
+      return {
+        layers: [
+          { kind: 'noise', start: 0, dur: 0.8, attack: 0.08, gain: 0.22, filterHz: 3200, q: 0.7 },
+          tone(0, 0.6, 'sine', [[0, 180], [0.55, 120]], 0.12, 0.05),
+        ],
+      };
+    case 'steam':
+      // Columna de vapor del géiser: soplido que sube y se abre.
+      return {
+        layers: [
+          { kind: 'noise', start: 0, dur: 1.1, attack: 0.25, gain: 0.3, filterHz: 1400, q: 0.6 },
+          { kind: 'noise', start: 0.15, dur: 0.9, attack: 0.3, gain: 0.16, filterHz: 3600, q: 0.8 },
+        ],
+      };
     case 'tick': {
       // «Tic» de contar: corto, más agudo con cada número (una escala que sube).
       const k = Math.max(0, Math.min(20, Math.round(opts.index ?? 1) - 1));
@@ -295,4 +313,6 @@ export const SFX_NAMES: readonly SfxName[] = [
   'stone',
   'glyph',
   'brachio',
+  'hiss',
+  'steam',
 ];

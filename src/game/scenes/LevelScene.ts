@@ -5,6 +5,7 @@ import { countChallenge, countRange, type CountChallenge } from '../../learning/
 import { footprintsChallenge, type FootprintsChallenge } from '../../learning/challenges/footprints';
 import { brachioChallenge, type BrachioChallenge } from '../../learning/challenges/brachio';
 import { caveDoorChallenge, type CaveDoorChallenge } from '../../learning/challenges/cave-door';
+import { geyserChallenge, type GeyserChallenge } from '../../learning/challenges/geyser';
 import { ageBand } from '../../learning/quiz/age';
 import { createRng } from '../../learning/quiz/rng';
 import { audio } from '../audio/audio-engine';
@@ -15,6 +16,7 @@ import { CountChallengeView } from '../challenges/count-challenge-view';
 import { FootprintsChallengeView } from '../challenges/footprints-challenge-view';
 import { BrachioChallengeView } from '../challenges/brachio-challenge-view';
 import { CaveDoorChallengeView } from '../challenges/cave-door-challenge-view';
+import { GeyserChallengeView } from '../challenges/geyser-challenge-view';
 import { LaloFlyer } from '../challenges/lalo-flyer';
 import { COLORS, GAME_H } from '../config';
 import { castleCourse } from '../castle/castle';
@@ -38,7 +40,7 @@ import {
   SPIKE_PLATE_H,
   STEEL,
 } from '../levels/spikes';
-import { BOAT_LAKE, RUN_SPEED, TILE, type WorldLevel, type WorldSpike } from '../levels/types';
+import { BOAT_LAKE, GEYSER_LAKE, RUN_SPEED, TILE, type WorldLevel, type WorldSpike } from '../levels/types';
 import { FRUIT_SIZE, FRUIT_VX, FRUIT_VY, loseCookie, pickFruitBlock, powerPhase, type PowerPhase } from '../power/power';
 import { activeAge, saveActive } from '../profile/active';
 import { session } from '../state';
@@ -195,7 +197,7 @@ export class LevelScene extends Phaser.Scene {
   /** Retos del recorrido (mundo 2) y Lalo volando para ayudar en ellos. */
   private challenges: ChallengeView[] = [];
   /** Retos generados para esta partida (con la edad del perfil), antes de dibujarlos. */
-  private plannedChallenges: (CountChallenge | BridgeChallenge | BoatChallenge | FootprintsChallenge | CaveDoorChallenge | BrachioChallenge)[] = [];
+  private plannedChallenges: (CountChallenge | BridgeChallenge | BoatChallenge | FootprintsChallenge | CaveDoorChallenge | BrachioChallenge | GeyserChallenge)[] = [];
   /**
    * Agua que cortan los retos en el suelo (hueco del puente y lago de la barca), para el escenario. La
    * que hace rebotar en cada momento la da `water()`.
@@ -476,6 +478,7 @@ export class LevelScene extends Phaser.Scene {
       if (c.kind === 'bridge') return bridgeChallenge(band, rng);
       if (c.kind === 'footprints') return footprintsChallenge(band, rng);
       if (c.kind === 'door') return caveDoorChallenge(band, rng);
+      if (c.kind === 'geyser') return geyserChallenge(band, rng);
       if (c.kind === 'boat') return boatChallenge(band, rng);
       if (c.kind === 'brachio') return brachioChallenge(band, rng);
       return countChallenge(band, rng, c, pool[next++ % pool.length]!);
@@ -484,6 +487,7 @@ export class LevelScene extends Phaser.Scene {
       const plan = this.plannedChallenges[i]!;
       if (plan.kind === 'bridge' || plan.kind === 'footprints') return [bridgeHole(c.x, plan)];
       if (plan.kind === 'boat' || plan.kind === 'brachio') return [{ index: -1, x: c.x, width: BOAT_LAKE * TILE }];
+      if (plan.kind === 'geyser') return [{ index: -1, x: c.x, width: GEYSER_LAKE * TILE }];
       return [];
     });
   }
@@ -509,6 +513,7 @@ export class LevelScene extends Phaser.Scene {
       if (plan.kind === 'bridge') return new BridgeChallengeView(this, this.fox, c, plan, hooks);
       if (plan.kind === 'footprints') return new FootprintsChallengeView(this, this.fox, c, plan, hooks);
       if (plan.kind === 'door') return new CaveDoorChallengeView(this, this.fox, c, plan, hooks);
+      if (plan.kind === 'geyser') return new GeyserChallengeView(this, this.fox, c, plan, hooks);
       if (plan.kind === 'boat') return new BoatChallengeView(this, this.fox, c, plan, hooks);
       if (plan.kind === 'brachio') return new BrachioChallengeView(this, this.fox, c, plan, hooks);
       return new CountChallengeView(this, this.fox, c, plan, hooks);
