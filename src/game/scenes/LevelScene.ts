@@ -164,7 +164,7 @@ export class LevelScene extends Phaser.Scene {
   private nextDustAt = 0;
   private enemies: EnemyView[] = [];
   /** Erizos y abejas del nivel, para «¿Te acuerdas?». */
-  private enemyCounts: Record<EnemyKind, number> = { hedgehog: 0, bee: 0, frog: 0, crab: 0 };
+  private enemyCounts: Record<EnemyKind, number> = { hedgehog: 0, bee: 0, frog: 0, crab: 0, ptero: 0, volcano: 0, trex: 0 };
   private knockUntil = -Infinity;
   private protectedUntil = -Infinity;
   private hitAt = -Infinity;
@@ -451,7 +451,7 @@ export class LevelScene extends Phaser.Scene {
   /** Enemigos al azar en zonas seguras (suelo llano); cambian cada vez que se entra en el nivel. */
   private buildEnemies(): void {
     const spawns = this.castle ? [] : layoutEnemies(this.def.enemies, this.level, courseFor(this.world));
-    this.enemyCounts = { hedgehog: 0, bee: 0, frog: 0, crab: 0 };
+    this.enemyCounts = { hedgehog: 0, bee: 0, frog: 0, crab: 0, ptero: 0, volcano: 0, trex: 0 };
     for (const spawn of spawns) this.enemyCounts[spawn.kind] += 1;
     this.enemies = spawns.map((spawn) => createEnemyView(this, spawn, GROUND_TOP));
     for (const enemy of this.enemies) enemy.update(this.time.now);
@@ -549,7 +549,7 @@ export class LevelScene extends Phaser.Scene {
   private touchingEnemies(): EnemyView[] {
     const body = this.fox.body;
     const fox = { x: body.x, y: body.y, w: body.width, h: body.height };
-    return this.enemies.filter((e) => overlaps(fox, e.box()));
+    return this.enemies.filter((e) => e.boxes().some((b) => overlaps(fox, b)));
   }
 
   /**
@@ -571,7 +571,8 @@ export class LevelScene extends Phaser.Scene {
 
   /** Pinchazo de un enemigo: brinco corto hacia el lado contrario al enemigo. */
   private onEnemyHit(enemy: EnemyView, time: number): void {
-    const box = enemy.box();
+    const fox = { x: this.fox.body.x, y: this.fox.body.y, w: this.fox.body.width, h: this.fox.body.height };
+    const box = enemy.boxes().find((b) => overlaps(fox, b)) ?? enemy.boxes()[0]!;
     let side = Math.sign(this.fox.x - (box.x + box.w / 2));
     if (side === 0) side = this.faceLeft ? 1 : -1;
     enemy.gesture();

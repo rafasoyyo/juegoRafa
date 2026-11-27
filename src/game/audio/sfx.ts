@@ -57,6 +57,8 @@ export type SfxName =
   | 'scale'
   | 'horn'
   | 'band'
+  | 'roar'
+  | 'rumble'
   | 'stone'
   | 'glyph';
 export interface SfxOptions {
@@ -201,6 +203,23 @@ export function recipe(name: SfxName, opts: SfxOptions = {}): Recipe {
           return [tone(start, dur, 'triangle', hz('G3'), 0.32, 0.03), tone(start, dur, 'sine', hz('D4'), 0.18, 0.03), tone(start, dur, 'square', hz('G2'), 0.06, 0.03)];
         }),
       };
+    case 'roar':
+      // Rugido del tiranosaurio: grave y corto, que crece despacio (se oye venir, nunca de golpe).
+      return {
+        layers: [
+          { ...tone(0, 1.1, 'triangle', [[0, 92], [0.5, 120], [1.0, 80]], 0.4, 0.35), vibrato: { rate: 18, depth: 8 } },
+          tone(0, 1.0, 'sine', [[0, 70], [0.5, 86], [0.9, 64]], 0.3, 0.35),
+          { kind: 'noise', start: 0.1, dur: 0.9, attack: 0.3, gain: 0.16, filterHz: 320, q: 0.8 },
+        ],
+      };
+    case 'rumble':
+      // Temblor del volcancito: retumbo grave y suave que sube un poco.
+      return {
+        layers: [
+          { kind: 'noise', start: 0, dur: 0.7, attack: 0.25, gain: 0.3, filterHz: 140, q: 0.7 },
+          tone(0, 0.7, 'sine', [[0, 62], [0.6, 78]], 0.3, 0.25),
+        ],
+      };
     case 'stone':
       // Losa de piedra que encaja: golpe seco y grave, sin rebote.
       return {
@@ -262,6 +281,8 @@ export const SFX_NAMES: readonly SfxName[] = [
   'scale',
   'horn',
   'band',
+  'roar',
+  'rumble',
   'stone',
   'glyph',
 ];

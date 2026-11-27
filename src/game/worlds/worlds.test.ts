@@ -82,6 +82,12 @@ describe('registro de mundos', () => {
     ]);
   });
 
+  it('pruebas de la bandera de la isla: una propia en cada nivel y el repaso en el 12', () => {
+    const isla = worldDef('isla');
+    const kinds = Array.from({ length: 12 }, (_, i) => isla.quizFor(i + 1));
+    expect(kinds).toEqual(['dino-shadows', 'shape-things', 'stego-plates', 'turned-shapes', 'nest', 'odd-egg', 'fossil', 'skin-mosaic', 'growing-neck', 'roll-or-not', 'hidden-triangles', 'island-review']);
+  });
+
   it('el mundo 1 no tiene retos del recorrido', () => {
     const [arcoiris] = WORLDS;
     for (const level of arcoiris!.levels) expect(level.challenges).toEqual([]);

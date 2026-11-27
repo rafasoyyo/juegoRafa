@@ -45,6 +45,10 @@ export class BootScene extends Phaser.Scene {
     svg('bee-wing', 'bee-wing', 40, 30);
     svg('frog', 'frog', 84, 66);
     svg('crab', 'crab', 96, 62);
+    svg('trex', 'trex', 280, 136);
+    svg('ptero', 'ptero', 150, 45);
+    svg('volcano-small', 'volcano-small', 120, 66);
+    svg('lava-rock', 'lava-rock', 56);
     svg('castle', 'castle', 260, 240);
     svg('medal', 'medal', 48);
     svg('medal-l', 'medal', 200);

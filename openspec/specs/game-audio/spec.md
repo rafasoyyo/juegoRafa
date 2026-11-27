@@ -210,3 +210,12 @@ Al encajar una losa o una pieza de piedra SHALL sonar un golpe seco y grave, sin
 #### Scenario: Serie que suena
 - **WHEN** se encienden las tablillas triángulo, cuadrado, triángulo, cuadrado
 - **THEN** suenan dos notas que se alternan, la misma para cada triángulo y la misma para cada cuadrado
+
+
+
+### Requirement: Avisos de los enemigos de la isla
+El tiranosaurio SHALL sonar con un rugido grave que empieza suave y crece al pararse a rugir, y el volcancito con un retumbo grave al temblar. Los dos SHALL sonar solo si el enemigo está a la vista y SHALL respetar el silencio.
+
+#### Scenario: Rugido fuera de la pantalla
+- **WHEN** un tiranosaurio ruge lejos de la parte del nivel que se ve
+- **THEN** no suena nada
