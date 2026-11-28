@@ -1,17 +1,20 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/audio-engine';
 import { COLORS, GAME_H, MAX_W } from '../config';
-import { FLAGS } from '../flags';
 import { skyColorAt, type SkyStop } from '../map/map-sky';
+import { eggSpot } from '../map/egg-spots';
 import { bandAngles, paintedBands, rainbowMemory } from '../map/rainbow-arc';
 import { activeAge, activeProfileId, saveActive } from '../profile/active';
 import { Finale } from '../story/finale';
+import { HatchFinale } from '../story/hatch-finale';
 import { markSeen, shouldPlayFinale } from '../story/story';
 import { castleStatus, currentLevel, levelStatus, session, type CastleStatus } from '../state';
 import { drawFox, drawLalo } from '../ui/characters';
+import { drawIslandEgg, drawSpot, SPOT_HEX } from '../ui/island-egg';
 import { digits, RoundButton } from '../ui/round-button';
 import { enter, goTo, onResize } from '../ui/transition';
 import { cookieCounter, fixToCamera } from '../ui/widgets';
+import { castleTexture, medalTexture } from '../castle/castle';
 import { opensAfter, worldAccess, type WorldAccess } from '../worlds/access';
 import { showWorld, shownWorld, UPCOMING, WORLDS, worldDef } from '../worlds/registry';
 import type { SelectorButton, WorldDef, WorldId } from '../worlds/types';
@@ -37,6 +40,16 @@ const BAND_MS = 150;
 const BAND_GAP_MS = 220;
 const HOLD_MS = 350;
 const HOP_MS = 520;
+
+/** Animación de la mancha nueva del huevo (ms). */
+const SPOT_MS = 520;
+
+/** Huevo del mapa en px lógicos: centro y alto. */
+interface Egg {
+  x: number;
+  y: number;
+  size: number;
+}
 
 /** Geometría del arco del mapa en px lógicos. */
 interface Arc {
@@ -91,7 +104,7 @@ export class MapScene extends Phaser.Scene {
     audio.playMusic('map');
     this.drag = undefined;
     // Gajos pintados desde la última vez que se vio este mapa con este perfil: se pintan delante del niño.
-    const painted = this.def.map.rainbow ? paintedBands(session, this.def) : [];
+    const painted = this.def.map.rainbow || this.def.map.egg ? paintedBands(session, this.def) : [];
     this.animating = rainbowMemory.take(`${activeProfileId() ?? '-'}/${this.def.id}`, painted);
     // Final del mundo: una vez por perfil, marcado ya al empezar para que salir o recargar no lo repita.
     this.inFinale = shouldPlayFinale(session, this.def);
@@ -99,7 +112,7 @@ export class MapScene extends Phaser.Scene {
     if (this.inFinale) {
       markSeen(session, 'final', this.def.id);
       saveActive();
-      this.unlocking = WORLDS.filter((w) => opensAfter(w, this.def.id, activeAge(), FLAGS)).map((w) => w.id);
+      this.unlocking = WORLDS.filter((w) => opensAfter(w, this.def.id, activeAge(), import.meta.env.DEV)).map((w) => w.id);
     }
     this.build(this.scale.width);
     onResize(this, () => this.rebuild());
@@ -154,7 +167,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   private access(def: WorldDef): WorldAccess {
-    return worldAccess(def, session, activeAge(), FLAGS);
+    return worldAccess(def, session, activeAge(), import.meta.env.DEV);
   }
 
   private scrollTo(x: number): void {
@@ -200,6 +213,8 @@ export class MapScene extends Phaser.Scene {
     };
     const fresh = this.animating;
     if (arc) this.drawArc(arc, paintedBands(session, this.def).filter((l) => !fresh.includes(l)));
+    const egg: Egg | undefined = map.egg && { x: map.egg.center[0] * sx, y: map.egg.center[1] * sy, size: map.egg.size * sy };
+    const eggG = egg && drawIslandEgg(this, egg.size, paintedBands(session, this.def).filter((l) => !fresh.includes(l))).setPosition(egg.x, egg.y);
     if (map.river) {
       const { from, to, offset } = map.river;
       const stops = map.nodes.slice(0, this.def.levelCount + (this.def.castle ? 1 : 0)).map(([x, y]) => [x, y + offset] as const);
@@ -224,7 +239,7 @@ export class MapScene extends Phaser.Scene {
     const foxEnd = new Phaser.Math.Vector2(foxAt.x, foxAt.y - nodeR + 6);
     // Con gajos nuevos, el zorro empieza en el último nivel terminado y salta al actual al acabar.
     const lastFresh = fresh[fresh.length - 1];
-    const fromNode = lastFresh !== undefined && arc ? nodes[lastFresh - 1] : undefined;
+    const fromNode = lastFresh !== undefined && (arc || egg) ? nodes[lastFresh - 1] : undefined;
     const foxStart = fromNode ? at(fromNode).add(new Phaser.Math.Vector2(0, -48 + 6)) : foxEnd;
     const fox = drawFox(this, foxStart.x, foxStart.y, 'idle', session.hat, 104);
     const bob = (): void => {
@@ -236,6 +251,8 @@ export class MapScene extends Phaser.Scene {
     if (this.busy) for (const b of this.nodeButtons) b.disableInteractive();
     if (arc && fresh.length > 0) {
       this.paintFresh(arc, fresh, () => this.hopFox(fox, foxEnd, width, afterFox));
+    } else if (egg && eggG && fresh.length > 0) {
+      this.paintFreshSpots(egg, eggG, fresh, () => this.hopFox(fox, foxEnd, width, afterFox));
     } else if (this.inFinale) {
       // Sin la animación del gajo, se espera a que entre la escena.
       const id = this.buildId;
@@ -359,6 +376,51 @@ export class MapScene extends Phaser.Scene {
     later(t + HOLD_MS, done);
   }
 
+  /**
+   * Pinta las manchas nuevas del huevo delante del niño: la cámara va al huevo, que se mueve un poco, y
+   * cada mancha aparece creciendo con una nota y destellos de su color; al final llama a `done`.
+   */
+  private paintFreshSpots(egg: Egg, g: Phaser.GameObjects.Graphics, fresh: readonly number[], done: () => void): void {
+    const id = this.buildId;
+    const later = (ms: number, fn: () => void): void => {
+      this.time.delayedCall(ms, () => {
+        if (id === this.buildId) fn();
+      });
+    };
+    this.tweens.add({
+      targets: this.cameras.main,
+      scrollX: Phaser.Math.Clamp(egg.x - this.scale.width / 2, 0, this.maxScroll),
+      duration: PAN_MS,
+      ease: 'Sine.easeInOut',
+    });
+    let t = PAN_MS + 150;
+    for (const level of fresh) {
+      const spot = eggSpot(level);
+      if (!spot) continue;
+      later(t, () => {
+        this.tweens.add({ targets: g, angle: { from: -4, to: 4 }, duration: 90, yoyo: true, repeat: 1, onComplete: () => g.setAngle(0) });
+        const x = egg.x + spot.x * egg.size;
+        const y = egg.y + spot.y * egg.size;
+        const color = SPOT_HEX[spot.color];
+        const grow = this.add.circle(x, y, spot.r * egg.size, color).setScale(0);
+        audio.sfx('glyph', { index: (level - 1) % 5 });
+        this.tweens.add({
+          targets: grow,
+          scale: 1,
+          duration: SPOT_MS,
+          ease: 'Back.easeOut',
+          onComplete: () => {
+            drawSpot(g, level, egg.size, true);
+            grow.destroy();
+          },
+        });
+        this.sparkle(x, y, color);
+      });
+      t += SPOT_MS + BAND_GAP_MS;
+    }
+    later(t + HOLD_MS, done);
+  }
+
   /** Destello que crece, gira y se desvanece. */
   private sparkle(x: number, y: number, tint: number): void {
     for (let i = 0; i < 2; i++) {
@@ -404,7 +466,8 @@ export class MapScene extends Phaser.Scene {
     this.tweens.add({ targets: fox, y: at.y - 46, duration: 260, yoyo: true, repeat: 2, repeatDelay: 80, ease: 'Quad.easeOut' });
     this.time.delayedCall(1300, () => {
       if (id !== this.buildId) return;
-      new Finale(this, width).play(() => {
+      const card = this.def.finale === 'hatch' ? new HatchFinale(this, width) : new Finale(this, width);
+      card.play(() => {
         if (id !== this.buildId) return;
         const locks = this.unlocking.flatMap((w) => this.selectorLocks.get(w) ?? []);
         this.unlocking = [];
@@ -601,7 +664,7 @@ export class MapScene extends Phaser.Scene {
       color: locked ? COLORS.locked : status === 'done' ? COLORS.grass : COLORS.white,
       shadowColor: locked ? COLORS.lockedDark : status === 'done' ? COLORS.grassDark : COLORS.shadow,
       shadowDepth: 8,
-      icon: 'castle',
+      icon: castleTexture(this.def.castle),
       iconSize: 100,
       onTap: () => (locked ? btn.shake() : goTo(this, 'Level', { world: this.def.id, castle: true })),
     });
@@ -611,7 +674,7 @@ export class MapScene extends Phaser.Scene {
       btn.add([this.add.circle(40, -40, 24, COLORS.white), this.add.image(40, -41, 'icon-lock').setDisplaySize(30, 30)]);
     }
     if (status === 'done') {
-      const medal = this.add.image(p.x + 64, p.y + 40, 'medal').setDisplaySize(64, 64);
+      const medal = this.add.image(p.x + 64, p.y + 40, medalTexture(this.def.castle)).setDisplaySize(64, 64);
       this.tweens.add({ targets: medal, angle: { from: -8, to: 8 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
   }
@@ -659,7 +722,7 @@ export class MapScene extends Phaser.Scene {
       if (w.access !== 'open') btn.face.setAlpha(0.7);
       if (w.id && session.worlds.get(w.id)?.medal) {
         // La medalla del castillo del mundo, en la esquina de su botón.
-        btn.add(this.add.image(-bw / 2 + 14, -bh / 2 + 12, 'medal').setDisplaySize(42, 42));
+        btn.add(this.add.image(-bw / 2 + 14, -bh / 2 + 12, medalTexture(worldDef(w.id).castle)).setDisplaySize(42, 42));
       }
       if (w.access === 'locked') {
         // Candado pequeño en la esquina: se abrirá más adelante.

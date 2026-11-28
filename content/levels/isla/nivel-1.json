@@ -1,0 +1,28 @@
+{
+  "ambient": "playa-negra",
+  "length": 157.5,
+  "steps": [],
+  "platforms": [],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 48.2, "row": "low" },
+    { "x": 49.4, "row": "low" },
+    { "x": 50.6, "row": "low" },
+    { "x": 58.6, "row": "high" },
+    { "x": 59.8, "row": "high" },
+    { "x": 94.3, "row": "low" },
+    { "x": 95.5, "row": "low" },
+    { "x": 103.5, "row": "high" },
+    { "x": 104.7, "row": "high" },
+    { "x": 139.2, "row": "low" },
+    { "x": 140.4, "row": "low" },
+    { "x": 141.6, "row": "low" }
+  ],
+  "spikes": [],
+  "challenges": [
+    { "kind": "footprints", "x": 22.2, "demo": true },
+    { "kind": "footprints", "x": 68.3 },
+    { "kind": "footprints", "x": 113.2 }
+  ]
+}

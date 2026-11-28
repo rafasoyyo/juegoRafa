@@ -84,7 +84,7 @@ y SHALL hacer que el candado tiemble.
 - **THEN** el candado tiembla y el mapa sigue abierto
 
 ### Requirement: Selector de mundos
-El mapa SHALL mostrar abajo un selector con 4 mundos en este orden: números (`123`), el río (con un marco de diez como icono), formas y letras (`Aa`), con el mundo mostrado resaltado. Tocar un mundo abierto SHALL abrir su mapa. Tocar un mundo con candado o que aún no existe SHALL hacer que su botón tiemble sin cambiar el mapa. Formas y letras SHALL mostrarse como mundos que aún no existen.
+El mapa SHALL mostrar abajo un selector con 4 mundos en este orden: números (`123`), el río (con un marco de diez como icono), formas y letras (`Aa`), con el mundo mostrado resaltado. Tocar un mundo abierto SHALL abrir su mapa. Tocar un mundo con candado o que aún no existe SHALL hacer que su botón tiemble sin cambiar el mapa. Letras SHALL mostrarse como un mundo que aún no existe; formas, también, mientras su interruptor de desarrollo esté apagado (ver «La isla en construcción»).
 
 #### Scenario: Orden del selector
 - **WHEN** se abre el mapa en un móvil horizontal de 844×390
@@ -345,3 +345,42 @@ Con la medalla del arcoíris ganada, el botón 123 del selector SHALL mostrarla 
 #### Scenario: Medalla del arcoíris en el selector
 - **WHEN** el niño ha ganado la medalla del arcoíris y abre cualquier mapa
 - **THEN** el botón 123 muestra la medalla en su esquina
+
+### Requirement: La isla en construcción
+El tercer botón del selector (formas) SHALL abrir el mundo 3, «La isla de los dinosaurios», también en el juego publicado, sin depender de ningún interruptor: con 7 años o más, o al llegar al nivel 12 del río, y con candado en otro caso.
+
+#### Scenario: Juego publicado
+- **WHEN** un niño de 8 años toca el botón de formas en el juego publicado
+- **THEN** se abre el mapa de la isla
+
+#### Scenario: Con 6 años
+- **WHEN** un perfil de 6 años que no ha llegado al nivel 12 del río toca el botón de formas
+- **THEN** el botón tiembla con candado
+
+### Requirement: Huevo de manchas de la isla
+El mapa de la isla SHALL mostrar arriba un huevo con 12 manchas, una por nivel, que siguen un patrón (por filas de abajo arriba y con los colores en serie). La mancha de un nivel SHALL estar pintada cuando el nivel está hecho o pendiente. Al volver al mapa con una mancha nueva, la cámara SHALL ir al huevo, la mancha SHALL aparecer creciendo con una nota y destellos y después Rufo SHALL saltar al nivel siguiente; un toque SHALL acabar la animación. Abrir un perfil con progreso SHALL NOT animar manchas ya pintadas.
+
+#### Scenario: Mancha nueva
+- **WHEN** el niño termina el nivel 3 de la isla con estrellas y vuelve al mapa
+- **THEN** la tercera mancha del huevo aparece creciendo y Rufo salta al nivel 4
+
+### Requirement: Final de la isla
+Al volver al mapa con todos los niveles de la isla hechos o pendientes, una vez por perfil, Rufo SHALL saltar de alegría y SHALL verse una viñeta sin texto: el huevo con sus 12 manchas en el nido del cráter, la mamá dinosaurio que se asoma, el huevo que se mueve, se raja y se abre, y un bebé que da un saltito. Un toque SHALL saltarla. Mientras no exista el mundo 4, el final SHALL acabar ahí.
+
+#### Scenario: Se ve una vez
+- **WHEN** un perfil que ya vio el final de la isla vuelve a abrir su mapa
+- **THEN** el mapa se abre sin la viñeta
+
+### Requirement: Medalla de la huella en el mapa
+El mapa de la isla SHALL mostrar el castillo como la parada siguiente a su último nivel y, ganada su medalla, la medalla de la huella junto a él y en la esquina del botón de formas del selector.
+
+#### Scenario: Medalla en el selector
+- **WHEN** un perfil gana el castillo de la isla y vuelve al mapa
+- **THEN** el botón de formas del selector lleva la medalla de la huella
+
+### Requirement: Mapa del volcán
+El mapa de la isla SHALL tener dos pantallas en las que el camino sube de la playa negra al gran volcán, con el paisaje de cada tramo, el huevo de 12 manchas encima de los niveles del medio sin que ningún nodo lo tape, y el castillo dibujado como el nido del cráter en la cima del volcán. El nido SHALL verse también al final del recorrido del castillo y en su prueba.
+
+#### Scenario: El nido en el cráter
+- **WHEN** se abre el mapa de la isla a 844×390 y se desplaza hasta el final
+- **THEN** el nido queda sobre el cráter, tras el nivel 12, sin que el selector tape las estrellas

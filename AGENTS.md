@@ -14,6 +14,8 @@ Plataformas 2D web para niños de 4 a 6 años que no leen ni suman. Rufo el zorr
 4. **Sin material de terceros con copyright** (ni Nintendo, ni Mario). Arte propio o CC0, anotado en `public/assets/LICENSES.md` en el mismo commit que lo añade.
 5. **Se publica y es para menores**: sin publicidad, sin analítica con identificadores personales, datos mínimos (alias, edad, avatar, progreso), sin enlaces externos ni chat. RGPD (menores de 14) y COPPA (menores de 13).
 6. **`src/learning/` es TypeScript puro**: no importa `phaser` ni `firebase`.
+7. **Fluido en tablets antiguas** (reglas completas en [openspec/specs/performance/spec.md](openspec/specs/performance/spec.md)): cada nivel cabe en 20 ms de media por fotograma (33 ms en el percentil 95) con la CPU frenada ×4 a 844×390. Los `Graphics` fijos se hornean una vez con `bakeGraphics` o `bakeShape` (`src/game/ui/bake.ts`); solo siguen como `Graphics` los que cambian de forma. En `update`, nada de `Math.random()` para dibujar ni listas u objetos nuevos si se puede evitar; los efectos repetidos usan reserva de objetos. Texturas de 2048 px de lado como mucho y liberadas al cerrar la escena. Física con paso variable (`fixedStep: false`) y sin `roundPixels`. Música con 0,25 s de margen.
+8. **Mundos desacoplados** (reglas completas en [openspec/specs/world-isolation/spec.md](openspec/specs/world-isolation/spec.md)): cada mundo se desarrolla en su rama sin tocar a los demás. Todo lo de un mundo va en `content/levels/<id>/` y `src/game/worlds/<id>/`, y se da de alta con una línea en `worlds/registry.ts`; un mundo en construcción lleva `gate.devOnly` en su definición. Fuera de esas carpetas nadie nombra un mundo: lo que cambia de uno a otro es una opción de su `WorldDef`. Cada tipo de reto, enemigo o prueba es una entrada de su registro (`CHALLENGE_SHAPES` y `CHALLENGE_MECHANICS`; `ENEMY_KINDS`, `SPAWNERS`, `REACH` y `ENEMY_VIEWS`; `QUIZ_KINDS`, `QUIZ_GENERATORS`, `GUIDE_TEXT`, `AREAS` y, si tiene vista propia, `QUIZ_VIEWS`); las escenas no comparan tipos uno a uno. Lo vigila `src/game/worlds/isolation.test.ts`.
 
 ## Comandos
 
@@ -43,7 +45,7 @@ Antes de dar un cambio por terminado: `npm test` y `npm run build` deben pasar. 
 - Alto lógico fijo de 720 px; el ancho se adapta entre 4:3 y 21:9 (`fitWidth`). Controles táctiles de al menos 96 px.
 - Estilo vectorial plano y redondeado, sin contornos negros. Paleta en `openspec/specs/visual-style/spec.md`. Tipografía Baloo 2 local.
 - Contenido como datos: un nivel o reto nuevo se añade en JSON o en un generador de `learning/`, sin tocar el motor.
-- Mundos independientes: un mundo nuevo es una carpeta `content/levels/<id>/`, una definición `src/game/worlds/<id>/index.ts` y una línea en `worlds/registry.ts` (quitando su hueco de `UPCOMING`). Nada del motor debe preguntar en qué mundo está: lo que cambie de un mundo a otro va en su `WorldDef`.
+- Mundos independientes: un mundo nuevo es una carpeta `content/levels/<id>/`, una definición `src/game/worlds/<id>/index.ts` y una línea en `worlds/registry.ts` (quitando su hueco de `UPCOMING`); mientras está en construcción, `gate.devOnly: true` en su definición. Nada del motor debe preguntar en qué mundo está: lo que cambie de un mundo a otro va en su `WorldDef`.
 - Los generadores de pruebas reciben una semilla para que las pruebas sean deterministas.
 - No metas dependencias nuevas sin necesidad: el juego debe seguir cargando ligero en tablets antiguas.
 

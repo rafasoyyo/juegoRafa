@@ -11,7 +11,8 @@ const SFX_GAIN = 0.8;
 
 /** Planificador de música: cada cuánto despierta y cuánto programa por delante (segundos). */
 const TICK_MS = 25;
-const LOOKAHEAD = 0.1;
+// Margen amplio: crear un nivel bloquea el hilo un rato en tablets lentas y la música no debe cortarse.
+const LOOKAHEAD = 0.25;
 const START_DELAY = 0.05;
 
 const FADE_OUT_S = 0.4;

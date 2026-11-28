@@ -9,6 +9,7 @@ import type { Face } from '../../learning/challenges/count-blocks';
 import { hitBlock, startChallenge, type ChallengeRun } from '../../learning/challenges/ladder';
 import { audio } from '../audio/audio-engine';
 import { COLORS } from '../config';
+import { bakeGraphics } from '../ui/bake';
 import { BLOCK_SIZE, GROUND_TOP } from '../level-course';
 import { ROW_BASE, type WorldSpike } from '../levels/types';
 import { drawFace } from './faces';
@@ -81,14 +82,21 @@ export abstract class ChallengeView {
 
   /** Bloques con cara en la fila baja sobre el suelo, centrados en `xs` (px). */
   protected addBlocks(faces: readonly Face[], xs: readonly number[]): void {
-    const by = GROUND_TOP - ROW_BASE.low - BLOCK_SIZE / 2;
-    faces.forEach((face, i) => {
-      const bx = xs[i] ?? 0;
+    this.addBlockViews(xs, (i) => {
       const g = this.scene.add.graphics();
       g.fillStyle(0xb9d9ef).fillRoundedRect(-BLOCK_SIZE / 2, -BLOCK_SIZE / 2 + 6, BLOCK_SIZE, BLOCK_SIZE, 18);
       g.fillStyle(COLORS.white).fillRoundedRect(-BLOCK_SIZE / 2, -BLOCK_SIZE / 2, BLOCK_SIZE, BLOCK_SIZE, 18);
-      const f = drawFace(this.scene, face, BLOCK_SIZE * 0.8);
-      const visual = this.scene.add.container(bx, by, [g, f.container]).setDepth(CHALLENGE_DEPTH);
+      // Fondo del bloque horneado en una imagen (un solo cuadro para la GPU), antes de meterlo en el contenedor.
+      const baked = bakeGraphics(this.scene, g, { x: -BLOCK_SIZE / 2, y: -BLOCK_SIZE / 2, width: BLOCK_SIZE, height: BLOCK_SIZE + 6 });
+      return [...baked, drawFace(this.scene, faces[i]!, BLOCK_SIZE * 0.8).container];
+    });
+  }
+
+  /** Bloques en la fila baja sobre el suelo, centrados en `xs` (px), con el dibujo que da `parts`. */
+  protected addBlockViews(xs: readonly number[], parts: (i: number) => Phaser.GameObjects.GameObject[]): void {
+    const by = GROUND_TOP - ROW_BASE.low - BLOCK_SIZE / 2;
+    xs.forEach((bx, i) => {
+      const visual = this.scene.add.container(bx, by, parts(i)).setDepth(CHALLENGE_DEPTH);
       const zone = this.scene.add.zone(bx, by, BLOCK_SIZE, BLOCK_SIZE);
       this.scene.physics.add.existing(zone, true);
       this.scene.physics.add.collider(this.fox, zone, () => {

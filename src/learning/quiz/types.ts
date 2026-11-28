@@ -31,6 +31,19 @@ export const QUIZ_KINDS = [
   'frog-jumps',
   'boats',
   'river-review',
+  // Mundo 3, la isla de los dinosaurios (`docs/MUNDO-3.md`).
+  'dino-shadows',
+  'shape-things',
+  'stego-plates',
+  'turned-shapes',
+  'nest',
+  'odd-egg',
+  'fossil',
+  'skin-mosaic',
+  'growing-neck',
+  'roll-or-not',
+  'hidden-triangles',
+  'island-review',
 ] as const;
 export type QuizKind = (typeof QUIZ_KINDS)[number];
 
@@ -40,8 +53,49 @@ export type AgeBand = 'small' | 'medium' | 'big';
 /** Objetos del juego que pueden aparecer en las preguntas. */
 export type ObjectId = 'cookie' | 'hedgehog' | 'bee' | 'star' | 'snail';
 
-export const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'star', 'hexagon', 'rectangle'] as const;
+export const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'star', 'hexagon', 'rectangle', 'oval', 'pentagon'] as const;
 export type ShapeId = (typeof SHAPES)[number];
+
+/** Dinosaurios de la isla (estilo A documental). */
+export const DINOS = ['trex', 'brachio', 'trici', 'stego', 'ptero'] as const;
+export type DinoId = (typeof DINOS)[number];
+
+/** Cosas de todos los días con una forma clara, para «Formas en las cosas». */
+export const THINGS = {
+  wheel: 'circle',
+  clock: 'circle',
+  window: 'square',
+  gift: 'square',
+  pizza: 'triangle',
+  sail: 'triangle',
+  door: 'rectangle',
+  book: 'rectangle',
+  egg: 'oval',
+  starfish: 'star',
+  kite: 'diamond',
+  honeycomb: 'hexagon',
+  house: 'pentagon',
+} as const satisfies Record<string, ShapeId>;
+export type ThingId = keyof typeof THINGS;
+
+/** Piezas sin simetría para «Igual aunque gire»: girarlas cambia cómo se ven y voltearlas da otra pieza. */
+export const PIECES = ['ell', 'flag', 'boot', 'arrow'] as const;
+export type PieceId = (typeof PIECES)[number];
+
+/** Dónde está una cosa respecto a otra («El nido»). */
+export const PLACES = ['in', 'out', 'on', 'under', 'front', 'behind', 'left', 'right'] as const;
+export type PlaceRel = (typeof PLACES)[number];
+
+/** Cuerpos de «Pelota, caja y cono»: los que ruedan (bola, cilindro, cono) y los que no. */
+export const SOLIDS = ['ball', 'cylinder', 'cone', 'cube', 'pyramid', 'brick'] as const;
+export type SolidId = (typeof SOLIDS)[number];
+
+/** Dibujos de «Formas escondidas» hechos con triángulos que se solapan. */
+export const FIGURES = ['one', 'cut-top', 'diagonal', 'split-1', 'triforce', 'split-2', 'two-diagonals'] as const;
+export type FigureId = (typeof FIGURES)[number];
+
+/** Dibujo de la cáscara de un huevo. */
+export type EggPattern = 'plain' | 'spots' | 'stripes';
 
 /** Iconos de consigna de «¿Te acuerdas?»: de qué trata la pregunta. */
 export type TopicIcon = 'landscape' | 'block' | 'path';
@@ -90,7 +144,34 @@ export type Visual =
   /** Calcetín del color `color` (índice de la paleta de calcetines) con su dibujo `pattern`. */
   | { type: 'sock'; color: number; pattern: number }
   /** Respuesta de pares y nones: todos con pareja o sobra uno. */
-  | { type: 'pairs'; odd: boolean };
+  | { type: 'pairs'; odd: boolean }
+  /** Dinosaurio de la isla, a color o como sombra; `flip` lo pone mirando a la izquierda. */
+  | { type: 'dino'; dino: DinoId; shadow: boolean; flip: boolean }
+  | { type: 'thing'; thing: ThingId }
+  /** Pieza sin simetría, girada `angle` grados y volteada si `mirrored`. */
+  | { type: 'piece'; piece: PieceId; angle: number; mirrored: boolean; color: number }
+  /** Escena de posición: `thing` (huevo o bebé) respecto a `holder` (nido, caja, cesto o cueva). */
+  | { type: 'place'; rel: PlaceRel; thing: 'egg' | 'baby'; holder: 'nest' | 'box' | 'basket' | 'cave' }
+  /** Huevo con color (índice de la paleta de huevos), dibujo y tamaño relativo. */
+  | { type: 'egg'; color: number; pattern: EggPattern; scale: number }
+  /** Nido con los huevos de la familia de ejemplo. */
+  | { type: 'nest'; eggs: { color: number; pattern: EggPattern }[] }
+  /** Losa de fósil de `rows`×`cols` huesos a la que le falta el trozo `hole`. */
+  | { type: 'fossil'; rows: number; cols: number; hole: GridCell[] }
+  /** Trozo de fósil: casillas desde (0, 0), sin girar. */
+  | { type: 'bones'; cells: GridCell[] }
+  /** Piel de dinosaurio en `rows`×`cols` escamas de colores (índices); -1 es la que falta. */
+  | { type: 'mosaic'; rows: number; cols: number; tiles: number[] }
+  /** Escama de un color (índice), con su marca para no depender del color. */
+  | { type: 'tile'; color: number }
+  /** Dinosaurio de cuello largo con `length` trozos de cuello. */
+  | { type: 'neck'; length: number }
+  | { type: 'solid'; solid: SolidId }
+  /** Rampa de la consigna: ¿cuál baja rodando (`roll`) o cuál se queda quieto (`stay`)? */
+  | { type: 'ramp'; ask: 'roll' | 'stay' }
+  | { type: 'figure'; figure: FigureId }
+  /** Formas sueltas de colores, para contar los triángulos entre ellas. */
+  | { type: 'mix'; shapes: { shape: ShapeId; color: number }[] };
 
 /**
  * Cómo se dibuja la parte de arriba de la pregunta:
@@ -99,9 +180,10 @@ export type Visual =
  * - `model`: un marco con el modelo que hay que buscar.
  * - `think`: un globo de pensamiento de Lalo con el tema de la pregunta.
  * - `basket`: la cesta de «más» o «menos».
+ * - `picture`: un dibujo grande (`items[0]`), sin marco.
  * - `share`, `order`, `cable-car`, `tracks`, `balance`, `mirror`: escenas propias (ver `Prompt.scene`).
  */
-export type PromptLayout = 'scatter' | 'rows' | 'tenframes' | 'row' | 'model' | 'think' | 'basket' | SceneData['kind'];
+export type PromptLayout = 'scatter' | 'rows' | 'tenframes' | 'row' | 'model' | 'think' | 'basket' | 'picture' | SceneData['kind'];
 
 /** Datos de la escena de las pruebas nuevas: lo que no cabe en `items` y que la vista necesita para animar. */
 export type SceneData =
@@ -266,7 +348,44 @@ export function visualKey(v: Visual): string {
       return `sock:${v.color}:${v.pattern}`;
     case 'pairs':
       return `pairs:${v.odd ? 'odd' : 'even'}`;
+    case 'dino':
+      return `dino:${v.dino}:${v.shadow ? 's' : 'c'}:${v.flip ? 'l' : 'r'}`;
+    case 'thing':
+      return `thing:${v.thing}`;
+    case 'piece':
+      return `piece:${v.piece}:${v.mirrored ? 'm' : 'n'}:${(((v.angle % 360) + 360) % 360)}`;
+    case 'place':
+      return `place:${v.rel}:${v.thing}:${v.holder}`;
+    case 'egg':
+      return `egg:${v.color}:${v.pattern}:${v.scale}`;
+    case 'nest':
+      return `nest:${v.eggs.map((e) => `${e.color}${e.pattern}`).join(',')}`;
+    case 'fossil':
+      return `fossil:${v.rows}x${v.cols}:${cellsKey(v.hole)}`;
+    case 'bones':
+      return `bones:${cellsKey(v.cells)}`;
+    case 'mosaic':
+      return `mosaic:${v.rows}x${v.cols}:${v.tiles.join('')}`;
+    case 'tile':
+      return `tile:${v.color}`;
+    case 'neck':
+      return `neck:${v.length}`;
+    case 'solid':
+      return `solid:${v.solid}`;
+    case 'ramp':
+      return `ramp:${v.ask}`;
+    case 'figure':
+      return `figure:${v.figure}`;
+    case 'mix':
+      return `mix:${v.shapes.map((x) => x.shape).join(',')}`;
   }
+}
+
+function cellsKey(cells: readonly GridCell[]): string {
+  return cells
+    .map((c) => `${c.row}.${c.col}`)
+    .sort()
+    .join('|');
 }
 
 /** Clave de una pregunta entera, para no repetir dos iguales en la misma prueba. */

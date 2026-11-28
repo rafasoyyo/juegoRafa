@@ -25,6 +25,9 @@ export const LIP_MIN_FOOT = 12;
 /** Acero de los pinchos, igual en todos los ambientes: cara de luz, cara media y cara de sombra. */
 export const STEEL = { light: 0xe6ecf3, mid: 0xb4bfcc, dark: 0x7f8c9d } as const;
 
+/** Lava de la isla: la de los charcos de los fosos y la del lago del géiser. */
+export const LAVA = { light: 0xffa23f, mid: 0xe8642c, dark: 0xa83a1c } as const;
+
 /** Los pies son el cuerpo del zorro recortado esto por cada lado, en px. */
 export const FOOT_INSET = 12;
 /** Medio cuerpo físico del zorro (mide 56 px de ancho), en px. */
