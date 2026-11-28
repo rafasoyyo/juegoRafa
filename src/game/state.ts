@@ -36,6 +36,8 @@ export interface WorldProgress {
   stars: Map<number, number>;
   /** Niveles jugados hasta la bandera sin superar su prueba. Nunca contiene un nivel hecho. */
   pending: Set<number>;
+  /** Medalla del castillo del mundo: se gana al terminar el castillo y no se pierde. */
+  medal: boolean;
 }
 
 export interface GameState {
@@ -44,14 +46,16 @@ export interface GameState {
   cookies: number;
   ownedHats: Set<HatId>;
   hat: HatId;
+  /** Escenas de historia ya vistas (p. ej. `prologo:arcoiris`): solo una marca por escena. */
+  seen: Set<string>;
 }
 
 export function createWorldProgress(): WorldProgress {
-  return { stars: new Map(), pending: new Set() };
+  return { stars: new Map(), pending: new Set(), medal: false };
 }
 
 export function createGameState(): GameState {
-  return { worlds: new Map(), cookies: 0, ownedHats: new Set<HatId>(['cap', 'none']), hat: 'cap' };
+  return { worlds: new Map(), cookies: 0, ownedHats: new Set<HatId>(['cap', 'none']), hat: 'cap', seen: new Set() };
 }
 
 /** Progreso del mundo `world`; si aún no tiene, se crea vacío y se guarda en el estado. */
@@ -107,6 +111,24 @@ export function canPlay(state: GameState, world: WorldShape, level: number): boo
   return levelStatus(state, world, level) !== 'locked';
 }
 
+/**
+ * Estado del castillo de un mundo: cerrado hasta jugar (hecho o pendiente) el último nivel; abierto
+ * hasta ganar la medalla y, después, hecho (se puede volver a jugar).
+ */
+export type CastleStatus = 'locked' | 'open' | 'done';
+
+export function castleStatus(state: GameState, world: WorldShape): CastleStatus {
+  const progress = read(state, world.id);
+  if (progress.medal) return 'done';
+  return reached(progress, world.levelCount) ? 'open' : 'locked';
+}
+
+/** Castillo terminado: siempre da la medalla del mundo (sin estrellas) y suma las galletas. */
+export function winMedal(state: GameState, world: WorldId, cookies: number): void {
+  worldProgress(state, world).medal = true;
+  state.cookies += Math.max(0, Math.floor(cookies));
+}
+
 /** Guarda la mejor puntuación en estrellas, suma las galletas y deja el nivel hecho (ya no pendiente). */
 export function completeLevel(state: GameState, world: WorldId, level: number, stars: number, cookies: number): void {
   const progress = worldProgress(state, world);
@@ -117,12 +139,10 @@ export function completeLevel(state: GameState, world: WorldId, level: number, s
 }
 
 /**
- * Prueba de la bandera no superada: suma las galletas y deja el nivel pendiente, salvo que ya estuviera
- * hecho (repetir un nivel hecho y fallar no lo deshace). El siguiente nivel queda desbloqueado.
+ * Fase terminada sin ninguna estrella: solo se suman las galletas. El nivel no queda hecho ni pendiente
+ * y no desbloquea el siguiente; si ya estaba hecho, conserva su mejor resultado.
  */
-export function markPending(state: GameState, world: WorldId, level: number, cookies: number): void {
-  const progress = worldProgress(state, world);
-  if (!progress.stars.has(level)) progress.pending.add(level);
+export function finishWithoutStars(state: GameState, cookies: number): void {
   state.cookies += Math.max(0, Math.floor(cookies));
 }
 

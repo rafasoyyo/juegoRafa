@@ -8,6 +8,7 @@ import Phaser from 'phaser';
 import type { CountChallenge } from '../../learning/challenges/count-blocks';
 import { audio } from '../audio/audio-engine';
 import { COLORS } from '../config';
+import { bakeGraphics } from '../ui/bake';
 import { GROUND_TOP } from '../level-course';
 import { CHALLENGE_BLOCK_XS, CHALLENGE_GATE_X, CHALLENGE_SIGN_X, TILE, type ChallengeData } from '../levels/types';
 import { ChallengeView, CHALLENGE_DEPTH as DEPTH, type ChallengeHooks } from './challenge-view';
@@ -55,11 +56,13 @@ export class CountChallengeView extends ChallengeView {
     const post = scene.add.graphics();
     post.fillStyle(WOOD_DARK).fillRoundedRect(-9, 0, 18, GROUND_TOP - SIGN_Y, 6);
     post.setPosition(this.signX, SIGN_Y).setDepth(DEPTH - 1);
+    bakeGraphics(scene, post, { x: -9, y: 0, width: 18, height: GROUND_TOP - SIGN_Y });
     const panel = scene.add.graphics();
     panel.fillStyle(COLORS.shadow).fillRoundedRect(-SIGN_W / 2, -SIGN_H / 2 + 8, SIGN_W, SIGN_H, 28);
     panel.fillStyle(COLORS.white).fillRoundedRect(-SIGN_W / 2, -SIGN_H / 2, SIGN_W, SIGN_H, 28);
     this.signFace = drawFace(scene, challenge.sign, Math.min(SIGN_W, SIGN_H) * 0.82);
     this.sign = scene.add.container(this.signX, SIGN_Y, [panel, this.signFace.container]).setDepth(DEPTH);
+    bakeGraphics(scene, panel, { x: -SIGN_W / 2, y: -SIGN_H / 2, width: SIGN_W, height: SIGN_H + 8 });
 
     // Bloques con cara, en la fila baja sobre el suelo.
     this.addBlocks(
@@ -75,6 +78,7 @@ export class CountChallengeView extends ChallengeView {
       posts.fillStyle(STONE_DARK).fillRoundedRect(px - POST_W / 2, top - 30 + 4, POST_W, GATE_H + 30, 8);
       posts.fillStyle(STONE).fillRoundedRect(px - POST_W / 2, top - 30, POST_W, GATE_H + 26, 8);
     }
+    bakeGraphics(scene, posts, { x: gx - GATE_W / 2 - POST_W, y: top - 30, width: GATE_W + POST_W * 2, height: GATE_H + 34 });
     this.board = scene.add.graphics().setDepth(DEPTH);
     this.board.fillStyle(WOOD_DARK).fillRoundedRect(gx - GATE_W / 2, top, GATE_W, GATE_H, 10);
     this.board.fillStyle(WOOD).fillRoundedRect(gx - GATE_W / 2 + 6, top + 6, GATE_W - 12, GATE_H - 12, 8);
@@ -142,7 +146,12 @@ export class CountChallengeView extends ChallengeView {
       parts.push(dot);
     }
     this.scene.add.container(this.signX, SIGN_Y + SIGN_H / 2 + 14, parts).setDepth(DEPTH);
+    bakeGraphics(this.scene, g, { x: -w / 2, y: 0, width: w, height: h });
     return this.helpDots;
+  }
+
+  override cookieReward(): number {
+    return GATE_COOKIES;
   }
 
   /** Resuelto: la compuerta se levanta y caen galletas. */

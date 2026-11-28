@@ -210,3 +210,17 @@ El agua libre del lago SHALL comportarse como el hueco del puente: el zorro que 
 #### Scenario: Caer al lago
 - **WHEN** el zorro cae al agua del lago desde la barca
 - **THEN** rebota hacia la barca y el contador de galletas no cambia
+
+### Requirement: Lomo del braquiosaurio
+El lomo del braquiosaurio SHALL ser una plataforma que se mueve como la barca: firme a ras del suelo, lleva al zorro sin control mientras cruza y SHALL NOT dejarlo caer. El agua libre del río SHALL comportarse como el agua del lago: rebote fuera sin perder galletas.
+
+#### Scenario: Cruzar en el braquiosaurio
+- **WHEN** el braquiosaurio cruza con Rufo en el lomo y el niño pulsa saltar o una flecha
+- **THEN** Rufo sigue en el lomo hasta la otra orilla y entonces vuelve a responder
+
+### Requirement: Piedras que se hunden
+Una piedra del géiser que se hunde SHALL devolver al zorro en un arco suave a la última piedra buena que pisó (o a la orilla), sin control durante el arco y sin perder galletas ni parpadear. La lava entre las piedras SHALL comportarse como el hueco del puente: rebote fuera sin perder galletas.
+
+#### Scenario: Volver a la anterior
+- **WHEN** el zorro cae sobre una piedra que se hunde
+- **THEN** vuelve en un saltito a la piedra buena anterior y recupera el control al llegar

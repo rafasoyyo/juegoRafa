@@ -1,10 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buyHat, completeLevel, createGameState, currentLevel, levelStatus, markPending, session, worldProgress, type GameState } from '../state';
+import { buyHat, completeLevel, createGameState, currentLevel, levelStatus, session, winMedal, worldProgress, type GameState } from '../state';
 import { ARCOIRIS } from '../worlds/arcoiris';
 import { activateProfile, activeAge, activeAlias, activeProfileId, DEFAULT_ALIAS, saveActive, savedProfiles, startProfile, useStore } from './active';
 import { cleanAlias, isValidProfile, profileId } from './profile-id';
 import { decodeProgress, encodeProgress } from './progress-codec';
 import { createProfile, listProfiles, loadProgress, saveProgress, type KeyValueStore } from './profile-store';
+
+/** Pendiente de un perfil antiguo (antes de las estrellas por objetivos ya no se crean). */
+function legacyPending(s: GameState, world: string, level: number): void {
+  worldProgress(s, world).pending.add(level);
+}
 
 /** El mundo 1: el progreso guardado antes de los mundos es suyo. */
 const W = ARCOIRIS;
@@ -76,7 +81,8 @@ describe('progress-codec: niveles pendientes', () => {
   it('ida y vuelta con pendientes', () => {
     const s = createGameState();
     completeLevel(s, W.id, 1, 2, 3);
-    markPending(s, W.id, 2, 1);
+    legacyPending(s, W.id, 2);
+    s.cookies += 1;
     const back = decodeProgress(JSON.parse(JSON.stringify(encodeProgress(s))));
     expect([...prog(back).pending]).toEqual([2]);
     expect(prog(back).stars.get(1)).toBe(2);
@@ -110,7 +116,7 @@ describe('progress-codec: mundos', () => {
   it('guarda cada mundo bajo su id, sin el formato antiguo', () => {
     const s = createGameState();
     completeLevel(s, W.id, 1, 2, 0);
-    markPending(s, W.id, 2, 0);
+    legacyPending(s, W.id, 2);
     const saved = JSON.parse(JSON.stringify(encodeProgress(s)));
     expect(saved.worlds).toEqual({ arcoiris: { stars: [[1, 2]], pending: [2] } });
     expect(saved.stars).toBeUndefined();
@@ -233,7 +239,8 @@ describe('perfil activo', () => {
 
   it('el pendiente se guarda y se recupera', () => {
     startProfile('ANA', 4);
-    markPending(session, W.id, 1, 2);
+    legacyPending(session, W.id, 1);
+    session.cookies += 2;
     saveActive();
     startProfile('BEA', 5);
     expect(prog(session).pending.size).toBe(0);
@@ -273,5 +280,38 @@ describe('paso pendiente', () => {
     expect(guideStep('', 5)).toBe('alias');
     expect(guideStep('A', 0)).toBe('age');
     expect(guideStep('ANA', 5)).toBe('accept');
+  });
+});
+
+describe('progress-codec: medalla del castillo', () => {
+  it('ida y vuelta con la medalla; sin medalla no se guarda el campo', () => {
+    const s = createGameState();
+    completeLevel(s, 'arcoiris', 1, 2, 0);
+    winMedal(s, 'rio', 0);
+    const saved = encodeProgress(s);
+    expect(saved.worlds?.rio).toEqual({ stars: [], pending: [], medal: true });
+    expect(saved.worlds?.arcoiris).toEqual({ stars: [[1, 2]], pending: [] });
+    const back = decodeProgress(JSON.parse(JSON.stringify(saved)));
+    expect(back.worlds.get('rio')?.medal).toBe(true);
+    expect(back.worlds.get('arcoiris')?.medal).toBe(false);
+  });
+
+  it('una medalla dañada no cuenta', () => {
+    const back = decodeProgress({ worlds: { rio: { stars: [[1, 2]], pending: [], medal: 'si' } } });
+    expect(back.worlds.get('rio')?.medal).toBe(false);
+  });
+});
+
+describe('progress-codec: escenas vistas', () => {
+  it('ida y vuelta, y sin escenas no se guarda el campo', () => {
+    const s = createGameState();
+    expect(encodeProgress(s).seen).toBeUndefined();
+    s.seen.add('prologo:arcoiris');
+    const back = decodeProgress(JSON.parse(JSON.stringify(encodeProgress(s))));
+    expect([...back.seen]).toEqual(['prologo:arcoiris']);
+  });
+  it('lo guardado antes de las escenas no tiene ninguna, y lo dañado se ignora', () => {
+    expect(decodeProgress({ cookies: 3, ownedHats: ['cap'], hat: 'cap' }).seen.size).toBe(0);
+    expect([...decodeProgress({ seen: ['final:arcoiris', 7, '', null] }).seen]).toEqual(['final:arcoiris']);
   });
 });

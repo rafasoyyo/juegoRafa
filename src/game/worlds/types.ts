@@ -6,10 +6,11 @@
  */
 
 import type { QuizKind } from '../../learning/quiz';
-import type { FlagId } from '../flags';
+import type { CastleDef } from '../castle/castle';
 import type { EnemyRules } from '../enemies/enemy-layout';
 import type { DurationLimits } from '../levels/duration';
 import type { LevelData } from '../levels/types';
+import type { SkyStop } from '../map/map-sky';
 import type { WorldId, WorldShape } from '../state';
 
 export type { WorldId };
@@ -31,16 +32,39 @@ export interface MapDecor {
   at: readonly [number, number];
   key: string;
   size: number;
+  /** Al tocarlo se abre el nivel 1 con el prólogo del mundo (la madriguera del mundo 1). */
+  prologue?: boolean;
 }
 
 /** Aspecto del mapa del mundo, en el artboard de diseño de `MapScene` (pantallas de 1180×820). */
 export interface WorldMap {
-  /** Textura del cielo (la crea `BootScene`). */
+  /** Textura del cielo (la crea `BootScene`); si hay `skyline`, solo se usa de reserva. */
   sky: string;
+  /**
+   * Paisaje que cambia a lo ancho del camino: paradas en x del artboard (de 0 a 1180 × `screens`), cada
+   * una con el cielo y la tierra de un ambiente (`map/map-sky.ts`). Sin él, el cielo `sky` fijo.
+   */
+  skyline?: readonly SkyStop[];
+  /**
+   * Arcoíris de gajos, uno por nivel, que se pintan al hacer los niveles (`map/rainbow-arc.ts`): centro de
+   * su base en el artboard, radio exterior y grosor de cada una de sus 6 bandas (estos dos, en px del
+   * artboard escalados con el alto, para que sea un semicírculo en cualquier pantalla).
+   */
+  rainbow?: { center: readonly [number, number]; radius: number; band: number };
+  /**
+   * Huevo de 12 manchas, una por nivel, que se pintan al hacer los niveles (`map/egg-spots.ts`): centro en
+   * el artboard y alto en px del artboard escalados con el alto.
+   */
+  egg?: { center: readonly [number, number]; size: number };
   /** Pantallas de ancho que mide el camino. */
   screens: number;
-  /** Posición de cada nivel (`nodes[0]` es el nivel 1). */
+  /** Posición de cada nivel (`nodes[0]` es el nivel 1) y, tras el último, la del castillo si lo hay. */
   nodes: readonly (readonly [number, number])[];
+  /**
+   * Río que acompaña al camino por debajo, desde `from` hasta `to` pasando junto a cada parada, `offset`
+   * px más abajo que ella. Sin él, el camino va solo.
+   */
+  river?: { from: readonly [number, number]; to: readonly [number, number]; offset: number };
   decor: readonly MapDecor[];
   /** Nubes del fondo: `x` en pantallas, `y` en px lógicos y escala. */
   clouds: readonly { x: number; y: number; scale: number }[];
@@ -56,12 +80,13 @@ export interface SelectorButton {
 }
 
 /**
- * Cuándo se abre un mundo desde el selector. Sin puerta, siempre. Con interruptor apagado, nunca
- * (se ve como un mundo que aún no existe). Si no, con la edad `openAge` o más, o al llegar (hecho o
+ * Cuándo se abre un mundo desde el selector. Sin puerta, siempre. Con `devOnly`, solo con `npm run dev`:
+ * en el juego publicado se ve como un mundo que aún no existe (es el interruptor del mundo en
+ * construcción, en su propia definición). Si no, con la edad `openAge` o más, o al llegar (hecho o
  * pendiente) al nivel `after.level` del mundo `after.world`.
  */
 export interface WorldGate {
-  flag?: FlagId;
+  devOnly?: boolean;
   openAge?: number;
   after?: { world: WorldId; level: number };
 }
@@ -75,12 +100,20 @@ export interface WorldDef extends WorldShape {
   course: CourseRules;
   /** Arcoíris del horizonte que crece de nivel en nivel (`horizon-rainbow.ts`). */
   horizonRainbow: boolean;
+  /**
+   * Prólogo al empezar el nivel 1 la primera vez (`story/prologue.ts`): Rufo sale de la madriguera y
+   * Lalo le señala el arcoíris. Sin él, el nivel 1 empieza sin más.
+   */
+  prologue?: boolean;
+  /**
+   * Final al volver al mapa con todos los niveles jugados, una vez por perfil (`story/finale.ts`): `rain`,
+   * la lluvia sobre la montaña hace nacer el río (mundo 1); `hatch`, el huevo se abre en el nido del
+   * cráter (mundo 3). Abre con una animación los mundos cuya puerta depende de terminar este (`gate.after`).
+   */
+  finale?: 'rain' | 'hatch';
   map: WorldMap;
   selector: SelectorButton;
   gate?: WorldGate;
-  /**
-   * Cómo se ganan las estrellas: por bloques «?» golpeados (mundo 1) o por retos del recorrido
-   * acertados a la primera (mundo 2, `docs/MUNDO-2.md`).
-   */
-  stars: 'blocks' | 'challenges';
+  /** Castillo tras el último nivel: sus retos y su paisaje. Sin él, el mapa acaba en el último nivel. */
+  castle?: CastleDef;
 }

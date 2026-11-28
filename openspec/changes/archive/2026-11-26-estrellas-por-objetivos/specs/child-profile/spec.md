@@ -1,0 +1,28 @@
+## MODIFIED Requirements
+
+### Requirement: Guardado automático del progreso
+El juego SHALL guardar en el navegador, bajo el id del perfil activo, las estrellas de cada nivel, los niveles pendientes de perfiles antiguos, las galletas, los gorros comprados y el gorro puesto, sin que el niño pulse nada: al terminar la prueba de un nivel, al completar un nivel y al comprar o ponerse un gorro. Terminar un nivel con 0 estrellas SHALL guardar solo las galletas. Un perfil nuevo SHALL empezar sin niveles hechos ni pendientes, con 0 galletas y el gorro inicial. El progreso guardado antes de existir las pruebas SHALL conservarse: sus niveles hechos siguen hechos, y los pendientes guardados SHALL seguir pendientes.
+
+#### Scenario: Cerrar y volver
+- **WHEN** el niño completa el nivel 1 con 2 estrellas, cierra la pestaña y vuelve a abrir el juego con su perfil
+- **THEN** el nivel 1 aparece hecho con 2 estrellas y el 2 es el actual
+
+#### Scenario: Cero estrellas guardado
+- **WHEN** el niño termina el nivel 1 con 0 estrellas tras recoger 2 galletas, cierra la pestaña y vuelve con su perfil
+- **THEN** el nivel 1 sigue siendo el actual, el 2 está bloqueado y las 2 galletas siguen sumadas
+
+#### Scenario: Pendiente antiguo
+- **WHEN** se abre un perfil guardado con el nivel 1 pendiente
+- **THEN** el nivel 1 aparece pendiente y el 2 está desbloqueado
+
+#### Scenario: Progreso anterior a las pruebas
+- **WHEN** un perfil guardado antes de este cambio tenía los niveles 1 y 2 hechos
+- **THEN** al abrirlo, los niveles 1 y 2 siguen hechos con sus estrellas y el 3 es el actual
+
+#### Scenario: Comprar un gorro
+- **WHEN** el niño compra un gorro y recarga la página
+- **THEN** al volver con su perfil sigue teniendo el gorro, puesto, y las galletas restantes
+
+#### Scenario: Mejor puntuación
+- **WHEN** el niño repite un nivel y saca menos estrellas que antes
+- **THEN** se conserva la mejor puntuación guardada

@@ -127,3 +127,102 @@ El agua libre del lago SHALL ser más ancha que lo que alcanza un salto normal d
 #### Scenario: Saltar desde la barca
 - **WHEN** el niño salta desde la barca sin haberla llenado
 - **THEN** cae al agua y rebota hacia la barca
+
+### Requirement: El camino de huellas
+Un reto de tipo camino de huellas SHALL mostrar un puente en ruinas de 5 losas sobre un río de lava, con una tablilla grabada sobre cada losa que sigue una serie de formas, al que le falta una losa, y tres bloques de piedra con formas sobre las losas firmes antes del hueco. Golpear el bloque con la forma que sigue SHALL hacer subir la losa de la lava hasta encajar con un golpe de piedra, encender los grabados uno tras otro con su nota y dejar el puente cruzable.
+
+#### Scenario: Acertar la forma que sigue
+- **WHEN** las tablillas muestran triángulo, cuadrado, triángulo, cuadrado y el hueco va después, y el niño golpea el bloque del triángulo
+- **THEN** la losa sube y encaja con un golpe de piedra, los grabados se encienden de uno en uno con su nota y el zorro puede cruzar
+
+#### Scenario: En el móvil
+- **WHEN** el niño está en la última losa firme antes del hueco en un móvil horizontal de 844×390
+- **THEN** ve los tres bloques, el hueco y las tablillas de la serie sin que los tapen los controles
+
+### Requirement: Series según la edad
+La serie del camino de huellas SHALL adaptarse a la franja de edad: de 3 a 4 años, AB con la misma forma en dos colores; de 5 a 6 años, AB, ABB o AAB con formas de un solo color; de 7 a 8 años, ABC con tres formas o una serie que crece (una forma más en cada losa). Delante del hueco SHALL verse siempre al menos una vuelta entera de la serie.
+
+#### Scenario: Perfil de 4 años
+- **WHEN** un perfil de 4 años llega a un camino de huellas
+- **THEN** las losas alternan dos colores de círculo y los bloques ofrecen círculos de tres colores
+
+#### Scenario: Perfil de 8 años con una serie que crece
+- **WHEN** a un perfil de 8 años le toca una serie que crece
+- **THEN** las tablillas llevan 1, 2, 3… formas iguales y los bloques ofrecen la cantidad que sigue y otras cercanas
+
+### Requirement: Escalera de fallos del camino de huellas
+Un fallo en el camino de huellas SHALL NOT quitar galletas. El primero SHALL hacer que el bloque se tambalee y que el hueco parpadee; el segundo, que las tablillas se enciendan de una en una desde la primera, cada una con la nota de su forma, y que en el hueco suene el silencio; el tercero, que Lalo señale el bloque correcto y la losa suba sola.
+
+#### Scenario: Segundo fallo
+- **WHEN** el niño falla por segunda vez en un camino de huellas
+- **THEN** la serie suena tablilla a tablilla y la misma forma suena siempre con la misma nota
+
+### Requirement: El hueco de lava no se salta ni cuesta galletas
+El hueco del camino de huellas SHALL ser más ancho que lo que alcanza un salto normal, también desde encima de un bloque del reto. Caer en él SHALL hacer rebotar al zorro fuera por el lado por el que entró sin quitar galletas, y SHALL cerrarse para siempre al encajar la losa.
+
+#### Scenario: Saltar el hueco
+- **WHEN** el niño salta hacia el hueco sin haber resuelto el reto
+- **THEN** cae a la lava, rebota fuera por donde entró y conserva sus galletas
+
+### Requirement: La puerta de la cueva
+El reto B de la isla SHALL mostrar una losa de piedra, más alta de lo que llega un salto, que tapa la entrada de un templo y tiene un hueco con una forma, y tres bloques de piedra con una forma cada uno, siempre derechos. Golpear el bloque cuya forma encaja SHALL hacer volar la pieza al hueco, girando lo que haga falta, encajarla con un golpe de piedra, iluminar el borde del hueco y hacer que el triceratops aparte la losa, que deja de cortar el paso y da 3 galletas.
+
+#### Scenario: Encaja girando
+- **WHEN** el hueco es un triángulo girado un cuarto de vuelta y el niño golpea el bloque del triángulo
+- **THEN** el triángulo vuela, gira hasta encajar y la losa se aparta
+
+### Requirement: Formas de la puerta según la edad
+De 3 a 4 años las formas SHALL ser círculo, cuadrado y triángulo, sin girar. De 5 a 6 SHALL sumarse estrella, rombo y óvalo, y el hueco PUEDE estar girado un cuarto de vuelta (solo en las formas a las que el giro les cambia la cara). De 7 a 8 SHALL ser piezas compuestas sin simetría con el hueco girado, y uno de los bloques SHALL ser la misma pieza volteada, que no encaja.
+
+#### Scenario: Volteada no encaja
+- **WHEN** a un niño de 8 años le sale una L girada en el hueco
+- **THEN** el bloque de la L volteada es un fallo
+
+### Requirement: Escalera de fallos de la puerta
+Al primer fallo la pieza del bloque SHALL volar al hueco, no caber, rebotar con un golpe sordo y volver; al segundo, un brillo SHALL recorrer el borde del hueco; al tercero, Lalo SHALL señalar el bloque y la pieza SHALL encajar sola. Fallar SHALL NOT quitar galletas.
+
+#### Scenario: Segundo fallo
+- **WHEN** el niño golpea un bloque que no encaja por segunda vez
+- **THEN** un brillo recorre el borde del hueco de esquina a esquina
+
+### Requirement: El paseo en braquiosaurio
+El reto C de la isla SHALL mostrar un braquiosaurio metido en un río humeante, en la orilla de salida, con una tablilla de piedra en el lomo que lleva un emblema tallado al que le falta una pieza, y tres bloques de piedra en la orilla con una pieza cada uno. Golpear el bloque cuya pieza tiene la forma del hueco SHALL hacerla volar a su sitio, encajarla con un golpe de piedra y encender los grabados del emblema; después el braquiosaurio SHALL agacharse y, cuando Rufo se sube al lomo, cruzar el río despacio hasta la otra orilla.
+
+#### Scenario: Completar el emblema
+- **WHEN** al emblema de la casa le falta el tejado y el niño golpea el bloque del triángulo del tejado
+- **THEN** el triángulo vuela a su sitio, el emblema se enciende y el braquiosaurio se agacha para que Rufo suba
+
+### Requirement: Piezas del emblema según la edad
+De 3 a 4 años el emblema SHALL tener dos mitades. De 5 a 6 SHALL tener 2 o 3 piezas. De 7 a 8 SHALL ser un tangram de 4 piezas, y a menudo uno de los bloques SHALL ser la pieza buena girada, que no encaja. Las piezas SHALL NOT girar al volar: encaja la que tiene la forma del hueco tal cual, y los tres bloques SHALL tener formas distintas.
+
+#### Scenario: Girada no encaja
+- **WHEN** a un niño de 8 años le falta un triángulo y uno de los bloques es ese triángulo girado un cuarto de vuelta
+- **THEN** ese bloque es un fallo
+
+### Requirement: Escalera de fallos del braquiosaurio
+Al primer fallo la pieza del bloque SHALL posarse en el hueco, sobrar o faltar por un lado y volver a su bloque; al segundo, el hueco SHALL llenarse de puntitos que dibujan la forma que falta; al tercero, Lalo SHALL señalar el bloque y el emblema SHALL completarse solo. Fallar SHALL NOT quitar galletas. En la demostración Lalo SHALL ir a la tablilla, enseñar los puntitos y señalar el bloque bueno.
+
+#### Scenario: Segundo fallo
+- **WHEN** el niño golpea por segunda vez un bloque que no encaja
+- **THEN** el hueco se llena de puntitos con la forma de la pieza que falta
+
+### Requirement: Las piedras del géiser
+El reto D de la isla SHALL mostrar un tótem de piedra en la orilla con una forma tallada y, sobre un lago de lava, una fila de seis piedras con una forma grabada cada una. Las piedras que cumplen lo del tótem SHALL aguantar y sonar al pisarlas; las otras SHALL hundirse despacio con un siseo, y Rufo SHALL volver con un saltito a la piedra buena anterior (o a la orilla) sin pinchazo ni galleta menos. Nunca SHALL haber dos piedras malas seguidas. Al llegar a la otra orilla el géiser SHALL lanzar una columna de vapor, y el reto SHALL contar como acertado a la primera si Rufo no pisó ninguna piedra mala.
+
+#### Scenario: Pisar una piedra mala
+- **WHEN** el tótem muestra un círculo y Rufo salta a una piedra con un triángulo
+- **THEN** la piedra se hunde despacio, Rufo vuelve a la piedra buena anterior y el contador de galletas no cambia
+
+### Requirement: Lo que pide el tótem según la edad
+De 3 a 4 años SHALL pedir la forma, con el tótem y todas las piedras del mismo color y tamaño. De 5 a 6 SHALL pedir la forma aunque las piedras cambien de color o tamaño, con el tótem sin color. De 7 a 8 SHALL pedir forma y color a la vez, y entre las malas SHALL haber una con la forma y otro color y otra con el color y otra forma.
+
+#### Scenario: Dos rasgos
+- **WHEN** a un niño de 8 años el tótem le muestra un círculo turquesa
+- **THEN** un círculo ámbar y un cuadrado turquesa se hunden
+
+### Requirement: Escalera de fallos del géiser
+Al primer fallo la forma del tótem SHALL iluminarse; al segundo, las piedras buenas SHALL brillar de una en una; al tercero, las malas SHALL hundirse del todo y Lalo SHALL volar sobre las buenas, de modo que solo quede el camino bueno. En la demostración Lalo SHALL ir al tótem, iluminarlo y hacer brillar las piedras buenas.
+
+#### Scenario: Tercer fallo
+- **WHEN** Rufo pisa una piedra mala por tercera vez
+- **THEN** las malas se hunden en la lava y solo quedan las buenas

@@ -55,9 +55,21 @@ export type SfxName =
   | 'gate'
   | 'tick'
   | 'scale'
-  | 'horn';
+  | 'horn'
+  | 'band'
+  | 'roar'
+  | 'rumble'
+  | 'stone'
+  | 'glyph'
+  | 'brachio'
+  | 'hiss'
+  | 'steam';
 export interface SfxOptions {
-  /** Para `star`: 0, 1 o 2; cada una más aguda. Para `tick`: el número que se cuenta (1, 2…), cada uno más agudo. */
+  /**
+   * Para `star`: 0, 1 o 2; cada una más aguda. Para `tick`: el número que se cuenta (1, 2…), cada uno más agudo.
+   * Para `band`: la banda del gajo del arcoíris, de 0 (fuera) a 5 (dentro), cada una más aguda.
+   * Para `glyph`: la nota del grabado (0, 1, 2…): cada forma de la serie suena siempre igual.
+   */
   index?: number;
 }
 
@@ -74,6 +86,10 @@ const tone = (start: number, dur: number, wave: Wave, freq: ToneLayer['freq'], g
 });
 
 const STAR_NOTES = ['C6', 'E6', 'G6'];
+/** Notas de los grabados de la isla: pentatónica de Do, sin choques entre formas seguidas. */
+const GLYPH_NOTES = ['C5', 'E5', 'G5', 'A5', 'C6'];
+/** Notas de las 6 bandas de un gajo del arcoíris del mapa, de fuera adentro: una escala que sube. */
+export const BAND_NOTES = ['C5', 'D5', 'E5', 'G5', 'A5', 'C6'];
 
 /** Jingle de victoria a partir de la partitura `victory`. */
 function victoryRecipe(): Recipe {
@@ -176,6 +192,12 @@ export function recipe(name: SfxName, opts: SfxOptions = {}): Recipe {
       return {
         layers: ['C5', 'D5', 'E5', 'F5', 'G5', 'A5', 'B5', 'C6'].map((n, i) => tone(i * 0.07, i === 7 ? 0.4 : 0.14, 'triangle', hz(n), 0.24, 0.006)),
       };
+    case 'band': {
+      // Banda del gajo del arcoíris: campana corta y clara, más aguda de fuera adentro.
+      const i = Math.max(0, Math.min(BAND_NOTES.length - 1, Math.round(opts.index ?? 0)));
+      const f = hz(BAND_NOTES[i]!);
+      return { layers: [tone(0, 0.32, 'sine', f, 0.26, 0.005), tone(0, 0.2, 'triangle', f * 2, 0.08, 0.005)] };
+    }
     case 'horn':
       // Bocina de la barca: dos toques graves y redondos (una quinta), el segundo más largo.
       return {
@@ -183,6 +205,61 @@ export function recipe(name: SfxName, opts: SfxOptions = {}): Recipe {
           const dur = i === 0 ? 0.2 : 0.55;
           return [tone(start, dur, 'triangle', hz('G3'), 0.32, 0.03), tone(start, dur, 'sine', hz('D4'), 0.18, 0.03), tone(start, dur, 'square', hz('G2'), 0.06, 0.03)];
         }),
+      };
+    case 'roar':
+      // Rugido del tiranosaurio: grave y corto, que crece despacio (se oye venir, nunca de golpe).
+      return {
+        layers: [
+          { ...tone(0, 1.1, 'triangle', [[0, 92], [0.5, 120], [1.0, 80]], 0.4, 0.35), vibrato: { rate: 18, depth: 8 } },
+          tone(0, 1.0, 'sine', [[0, 70], [0.5, 86], [0.9, 64]], 0.3, 0.35),
+          { kind: 'noise', start: 0.1, dur: 0.9, attack: 0.3, gain: 0.16, filterHz: 320, q: 0.8 },
+        ],
+      };
+    case 'rumble':
+      // Temblor del volcancito: retumbo grave y suave que sube un poco.
+      return {
+        layers: [
+          { kind: 'noise', start: 0, dur: 0.7, attack: 0.25, gain: 0.3, filterHz: 140, q: 0.7 },
+          tone(0, 0.7, 'sine', [[0, 62], [0.6, 78]], 0.3, 0.25),
+        ],
+      };
+    case 'stone':
+      // Losa de piedra que encaja: golpe seco y grave, sin rebote.
+      return {
+        layers: [
+          tone(0, 0.18, 'sine', [[0, 140], [0.15, 70]], 0.6, 0.005),
+          { kind: 'noise', start: 0, dur: 0.12, attack: 0.005, gain: 0.35, filterHz: 420, q: 0.9 },
+        ],
+      };
+    case 'glyph': {
+      // Grabado que se ilumina: campana de piedra, una nota de la pentatónica por forma.
+      const i = Math.max(0, Math.min(GLYPH_NOTES.length - 1, Math.round(opts.index ?? 0)));
+      const f = hz(GLYPH_NOTES[i]!);
+      return { layers: [tone(0, 0.3, 'triangle', f, 0.26, 0.006), tone(0, 0.18, 'sine', f * 2, 0.08, 0.006)] };
+    }
+    case 'brachio':
+      // Llamada del braquiosaurio: un mugido grave y suave que sube y baja, sin susto.
+      return {
+        layers: [
+          { ...tone(0, 0.9, 'sine', [[0, 98], [0.35, 131], [0.85, 110]], 0.34, 0.12), vibrato: { rate: 5, depth: 3 } },
+          tone(0, 0.85, 'triangle', [[0, 196], [0.35, 262], [0.8, 220]], 0.1, 0.12),
+        ],
+      };
+    case 'hiss':
+      // Piedra que se hunde en la lava: siseo suave que se apaga despacio, sin golpe.
+      return {
+        layers: [
+          { kind: 'noise', start: 0, dur: 0.8, attack: 0.08, gain: 0.22, filterHz: 3200, q: 0.7 },
+          tone(0, 0.6, 'sine', [[0, 180], [0.55, 120]], 0.12, 0.05),
+        ],
+      };
+    case 'steam':
+      // Columna de vapor del géiser: soplido que sube y se abre.
+      return {
+        layers: [
+          { kind: 'noise', start: 0, dur: 1.1, attack: 0.25, gain: 0.3, filterHz: 1400, q: 0.6 },
+          { kind: 'noise', start: 0.15, dur: 0.9, attack: 0.3, gain: 0.16, filterHz: 3600, q: 0.8 },
+        ],
       };
     case 'tick': {
       // «Tic» de contar: corto, más agudo con cada número (una escala que sube).
@@ -230,4 +307,12 @@ export const SFX_NAMES: readonly SfxName[] = [
   'tick',
   'scale',
   'horn',
+  'band',
+  'roar',
+  'rumble',
+  'stone',
+  'glyph',
+  'brachio',
+  'hiss',
+  'steam',
 ];

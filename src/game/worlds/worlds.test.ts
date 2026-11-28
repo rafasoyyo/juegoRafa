@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { QUIZ_KINDS } from '../../learning/quiz';
 import { courseFor, enemyCount, freeStretches } from '../enemies/enemy-layout';
 import { AMBIENTS } from '../levels/ambients';
+import { ARCOIRIS } from './arcoiris';
 import { estimateDuration } from '../levels/duration';
 import { toWorld } from '../levels/parse';
 import { validateLevel } from '../levels/validate';
@@ -50,23 +51,77 @@ describe('registro de mundos', () => {
     expect(WORLDS.length + UPCOMING.length).toBe(4);
   });
 
-  it('selector: 123, el río, formas y Aa', () => {
-    expect(WORLDS.map((w) => w.id)).toEqual(['arcoiris', 'rio']);
+  it('selector: 123, el río, formas (la isla) y Aa', () => {
+    expect(WORLDS.map((w) => w.id)).toEqual(['arcoiris', 'rio', 'isla']);
     expect(WORLDS[0]!.selector.label).toBe('123');
     expect(WORLDS[1]!.selector.icon).toBe('icon-ten-frame');
-    expect(UPCOMING.map((b) => b.icon ?? b.label)).toEqual(['icon-shapes', 'Aa']);
+    expect(WORLDS[2]!.selector.icon).toBe('icon-shapes');
+    expect(UPCOMING.map((b) => b.icon ?? b.label)).toEqual(['Aa']);
   });
 
-  it('el río va detrás del interruptor mundo-2-rio y se abre con 6 años o al llegar al nivel 12 del mundo 1', () => {
-    expect(worldDef('rio').gate).toEqual({ flag: 'mundo-2-rio', openAge: 6, after: { world: 'arcoiris', level: 12 } });
+  it('el río se abre con 6 años o al llegar al nivel 12 del mundo 1, sin interruptor de desarrollo', () => {
+    expect(worldDef('rio').gate).toEqual({ openAge: 6, after: { world: 'arcoiris', level: 12 } });
     expect(WORLDS[0]!.gate).toBeUndefined();
   });
 
-  it('el mundo 1 cuenta estrellas por bloques y no tiene retos; el río, por retos', () => {
-    const [arcoiris, rio] = WORLDS;
-    expect(arcoiris!.stars).toBe('blocks');
+  it('los 12 tramos de la isla siguen la tabla de docs/MUNDO-3.md: retos, paisajes y novedades', () => {
+    const isla = worldDef('isla');
+    expect(isla.levelCount).toBe(12);
+    const K = { footprints: 'A', door: 'B', brachio: 'C', geyser: 'D', count: '-', bridge: '-', boat: '-' } as const;
+    const mix = isla.levels.map((l) => l.challenges.map((c) => K[c.kind]).sort().join(''));
+    expect(mix).toEqual(['AAA', 'AAA', 'AAA', 'AABB', 'BBBB', 'AABB', 'AACC', 'BBCC', 'ABCCD', 'BBCCD', 'ABCDD', 'ABCCD']);
+    expect(isla.levels.map((l) => l.ambient)).toEqual([
+      'playa-negra', 'helechos', 'geiseres', 'huellas', 'cascada-templada', 'pantano', 'cuellos-largos', 'columnas', 'yacimiento', 'cristales', 'rios-lava', 'borde-crater',
+    ]);
+    // Lalo hace la demostración la primera vez que sale cada reto, y solo entonces.
+    const demos = isla.levels.flatMap((l, i) => l.challenges.filter((c) => c.demo).map((c) => [i + 1, c.kind]));
+    expect(demos).toEqual([[1, 'footprints'], [4, 'door'], [7, 'brachio'], [9, 'geyser']]);
+    for (const [n, kind] of demos as [number, string][]) expect(isla.levels[n - 1]!.challenges.find((c) => c.kind === kind)!.demo).toBe(true);
+    // Primeros escalones en el 2, primeros charcos de lava en el 4, primeras plataformas en el 5 y charcos
+    // anchos (de 2 baldosas) desde el 7, más en el 11.
+    const first = (has: (l: (typeof isla.levels)[number]) => boolean): number => isla.levels.findIndex(has) + 1;
+    expect(first((l) => l.steps.length > 0)).toBe(2);
+    expect(first((l) => l.spikes.length > 0)).toBe(4);
+    expect(first((l) => l.platforms.length > 0)).toBe(5);
+    expect(first((l) => l.spikes.some((z) => z.width === 2))).toBe(7);
+    const wide = isla.levels.map((l) => l.spikes.filter((z) => z.width === 2).length);
+    expect(Math.max(...wide.slice(0, 10))).toBeLessThan(wide[10]!);
+    // Pterosaurios desde el 3, volcancito desde el 5 y tiranosaurio desde el 7.
+    expect(isla.enemies.kinds.filter((k) => ['ptero', 'volcano', 'trex'].includes(k.kind)).map((k) => [k.kind, k.fromLevel])).toEqual([
+      ['ptero', 3],
+      ['volcano', 5],
+      ['trex', 7],
+    ]);
+  });
+
+  it('la isla: todos sus fosos son charcos de lava y el nido del cráter es su castillo', () => {
+    const isla = worldDef('isla');
+    for (const l of isla.levels) expect(AMBIENTS[l.ambient].pit, l.id).toBe('lava');
+    expect(AMBIENTS[isla.castle!.ambient].pit).toBe('lava');
+    expect(isla.castle!.icon).toBe('nest');
+    for (const w of ['arcoiris', 'rio'] as const) {
+      for (const l of worldDef(w).levels) expect(AMBIENTS[l.ambient].pit ?? 'spikes', l.id).toBe('spikes');
+      expect(worldDef(w).castle?.icon).toBeUndefined();
+    }
+  });
+
+  it('la isla tiene el huevo de 12 manchas en el mapa y su final es la eclosión', () => {
+    const isla = worldDef('isla');
+    expect(isla.map.egg).toBeDefined();
+    expect(isla.map.rainbow).toBeUndefined();
+    expect(isla.finale).toBe('hatch');
+    expect(worldDef('arcoiris').finale).toBe('rain');
+  });
+
+  it('pruebas de la bandera de la isla: una propia en cada nivel y el repaso en el 12', () => {
+    const isla = worldDef('isla');
+    const kinds = Array.from({ length: 12 }, (_, i) => isla.quizFor(i + 1));
+    expect(kinds).toEqual(['dino-shadows', 'shape-things', 'stego-plates', 'turned-shapes', 'nest', 'odd-egg', 'fossil', 'skin-mosaic', 'growing-neck', 'roll-or-not', 'hidden-triangles', 'island-review']);
+  });
+
+  it('el mundo 1 no tiene retos del recorrido', () => {
+    const [arcoiris] = WORLDS;
     for (const level of arcoiris!.levels) expect(level.challenges).toEqual([]);
-    expect(rio!.stars).toBe('challenges');
   });
 
   it('el nivel 1 del río lleva 3 retos A (puntos → cifra) y el primero es la demostración', () => {
@@ -78,18 +133,34 @@ describe('registro de mundos', () => {
     ]);
   });
 
-  it('el nivel 2 del río (borrador) mezcla retos A con marco de diez y dos puentes', () => {
-    const challenges = worldDef('rio').levels[1]!.challenges;
-    expect(challenges.map((c) => c.kind)).toEqual(['count', 'bridge', 'count', 'bridge']);
+  it('los 12 tramos del río siguen la tabla de docs/MUNDO-2.md: retos, paisajes y novedades', () => {
+    const rio = worldDef('rio');
+    expect(rio.levelCount).toBe(12);
+    const K = { count: 'A', bridge: 'B', boat: 'C', footprints: '-', door: '-', brachio: '-', geyser: '-' } as const;
+    const mix = rio.levels.map((l) => l.challenges.map((c) => K[c.kind]).sort().join(''));
+    expect(mix).toEqual(['AAA', 'AAA', 'AAA', 'AABB', 'BBBB', 'AABB', 'AACC', 'BBCC', 'ABBCC', 'BBBCC', 'ABBCC', 'ABBCC']);
+    expect(rio.levels.map((l) => l.ambient)).toEqual([
+      'manantial', 'arroyo', 'cascada', 'molino', 'canaveral', 'lago', 'embarcadero', 'puente', 'huertas', 'lluvia', 'puerto', 'desembocadura',
+    ]);
+    // Lalo hace la demostración la primera vez que sale cada mecánica, y solo entonces.
+    const demos = rio.levels.flatMap((l, i) => l.challenges.filter((c) => c.demo).map((c) => [i + 1, c.kind]));
+    expect(demos).toEqual([[1, 'count'], [4, 'bridge'], [7, 'boat']]);
+    for (const [n, kind] of demos as [number, string][]) expect(rio.levels[n - 1]!.challenges.find((c) => c.kind === kind)!.demo).toBe(true);
+    // Nivel 1: puntos; 2: marco de diez; 3: al revés.
+    expect(rio.levels[1]!.challenges.every((c) => c.show === 'tenframe' && !c.reverse)).toBe(true);
+    expect(rio.levels[2]!.challenges.every((c) => c.reverse)).toBe(true);
+    // Primeros escalones en el 2, primeros fosos en el 4, primeras plataformas en el 5.
+    const first = (has: (l: (typeof rio.levels)[number]) => boolean): number => rio.levels.findIndex(has) + 1;
+    expect(first((l) => l.steps.length > 0)).toBe(2);
+    expect(first((l) => l.spikes.length > 0)).toBe(4);
+    expect(first((l) => l.platforms.length > 0)).toBe(5);
   });
 
-  it('el nivel 3 del río (borrador) prueba la barca: la primera con demostración', () => {
-    const challenges = worldDef('rio').levels[2]!.challenges;
-    expect(challenges.map((c) => [c.kind, c.demo])).toEqual([
-      ['boat', true],
-      ['count', false],
-      ['boat', false],
-    ]);
+  it('pruebas de la bandera del río: una propia en cada nivel y el repaso en el 12', () => {
+    const rio = worldDef('rio');
+    const kinds = Array.from({ length: 12 }, (_, i) => rio.quizFor(i + 1));
+    expect(kinds).toEqual(['fingers', 'ten-frame', 'memory', 'neighbor', 'number-line', 'biggest', 'ten-friends', 'train', 'socks', 'frog-jumps', 'boats', 'river-review']);
+    expect(new Set(kinds).size).toBe(12);
   });
 
   it('un mundo desconocido o sin dato da el primero', () => {
@@ -103,5 +174,44 @@ describe('registro de mundos', () => {
     expect(clampLevel(w, 0)).toBe(1);
     expect(clampLevel(w, w.levelCount + 5)).toBe(w.levelCount);
     expect(levelData(w, 99)).toBe(w.levels[w.levelCount - 1]);
+  });
+});
+
+describe('mapa del arcoíris', () => {
+  const map = ARCOIRIS.map;
+
+  it('tiene arco y paisaje con paradas ordenadas, dentro del camino y de ambientes que existen', () => {
+    expect(map.rainbow).toBeDefined();
+    const skyline = map.skyline ?? [];
+    expect(skyline.length).toBeGreaterThan(1);
+    for (let i = 1; i < skyline.length; i++) expect(skyline[i]!.x).toBeGreaterThan(skyline[i - 1]!.x);
+    for (const stop of skyline) {
+      expect(AMBIENTS[stop.ambient]).toBeDefined();
+      expect(stop.x).toBeLessThanOrEqual(1180 * map.screens);
+    }
+  });
+
+  it('el cielo sigue el viaje: noche sobre el 6, playa sobre el 7 y nubes sobre el 12', () => {
+    const skyline = map.skyline ?? [];
+    const at = (level: number): string | undefined => {
+      const x = map.nodes[level - 1]![0];
+      return [...skyline].reverse().find((s) => s.x <= x)?.ambient;
+    };
+    expect(at(6)).toBe('noche');
+    expect(at(7)).toBe('playa');
+    expect(at(12)).toBe('nubes');
+  });
+
+  it('el arco queda por encima de los nodos, sin que ninguno lo tape', () => {
+    const { center, radius } = map.rainbow!;
+    // Los pies del arco están a la altura de su centro; los nodos (radio de 64 px del artboard) más abajo.
+    for (const [, y] of map.nodes.slice(0, ARCOIRIS.levelCount)) expect(y - 64).toBeGreaterThan(center[1] - radius);
+    for (const [x, y] of map.nodes.slice(7, ARCOIRIS.levelCount)) {
+      if (Math.abs(x - center[0]) < radius) expect(y - 64).toBeGreaterThanOrEqual(center[1]);
+    }
+  });
+
+  it('los demás mundos no tienen arco', () => {
+    for (const w of WORLDS.filter((w) => w.id !== ARCOIRIS.id)) expect(w.map.rainbow).toBeUndefined();
   });
 });

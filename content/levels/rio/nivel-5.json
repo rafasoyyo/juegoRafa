@@ -1,0 +1,37 @@
+{
+  "ambient": "canaveral",
+  "length": 219,
+  "steps": [
+    { "x": 110.4, "width": 4, "height": 1 }
+  ],
+  "platforms": [
+    { "x": 56.9, "width": 4, "height": 1.5 },
+    { "x": 158.3, "width": 4, "height": 1.5 },
+    { "x": 195.8, "width": 4, "height": 1.5 }
+  ],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 21.7, "row": "high" },
+    { "x": 22.9, "row": "high" },
+    { "x": 58.9, "row": "low", "on": "platform" },
+    { "x": 112.4, "row": "high", "on": "step" },
+    { "x": 148.4, "row": "low" },
+    { "x": 149.6, "row": "low" },
+    { "x": 150.8, "row": "low" },
+    { "x": 160.3, "row": "low", "on": "platform" },
+    { "x": 197.8, "row": "low", "on": "platform" },
+    { "x": 207.3, "row": "high" },
+    { "x": 208.5, "row": "high" }
+  ],
+  "spikes": [
+    { "x": 67.9, "width": 1 },
+    { "x": 102.4, "width": 1 }
+  ],
+  "challenges": [
+    { "kind": "bridge", "x": 31.4 },
+    { "kind": "bridge", "x": 76.9 },
+    { "kind": "bridge", "x": 122.4 },
+    { "kind": "bridge", "x": 170.3 }
+  ]
+}

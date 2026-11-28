@@ -37,8 +37,9 @@ const MIN_DELTA_E = 30;
 const FOX = 0xf28c28;
 
 describe('ambientes', () => {
-  it('existen los 12 ambientes y cada uno se llama como su clave', () => {
-    expect(AMBIENT_IDS).toHaveLength(12);
+  it('existen los ambientes de los mundos 1 y 2 (12 por mundo), los de la isla, y cada uno se llama como su clave', () => {
+    expect(AMBIENT_IDS.slice(0, 24)).toHaveLength(24);
+    expect(AMBIENT_IDS).toContain('playa-negra');
     expect(Object.keys(AMBIENTS).sort()).toEqual([...AMBIENT_IDS].sort());
     for (const id of AMBIENT_IDS) expect(AMBIENTS[id].id).toBe(id);
   });
@@ -60,12 +61,14 @@ describe('ambientes', () => {
     expect(prado.decor).toBe('clouds');
   });
 
-  it('cada ambiente tiene otro cielo, otras colinas y otra decoración', () => {
+  it('cada ambiente tiene otro cielo, otras colinas y otro suelo; en cada mundo, otra decoración', () => {
     const all = Object.values(AMBIENTS);
     expect(new Set(all.map((a) => JSON.stringify(a.sky))).size).toBe(all.length);
     expect(new Set(all.map((a) => a.hill)).size).toBe(all.length);
     expect(new Set(all.map((a) => a.grass)).size).toBe(all.length);
-    expect(new Set(all.map((a) => a.decor)).size).toBe(all.length);
+    // Los 12 primeros son los del mundo 1; los 12 siguientes, los del río.
+    const worlds = [AMBIENT_IDS.slice(0, 12), AMBIENT_IDS.slice(12)];
+    expect(new Set(worlds[0]!.map((id) => AMBIENTS[id].decor)).size).toBe(12);
   });
 
   it('las paradas del cielo van de 0 a 1 en orden', () => {

@@ -12,7 +12,7 @@ Desde su madriguera en la colina, junto al prado, Rufo ve un arcoíris muy lejos
 
 - Los 12 ambientes y su orden. Algunas pruebas de la bandera van ligadas a su ambiente (el teleférico en la montaña, las huellas en la nieve).
 - Las pruebas de la bandera, una por nivel.
-- Las estrellas de los bloques «?» y las galletas.
+- Las estrellas y las galletas (desde `estrellas-por-objetivos`, las estrellas salen de las galletas y de la prueba de la bandera, como en todos los mundos: ver `docs/PROPUESTA.md`).
 - Los pinchos desde el nivel 7, el erizo y la abeja.
 - El selector de mundos, con el botón 123 para este mundo.
 
@@ -101,7 +101,7 @@ Mientras el río no esté abierto en el juego publicado (paso 9 del plan del mun
 
 - Cambiar los ambientes, su orden, los recorridos o las pruebas de la bandera.
 - Mecánicas nuevas o retos dentro del recorrido (son del mundo 2).
-- Cambiar cómo se ganan las estrellas en el mundo 1.
+- Cambiar cómo se ganan las estrellas en el mundo 1 (lo hizo después, para todos los mundos, `estrellas-por-objetivos`).
 - La voz grabada.
 - Textos para el niño. Si hiciera falta explicar algo al adulto, va en el bocadillo de Lalo.
 
@@ -118,5 +118,7 @@ Un cambio de OpenSpec por pieza, cada uno con su ciclo: `openspec-propose` → `
 | 3 | `prologo-del-arcoiris` | La escena del prólogo, que se ve una vez por perfil y se repite tocando la madriguera. | `mascot-guide`, `child-profile`, `world-map` | Perfil nuevo: se ve una vez y se salta tocando. Perfil antiguo: no se ve. Revisión a 844×390. |
 | 4 | `final-del-arcoiris` | La lluvia sobre la montaña. Va después de `progreso-por-mundos` del mundo 2; el manantial que abre el río se ve cuando el río se abre con `mundo-2-rio`. | `world-map`, `level-complete`, `mascot-guide` | Perfil de 5 años que termina el nivel 12: ve el final y el río se abre. Perfil de 6 años: ve la lluvia y el manantial sin la animación del botón. No se repite. |
 | 5 | `castillo-del-arcoiris` | Castillo del mundo 1 con la pieza de `castillo-y-medalla` del mundo 2, como parada propia tras el nivel 12: 5 retos y la medalla del arcoíris. | `world-castle`, `world-map` | El castillo siempre da medalla y la medalla se ve en el selector. |
+
+**Estado (26 de noviembre de 2026):** hechos todos los pasos: 0, 1 (`arcoiris-en-el-horizonte`), 2 (`mapa-del-arcoiris`), 3 (`prologo-del-arcoiris`), 4 (`final-del-arcoiris`) y 5 (`castillo-del-arcoiris`); la prueba con niños se dio por validada.
 
 Para empezar cada paso: `openspec-propose` con el nombre del cambio y una frase como «sigue docs/MUNDO-1.md, sección El mapa del arcoíris», para que la propuesta parta de lo aprobado.

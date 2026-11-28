@@ -244,3 +244,70 @@ El archivo de un nivel SHALL poder declarar retos de tipo barca con la posición
 #### Scenario: Barca sobre un escalón
 - **WHEN** un archivo de nivel pone una barca donde hay un escalón
 - **THEN** las pruebas automáticas fallan e indican el nivel y el reto
+
+### Requirement: Los 12 tramos del río
+El río SHALL tener 12 niveles con los retos de la tabla de `docs/MUNDO-2.md`: A×3 en los niveles 1 a 3 (puntos, marco de diez y al revés), A×2 y B×2 en el 4 y el 6, B×4 en el 5, A×2 y C×2 en el 7, B×2 y C×2 en el 8, B×3 y C×2 en el 10, y A, B×2 y C×2 en el 9, el 11 y el 12. Lalo SHALL hacer la demostración solo en el primer reto de cada mecánica: A en el nivel 1, B en el 4 y C en el 7. Cada nivel SHALL durar de 90 a 150 s con calma.
+
+#### Scenario: Retos del nivel 7
+- **WHEN** se juega el nivel 7 del río
+- **THEN** hay dos barcas y dos retos de contar, y Lalo hace la demostración en la primera barca
+
+#### Scenario: Dificultad creciente
+- **WHEN** se recorren los niveles del río en orden
+- **THEN** los escalones aparecen en el 2, los fosos de pinchos en el 4 y las plataformas en el 5
+
+### Requirement: Paisajes del río
+Cada nivel del río SHALL tener su propio paisaje, en orden: manantial, arroyo, cascada, molino, cañaveral, lago de noche, embarcadero, puente, huertas, lluvia, puerto y desembocadura. Cada paisaje SHALL tener cielo, colinas y suelo propios y cumplir el mismo contraste que los del mundo 1.
+
+#### Scenario: Del manantial a la desembocadura
+- **WHEN** se abre el nivel 1 y después el 12 del río
+- **THEN** el 1 tiene montañas y el 12 playa con arena, con cielos distintos
+
+### Requirement: Caminos de huellas en los datos del recorrido
+El archivo de un nivel SHALL poder declarar retos de tipo camino de huellas (`footprints`) con su posición. Ocupan lo mismo que un puente y la validación SHALL comprobar lo mismo: todo el puente, con un margen a cada lado, sobre suelo llano y libre, entre la salida y la bandera.
+
+#### Scenario: Camino de huellas sobre un escalón
+- **WHEN** un archivo de nivel pone un camino de huellas donde hay un escalón
+- **THEN** las pruebas automáticas fallan e indican el nivel y el reto
+
+### Requirement: Puertas de la cueva en los datos del recorrido
+El archivo de un nivel SHALL poder declarar retos de tipo puerta de la cueva (`door`) con su posición. Ocupan lo mismo que unos bloques que cuentan y 2,5 baldosas más tras la losa, donde espera el triceratops, y la validación SHALL comprobar que ese tramo es suelo llano y libre entre la salida y la bandera.
+
+#### Scenario: Puerta junto a un foso
+- **WHEN** un archivo de nivel pone una puerta cuyo tramo pisa un foso
+- **THEN** las pruebas automáticas fallan e indican el nivel y el reto
+
+### Requirement: Paseos en braquiosaurio en los datos del recorrido
+El archivo de un nivel SHALL poder declarar retos de tipo paseo en braquiosaurio (`brachio`) con el borde izquierdo del río. Ocupan lo mismo que una barca (orilla, río y margen), y la validación SHALL comprobar que ese tramo es suelo llano y libre entre la salida y la bandera.
+
+#### Scenario: Braquiosaurio con un escalón en la orilla
+- **WHEN** un archivo de nivel pone un escalón en la orilla de un paseo en braquiosaurio
+- **THEN** las pruebas automáticas fallan e indican el nivel y el reto
+
+### Requirement: Piedras del géiser en los datos del recorrido
+El archivo de un nivel SHALL poder declarar retos de tipo piedras del géiser (`geyser`) con el borde izquierdo del lago. Ocupan desde 4 baldosas antes del lago (el tótem) hasta 2,5 después (el géiser), y la validación SHALL comprobar que ese tramo es suelo llano y libre. La geometría SHALL garantizar que saltar de una piedra buena a la siguiente por encima de una hundida cabe en un salto.
+
+#### Scenario: Géiser junto a un foso
+- **WHEN** un archivo de nivel pone un foso en el sitio del tótem
+- **THEN** las pruebas automáticas fallan e indican el nivel y el reto
+
+### Requirement: Los 12 tramos de la isla
+La isla SHALL tener 12 niveles con los retos de la tabla de `docs/MUNDO-3.md`: A×3 en los niveles 1 a 3, A×2 y B×2 en el 4 y el 6, B×4 en el 5, C×2 y A×2 en el 7, B×2 y C×2 en el 8, A, B, C×2 y D en el 9 y el 12, B×2, C×2 y D en el 10, y A, B, C y D×2 en el 11. Lalo SHALL hacer la demostración solo en el primer reto de cada mecánica: A en el nivel 1, B en el 4, C en el 7 y D en el 9. Los escalones SHALL aparecer en el 2, los charcos de lava en el 4, las plataformas en el 5 y los charcos anchos en el 7, con más en el 11. Cada nivel SHALL durar de 90 a 150 s con calma.
+
+#### Scenario: Retos del nivel 9
+- **WHEN** se juega el nivel 9 de la isla
+- **THEN** hay un camino de huellas, una puerta, dos braquiosaurios y unas piedras del géiser, y Lalo hace la demostración en el géiser
+
+### Requirement: Paisajes de la isla
+Cada nivel de la isla SHALL tener su propio paisaje, en orden: playa negra, helechos, charcas y géiseres, huellas gigantes, cascada templada, pantano de noche, valle de los cuellos largos, columnas de roca, yacimiento de fósiles, cueva de cristales, ríos de lava y borde del cráter, con cielo, colinas y suelo propios y el mismo contraste que los demás. Salvo de noche, en la cueva, en el yacimiento y en el borde del cráter, el gran volcán SHALL humear al fondo, sin hacer daño.
+
+#### Scenario: De la playa al cráter
+- **WHEN** se abre el nivel 1 y después el 12 de la isla
+- **THEN** el 1 tiene arena negra, mar oscuro y el volcán al fondo, y el 12 el cielo rojizo del cráter con brasas que suben
+
+### Requirement: Charcos de lava
+En los niveles y el castillo de la isla, el fondo de cada foso SHALL ser un charco de lava redondeado en lugar de pinchos, con la misma geometría y las mismas reglas: rebote fuera del foso y una galleta menos, que nunca baja de 0.
+
+#### Scenario: Caer en la lava
+- **WHEN** Rufo cae en un charco de lava del nivel 4 de la isla sin protección
+- **THEN** rebota fuera por donde entró, sisea y pierde una galleta

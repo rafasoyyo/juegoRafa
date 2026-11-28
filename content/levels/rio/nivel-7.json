@@ -1,0 +1,38 @@
+{
+  "ambient": "embarcadero",
+  "length": 200,
+  "steps": [
+    { "x": 134.4, "width": 4, "height": 1 },
+    { "x": 180.8, "width": 5, "height": 1 },
+    { "x": 185.8, "width": 4, "height": 2 }
+  ],
+  "platforms": [
+    { "x": 54.2, "width": 4, "height": 1.5 },
+    { "x": 65.2, "width": 4, "height": 1.5 }
+  ],
+  "blocks": [
+    { "x": 12.5, "row": "low" },
+    { "x": 13.7, "row": "low" },
+    { "x": 56.2, "row": "low", "on": "platform" },
+    { "x": 67.2, "row": "low", "on": "platform" },
+    { "x": 101.7, "row": "high" },
+    { "x": 102.9, "row": "high" },
+    { "x": 136.4, "row": "high", "on": "step" },
+    { "x": 170.9, "row": "low" },
+    { "x": 172.1, "row": "low" },
+    { "x": 173.3, "row": "low" },
+    { "x": 183.3, "row": "low", "on": "step" },
+    { "x": 187.8, "row": "high", "on": "step" }
+  ],
+  "spikes": [
+    { "x": 21.2, "width": 2 },
+    { "x": 93.2, "width": 1 },
+    { "x": 145.4, "width": 1 }
+  ],
+  "challenges": [
+    { "kind": "boat", "x": 36.2, "demo": true },
+    { "kind": "count", "x": 82.2, "show": "tenframe" },
+    { "kind": "boat", "x": 116.4 },
+    { "kind": "count", "x": 159.4, "show": "tenframe", "reverse": true }
+  ]
+}

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRng } from '../quiz/rng';
 import type { AgeBand } from '../quiz/types';
-import { starsForChallenges } from '../scoring';
 import { countChallenges, countRange, type CountSpec, type Face } from './count-blocks';
 import { hitBlock, startChallenge, tally } from './ladder';
 
@@ -102,17 +101,5 @@ describe('escalera de fallos', () => {
     hitBlock(c, 1);
     hitBlock(c, 0);
     expect(tally([{ run: a, demo: true }, { run: b, demo: false }, { run: c, demo: false }])).toEqual({ firstTry: 1, total: 2 });
-  });
-});
-
-describe('estrellas por retos', () => {
-  it('75 % → 3, 40 % → 2, el resto → 1', () => {
-    expect(starsForChallenges(3, 4)).toBe(3);
-    expect(starsForChallenges(2, 5)).toBe(2);
-    expect(starsForChallenges(1, 4)).toBe(1);
-    expect(starsForChallenges(0, 5)).toBe(1);
-    expect(starsForChallenges(2, 3)).toBe(2);
-    expect(starsForChallenges(5, 5)).toBe(3);
-    expect(starsForChallenges(0, 0)).toBe(3);
   });
 });

@@ -4,6 +4,7 @@
  */
 
 import { quizForLevel } from '../../../learning/quiz/catalog';
+import type { CastleDef } from '../../castle/castle';
 import type { EnemyRules } from '../../enemies/enemy-layout';
 import type { DurationLimits } from '../../levels/duration';
 import { levelsFrom } from '../load-levels';
@@ -14,7 +15,12 @@ const LEVELS = levelsFrom('arcoiris', import.meta.glob('../../../../content/leve
 /** Enemigos de los niveles 1 a 12; la abeja sale desde el nivel 2. */
 export const ENEMIES: EnemyRules = {
   perLevel: [2, 3, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10],
-  beeFromLevel: 2,
+  // Erizo desde el nivel 1 y abeja desde el 2, mitad y mitad. (El orden, abeja primero, conserva los
+  // repartos con semilla de antes de que hubiera más tipos.)
+  kinds: [
+    { kind: 'bee', fromLevel: 2 },
+    { kind: 'hedgehog', fromLevel: 1 },
+  ],
 };
 
 /** Bloques «?»: 12–20 en los niveles 1 a 6 y 20–25 en los 7 a 12. */
@@ -36,42 +42,77 @@ export const COURSE: CourseRules = {
 };
 
 /**
- * Mapa de dos pantallas: los 6 primeros niveles llenan la primera y los otros 6 siguen el camino.
- * Árboles en la primera mitad y algunos de los ambientes nuevos en la segunda.
+ * Mapa de dos pantallas (`docs/MUNDO-1.md`, «3. El mapa del arcoíris»): el camino sale de la madriguera,
+ * a la izquierda, y sube por el día hasta la noche en lo alto de la colina (nivel 6); baja a la playa al
+ * amanecer (7) y sigue por la selva, la montaña, la nieve y el desierto hasta las nubes (12). Encima de
+ * los últimos niveles, el arcoíris de 12 gajos que se pinta nivel a nivel.
  */
 const MAP: WorldMap = {
   sky: 'sky-map',
+  skyline: [
+    { x: 0, ambient: 'prado' },
+    { x: 560, ambient: 'prado' },
+    { x: 700, ambient: 'otono' },
+    { x: 880, ambient: 'atardecer' },
+    { x: 1010, ambient: 'noche' },
+    { x: 1100, ambient: 'noche' },
+    { x: 1220, ambient: 'playa' },
+    { x: 1410, ambient: 'selva' },
+    { x: 1590, ambient: 'montana' },
+    { x: 1760, ambient: 'nieve' },
+    { x: 1940, ambient: 'desierto' },
+    { x: 2130, ambient: 'nubes' },
+  ],
   screens: 2,
   nodes: [
-    [150, 530],
-    [330, 440],
-    [520, 530],
-    [710, 390],
-    [880, 490],
-    [1040, 310],
-    [1220, 470],
-    // Como mucho a la altura de los más bajos de la primera pantalla: más abajo, el selector de mundos
-    // taparía sus estrellas.
-    [1400, 530],
-    [1580, 420],
-    [1760, 520],
-    [1940, 370],
-    [2150, 480],
+    [190, 545],
+    [350, 470],
+    [520, 520],
+    [700, 420],
+    [870, 455],
+    [1040, 340],
+    [1230, 535],
+    // Del 8 al 12, por debajo del arcoíris y como mucho a la altura de los más bajos de la primera
+    // pantalla: más abajo, el selector de mundos taparía sus estrellas.
+    [1410, 515],
+    [1590, 490],
+    [1770, 525],
+    [1950, 490],
+    [2140, 480],
+    // El castillo, sobre una nube al pie derecho del arcoíris.
+    [2280, 385],
   ],
+  rainbow: { center: [1940, 395], radius: 300, band: 13 },
   decor: [
-    { at: [115, 450], key: 'tree', size: 0 },
-    { at: [605, 370], key: 'tree', size: 0 },
-    { at: [975, 680], key: 'tree', size: 0 },
-    { at: [1310, 360], key: 'decor-palm', size: 150 },
-    { at: [1480, 720], key: 'tree', size: 0 },
-    { at: [1690, 330], key: 'decor-pine-snow', size: 120 },
-    { at: [1860, 690], key: 'decor-cactus', size: 105 },
-    { at: [2290, 700], key: 'tree', size: 0 },
+    { at: [95, 640], key: 'decor-burrow', size: 190, prologue: true },
+    { at: [265, 420], key: 'tree', size: 0 },
+    { at: [610, 420], key: 'tree', size: 0 },
+    { at: [790, 330], key: 'decor-tree-autumn', size: 110 },
+    { at: [905, 390], key: 'decor-sun', size: 150 },
+    { at: [1115, 210], key: 'decor-moon', size: 110 },
+    { at: [960, 170], key: 'decor-star', size: 26 },
+    { at: [1010, 250], key: 'decor-star', size: 18 },
+    { at: [1150, 290], key: 'decor-star', size: 22 },
+    { at: [1080, 120], key: 'decor-star', size: 18 },
+    { at: [1320, 470], key: 'decor-palm', size: 140 },
+    { at: [1500, 690], key: 'decor-leaf', size: 110 },
+    { at: [1680, 450], key: 'decor-pine-snow', size: 110 },
+    { at: [1860, 690], key: 'decor-cactus', size: 100 },
+    { at: [2280, 480], key: 'cloud', size: 250 },
   ],
   clouds: [
-    { x: 0.39, y: 170, scale: 1 },
-    { x: 1.45, y: 150, scale: 0.9 },
+    { x: 0.39, y: 150, scale: 1 },
+    { x: 1.3, y: 120, scale: 0.8 },
   ],
+};
+
+/**
+ * Castillo del arcoíris (`docs/MUNDO-1.md`, «El castillo y la medalla»): un paseo por las nubes hasta la
+ * bandera, sin retos, y allí una pregunta de cada una de estas pruebas del mundo.
+ */
+export const CASTLE: CastleDef = {
+  ambient: 'nubes',
+  steps: [{ quiz: ['count'] }, { quiz: ['compare'] }, { quiz: ['series'] }, { quiz: ['share'] }, { quiz: ['balance'] }],
 };
 
 export const ARCOIRIS: WorldDef = {
@@ -82,7 +123,9 @@ export const ARCOIRIS: WorldDef = {
   enemies: ENEMIES,
   course: COURSE,
   horizonRainbow: true,
+  prologue: true,
+  finale: 'rain',
   map: MAP,
   selector: { color: 0xffe9e6, shadow: 0xf2c4bd, label: '123' },
-  stars: 'blocks',
+  castle: CASTLE,
 };

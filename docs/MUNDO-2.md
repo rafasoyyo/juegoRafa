@@ -24,7 +24,7 @@ Respuestas del usuario:
 
 - **Retos en el recorrido**, además de la prueba de la bandera.
 - **Tema del río**, del manantial al mar.
-- **Estrellas** según los retos acertados a la primera.
+- **Estrellas** como en todos los mundos: por galletas y prueba de la bandera (`estrellas-por-objetivos`). Antes contaban los retos acertados a la primera.
 - **12 niveles**, como el mundo 1.
 - **Desbloqueo por edad**: abierto desde el principio con 6 años o más; para los menores, al acabar el mundo 1.
 - **Castillo con medalla** al final, como parada propia después del nivel 12, diseñado para poder usarlo después en el mundo 1.
@@ -96,7 +96,7 @@ La barca solo zarpa llena, y sus asientos forman un marco de diez. En el muelle 
 
 ## Los 12 tramos del río
 
-Cada mecánica se presenta sola y luego se mezcla con las anteriores. Las pruebas de la bandera son nuevas en los niveles 1 a 11 y el 12 cierra con un repaso; una por nivel y siempre la misma en cada nivel, como en el mundo 1. Todas siguen la regla actual: 3 preguntas y se supera con 2. Las notas de la columna de retos describen la franja de 5-6 años; las otras franjas siguen la tabla de «Qué se aprende». El castillo no es un nivel: es la parada siguiente del mapa.
+Cada mecánica se presenta sola y luego se mezcla con las anteriores. Las pruebas de la bandera son nuevas en los niveles 1 a 11 y el 12 cierra con un repaso; una por nivel y siempre la misma en cada nivel, como en el mundo 1. Todas tienen 3 preguntas, y sus aciertos cuentan para las estrellas. Las notas de la columna de retos describen la franja de 5-6 años; las otras franjas siguen la tabla de «Qué se aprende». El castillo no es un nivel: es la parada siguiente del mapa.
 
 | Nivel | Ambiente | Retos del recorrido | Prueba de la bandera | Novedad |
 |---|---|---|---|---|
@@ -116,15 +116,9 @@ Cada mecánica se presenta sola y luego se mezcla con las anteriores. Las prueba
 
 ## Estrellas
 
-Las estrellas cuentan lo aprendido. Lo que cuenta es la proporción de retos del recorrido acertados a la primera:
+**Sustituido por `estrellas-por-objetivos`** (26 de noviembre de 2026): las estrellas se ganan igual en todos los mundos, por las galletas de la fase y los aciertos de la prueba de la bandera (detalle en `docs/PROPUESTA.md`). En el río, las galletas de la fase son las de los bloques «?» y las 3 de cada compuerta. Los retos del recorrido siguen cortando el paso y dando galletas, pero acertarlos a la primera ya no da estrellas.
 
-- **3 estrellas** con el 75 % o más.
-- **2 estrellas** con el 40 % o más.
-- **1 estrella** en el resto de casos. Terminar siempre da al menos una.
-
-La prueba de la bandera no da estrellas y, en este mundo, los bloques «?» tampoco.
-
-Ejemplos: 3 de 4 a la primera (75 %) dan 3 estrellas; 2 de 5 a la primera (40 %) dan 2; ninguno a la primera sigue dando 1.
+Regla anterior, como referencia: 3 estrellas con el 75 % o más de retos acertados a la primera, 2 con el 40 % o más y 1 en el resto.
 
 ## Castillo, enemigos y desbloqueo
 
@@ -137,7 +131,7 @@ Después del nivel 12, como parada propia del mapa junto a la desembocadura (igu
 
 ### La rana y el cangrejo
 
-Se suman al erizo y a la abeja y siguen sus reglas: tocarlos es un pinchazo que resta una galleta del nivel, nunca baja de 0 y no cambia las estrellas.
+Se suman al erizo y a la abeja y siguen sus reglas: tocarlos es un pinchazo que resta una galleta del nivel y nunca baja de 0.
 
 - **Rana** (desde el nivel 3): salta en el sitio con un ritmo fijo y se nota cuándo va a saltar, porque antes se agacha. Se pasa por debajo mientras está en el aire o se salta por encima mientras está quieta.
 - **Cangrejo** (desde el nivel 7): camina de lado por un tramo corto de la orilla, más despacio que el erizo.
@@ -177,10 +171,10 @@ Grupos: base (0, 1, 2) · motor de retos (3, 4, 5) · en paralelo (6, 7) · cier
 | ★ | Prueba con niños de la mecánica A | Antes de construir B y C: ¿entiende un niño de 4 años el cartel sin explicárselo? ¿La escalera de fallos le ayuda o le frustra? Lo que salga se ajusta en `course-challenges` con `openspec-update-change` o con un arreglo pequeño. | — | Notas de la prueba. | |
 | 4 | `reto-puente` | La mecánica B sobre el motor del paso 3: tablas numeradas, un hueco con agua que reutiliza el rebote del foso y la tabla que vuela a su sitio. | `course-challenges`, `level-courses` (puente y hueco), `platformer-level` | Generadores del siguiente, el anterior y de 2 en 2. Validación: los bloques del reto siempre encima de tablas firmes. | Hecho (archivado el 2026-11-26), con el nivel 2 del río en borrador |
 | 5 | `reto-barca` | La mecánica C. Pieza nueva del motor: una plataforma que se mueve y lleva a Rufo a la otra orilla. | `course-challenges`, `platformer-level` (plataforma móvil), `game-audio` (bocina) | Generadores de barca de 5, de 10 y doble. Rufo no puede caerse de la barca en marcha. | Hecho (archivado el 2026-11-26), con el nivel 3 del río en borrador |
-| 6 | `enemigos-del-rio` (en paralelo con 3 a 5) | La rana y el cangrejo. Solo toca `level-enemies`. | `level-enemies` (movimiento y colocación lejos de los retos); arte en `public/assets/svg` anotado en `LICENSES.md` | Pruebas de movimiento y de colocación. La rana avisa antes de saltar, comprobado a ojo en el móvil. | |
-| 7 | `pruebas-bandera-rio` (en paralelo con 3 a 5) | Once tipos de prueba nuevos (niveles 1 a 11), el repaso del nivel 12 y un catálogo por mundo. TypeScript puro e independientes entre sí, con el mismo contrato (`Question`, `AgeBand`, `Rng`), así que se pueden repartir entre varios agentes. Si se alarga, se divide en dos cambios: niveles 1 a 6 y 7 a 12. | `flag-quiz` (un requisito por prueba y el catálogo por mundo) | Pruebas deterministas con semilla para cada prueba y franja. Cada prueba revisada en la pantalla de la bandera a 844×390. | |
-| 8 | `castillo-y-medalla` | Una pieza que recibe una lista de retos (de las mecánicas y de la bandera) y da la medalla. Pensada para reutilizarla en el castillo del mundo 1, que es otro cambio. | Nueva `world-castle`, `world-map` (nodo del castillo tras el nivel 12 y medalla en el selector), `level-complete` | Terminar el castillo siempre da medalla, también con todo resuelto por Lalo. La medalla se ve en el selector. | |
-| 9 | `mundo-2-rio` | El contenido: 12 ambientes, 12 recorridos en JSON con sus retos, el mapa del río con el nodo del castillo y la apertura del mundo (se quita el interruptor de desarrollo). Los JSON se pueden repartir entre agentes una vez fijadas las reglas de validación. | `level-courses` (ambientes, de 90 a 150 s, de 3 a 5 retos, dificultad creciente), `world-map` (mapa del río) | `validate.ts` y `duration.ts` pasan con los 12 niveles. Recorrido completo del mundo en el móvil. | |
+| 6 | `enemigos-del-rio` (en paralelo con 3 a 5) | La rana y el cangrejo. Solo toca `level-enemies`. | `level-enemies` (movimiento y colocación lejos de los retos); arte en `public/assets/svg` anotado en `LICENSES.md` | Pruebas de movimiento y de colocación. La rana avisa antes de saltar, comprobado a ojo en el móvil. | Hecho (archivado el 2026-11-26) |
+| 7 | `pruebas-bandera-rio` (en paralelo con 3 a 5) | Once tipos de prueba nuevos (niveles 1 a 11), el repaso del nivel 12 y un catálogo por mundo. TypeScript puro e independientes entre sí, con el mismo contrato (`Question`, `AgeBand`, `Rng`), así que se pueden repartir entre varios agentes. Si se alarga, se divide en dos cambios: niveles 1 a 6 y 7 a 12. | `flag-quiz` (un requisito por prueba y el catálogo por mundo) | Pruebas deterministas con semilla para cada prueba y franja. Cada prueba revisada en la pantalla de la bandera a 844×390. | Hecho (archivado el 2026-11-26 en dos cambios: `pruebas-bandera-rio-1-6` y `pruebas-bandera-rio-7-12`) |
+| 8 | `castillo-y-medalla` | Una pieza que recibe una lista de retos (de las mecánicas y de la bandera) y da la medalla. Pensada para reutilizarla en el castillo del mundo 1, que es otro cambio. | Nueva `world-castle`, `world-map` (nodo del castillo tras el nivel 12 y medalla en el selector), `level-complete` | Terminar el castillo siempre da medalla, también con todo resuelto por Lalo. La medalla se ve en el selector. | Hecho (archivado el 2026-11-26) |
+| 9 | `mundo-2-rio` | El contenido: 12 ambientes, 12 recorridos en JSON con sus retos, el mapa del río con el nodo del castillo y la apertura del mundo (se quita el interruptor de desarrollo). Los JSON se pueden repartir entre agentes una vez fijadas las reglas de validación. | `level-courses` (ambientes, de 90 a 150 s, de 3 a 5 retos, dificultad creciente), `world-map` (mapa del río) | `validate.ts` y `duration.ts` pasan con los 12 niveles. Recorrido completo del mundo en el móvil. | Hecho (archivado el 2026-11-26) |
 | 10 | Prueba final con niños y ajustes | Rangos por edad, umbrales de estrellas y ritmo de la rana. Los ajustes de valores no necesitan un cambio formal. Después, actualizar el estado en README y AGENTS.md y desplegar cuando se decida. | — | Notas de la prueba. | |
 
 Para empezar cada paso: `openspec-propose` con el nombre del cambio y una frase como «sigue docs/MUNDO-2.md, sección A. Bloques que cuentan», para que la propuesta parta de lo aprobado y no lo vuelva a inventar.

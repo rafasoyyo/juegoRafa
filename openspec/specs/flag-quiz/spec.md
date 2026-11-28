@@ -98,28 +98,6 @@ Cada pregunta SHALL permitir 3 intentos. Un fallo SHALL dar un rebote suave y un
 - **WHEN** el niño acierta en el segundo o el tercer intento
 - **THEN** la pregunta cuenta como acertada
 
-### Requirement: Prueba superada con dos de tres
-La prueba SHALL superarse con al menos 2 preguntas acertadas de 3, con cualquier número de intentos. Superarla completa el nivel. Si no se supera, el nivel no queda completado, aunque el siguiente nivel sí se desbloquea.
-
-#### Scenario: Dos aciertos
-- **WHEN** el niño acierta la primera y la tercera pregunta y falla la segunda
-- **THEN** la prueba está superada y se abre la celebración de nivel completado
-
-#### Scenario: Un acierto
-- **WHEN** el niño acierta solo una pregunta
-- **THEN** la prueba no está superada y se abre la pantalla de prueba no superada
-
-#### Scenario: Repetir un nivel ya hecho y fallar
-- **WHEN** el niño repite el nivel 1, que ya estaba hecho con 2 estrellas, y no supera la prueba
-- **THEN** el nivel 1 sigue hecho con 2 estrellas
-
-### Requirement: La prueba no da estrellas
-La prueba SHALL NOT sumar ni quitar estrellas ni galletas. Las estrellas del nivel SHALL seguir dependiendo solo de los bloques «?» golpeados.
-
-#### Scenario: Prueba perfecta sin bloques
-- **WHEN** el niño llega a la meta sin golpear ningún bloque y acierta las tres preguntas a la primera
-- **THEN** la celebración muestra 1 estrella
-
 ### Requirement: Prueba «¿Cuántos hay?»
 Se ven unos objetos del juego (galletas, erizos, abejas o estrellas) y se toca cuántos hay. Pequeños: de 1 a 3 objetos, con 3 respuestas en puntos de dado. Medianos: de 1 a 10, con 3 respuestas en cifras. Mayores: de 8 a 20, ordenados en marcos de 10, con 4 respuestas en cifras. La pista de Lalo SHALL iluminar los objetos uno a uno, de izquierda a derecha.
 
@@ -428,3 +406,193 @@ Se ve la mitad de un dibujo junto a una línea de espejo, y hay que completar la
 #### Scenario: Pista de doblar
 - **WHEN** el niño falla dos veces una pregunta de «La otra mitad»
 - **THEN** la mitad dibujada se dobla por la línea como una hoja de papel y se queda en transparente sobre el lado donde va la respuesta
+
+### Requirement: Pruebas del río por nivel
+Cada mundo SHALL tener su propio catálogo de pruebas de la bandera. En el río, cada nivel SHALL tener siempre la misma: nivel 1, «¿Cuántos dedos?»; nivel 2, «El marco de diez»; nivel 3, «Parejas»; nivel 4, «El vecino»; nivel 5, «¿Dónde va?»; nivel 6, «El número más grande»; nivel 7, «Los amigos del 10»; nivel 8, «El tren»; nivel 9, «Calcetines»; nivel 10, «Saltos de rana»; nivel 11, «Los barcos del puerto»; nivel 12, «Repaso del río».
+
+#### Scenario: Nivel 4 del río
+- **WHEN** el niño llega a la bandera del nivel 4 del río
+- **THEN** la prueba es «El vecino»
+
+#### Scenario: Nivel 12 del río
+- **WHEN** el niño llega a la bandera del nivel 12 del río
+- **THEN** la prueba es «Repaso del río»
+
+### Requirement: Prueba «¿Cuántos dedos?»
+La prueba SHALL mostrar una o dos manos con dedos levantados y pedir cuántos hay: de 3 a 4 años, una mano (1 a 5) y respuestas con puntos de dado; de 5 a 6 años, hasta 10 llenando primero una mano; de 7 a 8 años, hasta 10 repartidos entre las dos manos. La pista SHALL iluminar los dedos levantados de uno en uno.
+
+#### Scenario: Dos manos
+- **WHEN** un perfil de 6 años ve una mano entera y otra con tres dedos
+- **THEN** la respuesta buena es 8
+
+### Requirement: Prueba «El marco de diez»
+La prueba SHALL mostrar un marco con fichas: de 5 casillas de 3 a 4 años y de 10 desde los 5. Hasta los 6 años se pregunta cuántas fichas hay; de 7 a 8 años, cuántas faltan para llenarlo, con las casillas vacías marcadas. La pista SHALL iluminar de una en una lo que hay que contar.
+
+#### Scenario: Cuántas faltan
+- **WHEN** un perfil de 8 años ve un marco de diez con 6 fichas
+- **THEN** la respuesta buena es 4
+
+### Requirement: Prueba «Parejas»
+La prueba SHALL mostrar una cantidad de objetos y varias cartas con números (con puntos de dado de 3 a 4 años) que se ven al menos 2,5 s y se dan la vuelta. Tocar una carta la destapa; la buena es la que tiene el número de la cantidad. La pista SHALL destapar todas las cartas un momento.
+
+#### Scenario: Carta equivocada
+- **WHEN** el niño toca una carta que no es la pareja
+- **THEN** la carta se destapa, se ve su número y se vuelve a tapar
+
+### Requirement: Prueba «El vecino»
+La prueba SHALL mostrar una fila de números con un hueco: de 3 a 4 años, el siguiente del 1 al 5 con puntos; de 5 a 6 años, el anterior o el siguiente del 1 al 10; de 7 a 8 años, además el de en medio, del 1 al 20.
+
+#### Scenario: El anterior
+- **WHEN** la fila muestra un hueco y después el 7
+- **THEN** la respuesta buena es 6
+
+### Requirement: Prueba «¿Dónde va?»
+La prueba SHALL mostrar una tarjeta con un número y una recta con algunos números a la vista: del 1 al 5 con puntos de 3 a 4 años, del 0 al 10 de 5 a 6 años y del 0 al 20 de 2 en 2 de 7 a 8 años. El niño SHALL tocar el sitio del número entre varios marcados, separados lo bastante para el dedo. La pista SHALL saltar marca a marca desde el principio, contando, hasta el sitio.
+
+#### Scenario: Colocar el 3
+- **WHEN** la tarjeta lleva el 3 en la recta del 0 al 10
+- **THEN** el sitio bueno es la tercera marca después del 0
+
+### Requirement: Prueba «El número más grande»
+La prueba SHALL mostrar la cesta llena (el más grande) o casi vacía (el más pequeño) y varios números sin objetos que contar: dos dados de 3 a 4 años (siempre el más grande), tres cifras del 1 al 10 de 5 a 6 años y del 1 al 20 de 7 a 8 años.
+
+#### Scenario: El más pequeño
+- **WHEN** la cesta está casi vacía y los números son 12, 5 y 9
+- **THEN** la respuesta buena es 5
+
+### Requirement: Prueba «Los amigos del 10»
+La prueba SHALL mostrar la meta (5 de 3 a 4 años, 10 de 5 a 6 y 20 de 7 a 8) y un marco con fichas y casillas vacías marcadas, y pedir cuántas faltan para completarlo. La pista SHALL iluminar las casillas vacías de una en una.
+
+#### Scenario: Completar el 10
+- **WHEN** el marco de diez tiene 7 fichas
+- **THEN** la respuesta buena es 3
+
+### Requirement: Prueba «El tren»
+La prueba SHALL mostrar una tarjeta con un puesto (con puntos de 3 a 4 años) y un tren con su locomotora y 3, 5 o 7 vagones según la edad, cada uno con un pasajero. El niño SHALL tocar el vagón de ese puesto contando desde la locomotora. La pista SHALL recorrer los vagones desde el primero, contando, hasta el puesto.
+
+#### Scenario: El tercero
+- **WHEN** la tarjeta dice 3
+- **THEN** el vagón bueno es el tercero empezando por el pegado a la locomotora
+
+### Requirement: Prueba «Calcetines»
+De 3 a 4 años, la prueba SHALL mostrar un calcetín y pedir su pareja (mismo color y mismo dibujo) entre tres. Desde los 5 años SHALL mostrar una fila de calcetines (hasta 10, o hasta 20 de 7 a 8 años) y dos respuestas, «todos con pareja» y «sobra uno». La pista SHALL unir los calcetines de dos en dos y hacer brillar el que sobra.
+
+#### Scenario: Nones
+- **WHEN** hay 7 calcetines en la cuerda
+- **THEN** la respuesta buena es «sobra uno»
+
+### Requirement: Prueba «Saltos de rana»
+La prueba SHALL mostrar una recta con la rana en la salida y, arriba, un arco por cada salto con su tamaño (sin número cuando es 1). El niño SHALL tocar dónde acaba la rana: de 1 en 1 hasta 5 de 3 a 4 años, de 1 o de 2 hasta 10 de 5 a 6 años y de 2, 3 o 5 hasta 20 de 7 a 8 años. La pista SHALL hacer saltar a la rana contando.
+
+#### Scenario: Dos saltos de 5
+- **WHEN** la rana sale del 7 y da dos saltos de 5
+- **THEN** el sitio bueno es el 17
+
+### Requirement: Prueba «Los barcos del puerto»
+La prueba SHALL mostrar números (con puntos de 3 a 4 años) que se tocan de menor a mayor: 3 de 3 a 4 años, 4 hasta 10 de 5 a 6 años y 5 hasta 20 de 7 a 8 años.
+
+#### Scenario: Ordenar
+- **WHEN** salen 9, 2 y 5
+- **THEN** hay que tocar 2, 5 y 9 en ese orden
+
+### Requirement: Repaso del río
+La prueba del nivel 12 del río SHALL hacer una pregunta de cada una de tres pruebas anteriores del río, distintas entre sí, y cada pregunta SHALL verse y tener la pista de su prueba.
+
+#### Scenario: Tres pruebas distintas
+- **WHEN** el niño llega a la bandera del nivel 12 del río
+- **THEN** las tres preguntas son de tres pruebas distintas del río
+
+### Requirement: Prueba «Sombras de dinosaurios»
+La prueba SHALL mostrar un dinosaurio de la isla a color en el marco del modelo y tres siluetas, de las que solo una es la suya. De 3 a 4 años las otras siluetas SHALL ser muy distintas; de 5 a 6, parecidas; de 7 a 8, parecidas y alguna mirando al otro lado (la buena también puede mirar al otro lado). La pista SHALL llevar la silueta tocada sobre el modelo para ver que no encaja.
+
+#### Scenario: La sombra que mira al otro lado
+- **WHEN** un niño de 7 años ve el triceratops y la sombra del triceratops mira a la izquierda
+- **THEN** esa sombra es la respuesta buena
+
+### Requirement: Prueba «Formas en las cosas»
+La prueba SHALL mostrar una cosa de todos los días con una forma clara (rueda, reloj, ventana, regalo, pizza, vela, puerta, libro, huevo, estrella de mar, cometa, panal, casa) y tres formas de colores al azar, y pedir la forma de la cosa. Las formas SHALL ser círculo, cuadrado y triángulo de 3 a 4 años; además rectángulo, óvalo, estrella y rombo de 5 a 6; y además pentágono y hexágono de 7 a 8. El color SHALL NOT indicar la respuesta.
+
+#### Scenario: La rueda es un círculo
+- **WHEN** la cosa es una rueda
+- **THEN** la respuesta buena es el círculo, sea del color que sea
+
+### Requirement: Prueba «Las placas del estegosaurio»
+La prueba SHALL mostrar una placa con una forma y tres placas para elegir la misma forma aunque cambie de tamaño, color o (desde 5 años) un poco de giro; la primera pregunta SHALL ser el triángulo. De 7 a 8 años la consigna SHALL ser un dado con tantos puntos como esquinas, y las otras formas SHALL tener otro número de esquinas.
+
+#### Scenario: Contar esquinas
+- **WHEN** un niño de 8 años ve un dado de 5 puntos
+- **THEN** la respuesta buena es el pentágono
+
+### Requirement: Prueba «Igual aunque gire»
+La prueba SHALL mostrar una pieza sin simetría y tres para elegir la misma. De 3 a 4 años la pieza SHALL NOT girar; de 5 a 6 SHALL girar un cuarto de vuelta; de 7 a 8 SHALL girar un cuarto, media o tres cuartos de vuelta y una de las otras SHALL ser la misma pieza volteada, que no vale.
+
+#### Scenario: Volteada no vale
+- **WHEN** a un niño de 7 años le salen la pieza girada media vuelta y la misma pieza volteada
+- **THEN** solo la girada es la respuesta buena
+
+### Requirement: Prueba «El nido»
+La prueba SHALL mostrar al bebé dinosaurio en un sitio respecto al nido y tres dibujos (dos de 3 a 4 años) con el huevo respecto a una caja, un cesto o una cueva, y pedir el que tiene la misma posición aunque cambie el dibujo. Las posiciones SHALL ser dentro y fuera de 3 a 4 años; dentro, fuera, encima, debajo, delante y detrás de 5 a 6; y encima, debajo, delante, detrás, izquierda y derecha de 7 a 8. Entre las opciones SHALL estar la posición contraria.
+
+#### Scenario: Debajo
+- **WHEN** el bebé está debajo del nido
+- **THEN** la respuesta buena es el huevo debajo del cesto, no el huevo encima
+
+### Requirement: Prueba «Los huevos de la familia»
+La prueba SHALL mostrar un nido con tres huevos de una familia y cuatro huevos para elegir el que no es de ella. La familia SHALL ser de un color de 3 a 4 años, de un dibujo (manchas, rayas o liso) de 5 a 6 aunque cambie el color, y de un color y un dibujo de 7 a 8, con el raro compartiendo uno de los dos.
+
+#### Scenario: Comparte el color
+- **WHEN** la familia es de huevos azules con manchas y un huevo es azul con rayas
+- **THEN** ese huevo es la respuesta buena
+
+### Requirement: Prueba «El fósil»
+La prueba SHALL mostrar una losa de huesos a la que le falta un trozo y tres piezas, y pedir la que llena el hueco tal cual, sin girarla. El hueco SHALL ser de 2 casillas de 3 a 4 años, de 3 de 5 a 6 y de 4 de 7 a 8; de 7 a 8 una de las piezas falsas SHALL ser la misma pieza en otra posición.
+
+#### Scenario: La misma pieza girada no encaja
+- **WHEN** el hueco es una L tumbada y entre las piezas está la L de pie
+- **THEN** solo la L tumbada es la respuesta buena
+
+### Requirement: Prueba «La piel del dinosaurio»
+La prueba SHALL mostrar un mosaico de escamas que sigue un dibujo, con una escama que falta, y las escamas para elegir; cada color SHALL llevar su marca blanca para no depender del color. Los dibujos SHALL ser rayas de 3 a 4 años (falta una de la última fila), rayas o damero de 5 a 6, y damero, damero de bloques o diagonales de tres colores de 7 a 8.
+
+#### Scenario: Damero
+- **WHEN** la piel es un damero naranja y verde y falta una escama entre dos naranjas de su fila
+- **THEN** la respuesta buena es la verde
+
+### Requirement: Prueba «El cuello que crece»
+La prueba SHALL mostrar en fila dinosaurios con el cuello cada vez más largo y pedir el que falta. De 3 a 6 años el cuello SHALL crecer de uno en uno y faltar el último; de 7 a 8 SHALL crecer de uno en uno o de dos en dos y el hueco PUEDE estar en medio. Ningún cuello SHALL pasar de 8 trozos.
+
+#### Scenario: De dos en dos
+- **WHEN** los cuellos son de 1, 3, hueco y 7 trozos
+- **THEN** la respuesta buena es el de 5 trozos
+
+### Requirement: Prueba «Pelota, caja y cono»
+La prueba SHALL mostrar una rampa que pide el cuerpo que baja rodando (bolas que giran) o el que se queda quieto (un cubo quieto), y tres cuerpos de los que solo uno cumple. De 3 a 4 años SHALL pedir siempre rodar, con la bola entre cuerpos de caras planas; de 5 a 6 SHALL entrar el cilindro; de 7 a 8, también el cono.
+
+#### Scenario: El cono rueda
+- **WHEN** un niño de 8 años ve la rampa de rodar con la pirámide, el cono y el cubo
+- **THEN** la respuesta buena es el cono
+
+### Requirement: Prueba «Formas escondidas»
+La prueba SHALL pedir cuántos triángulos hay. De 3 a 4 años SHALL mostrar formas sueltas (triángulos, círculos y cuadrados) y respuestas con puntos; de 5 a 6, dibujos con 1 a 3 triángulos; de 7 a 8, dibujos donde los triángulos se solapan, contando también los grandes. Entre las respuestas SHALL estar, si es distinta, la de contar solo los trozos.
+
+#### Scenario: Los grandes también cuentan
+- **WHEN** el dibujo es un triángulo partido en cuatro por sus puntos medios
+- **THEN** la respuesta buena es 5 y entre las falsas está el 4
+
+### Requirement: Repaso de la isla
+La prueba del nivel 12 de la isla SHALL hacer una pregunta de cada una de tres pruebas anteriores de la isla, distintas entre sí, y cada pregunta SHALL verse y tener la pista de su prueba.
+
+#### Scenario: Tres pruebas distintas
+- **WHEN** el niño llega a la bandera del nivel 12 de la isla
+- **THEN** las tres preguntas son de tres pruebas distintas de la isla
+
+### Requirement: Los aciertos de la prueba dan estrellas
+La prueba SHALL contar sus preguntas acertadas, con cualquier número de intentos, y pasarlas a la pantalla final: acertar al menos 1 SHALL dar una estrella y acertar las 3 SHALL ser condición para las 3 estrellas (ver `level-complete`). La prueba SHALL NOT sumar ni quitar galletas.
+
+#### Scenario: Una pregunta acertada
+- **WHEN** el niño acierta solo la segunda pregunta y llega con menos de la mitad de las galletas
+- **THEN** la pantalla final muestra 1 estrella
+
+#### Scenario: Ninguna acertada
+- **WHEN** el niño no acierta ninguna pregunta y llega con menos de la mitad de las galletas
+- **THEN** se abre la pantalla de ánimo sin estrellas

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { COLORS, GAME_H, MAX_W } from '../config';
 import { INK, mixColor, pitWall, skyKey, type Ambient, type GroundStyle } from '../levels/ambients';
 import { horizonRainbow } from '../levels/horizon-rainbow';
+import { bakeGraphics, bakeShape } from './bake';
 import { PIT_DEPTH, PIT_LIP_RADIUS, type Span } from '../levels/spikes';
 import { digits, fitImage } from './round-button';
 
@@ -37,8 +38,11 @@ export function drawGround(
   grass = 36,
   colors: GroundColors = COLORS,
   round: GroundRound = {},
-): Phaser.GameObjects.Graphics {
+): Phaser.GameObjects.Image[] {
   const g = scene.add.graphics();
+  // Los bultos que asoman por fuera del tramo solo lo hacen en los bordes del mundo, donde no se ven; lo
+  // que queda bajo el borde de la pantalla tampoco.
+  const bake = (): Phaser.GameObjects.Image[] => bakeGraphics(scene, g, { x, y: top, width, height: GAME_H - top });
   const corners = { tl: round.left ? PIT_LIP_RADIUS : 0, tr: round.right ? PIT_LIP_RADIUS : 0, bl: 0, br: 0 };
   const band = (h: number): void => {
     if (corners.tl || corners.tr) g.fillRoundedRect(x, top, width, h, corners);
@@ -69,7 +73,7 @@ export function drawGround(
       g.fillStyle(colors.grassDark, 0.5);
       for (let px = x + step / 2; px < x + width; px += step * 2) g.fillCircle(px, top + 10, 6);
     }
-    return g;
+    return bake();
   }
   g.fillStyle(colors.grassDark);
   band(grass + 6);
@@ -80,7 +84,7 @@ export function drawGround(
     g.fillStyle(colors.grassDark, 0.6);
     for (let i = 0, px = x + 20; px < x + width - 10; i++, px += 34 + jitter(i, 5) * 40) g.fillCircle(px, top + 10 + jitter(i, 6) * 18, 2.5 + jitter(i, 7) * 2);
   }
-  return g;
+  return bake();
 }
 
 /** La pared del foso asoma esto por cada lado bajo las esquinas redondeadas del suelo, en px. */
@@ -94,7 +98,7 @@ const PIT_SHADOW_ALPHA = 0.45;
  * ambiente oscurecida, una sombra en degradado bajo el borde y, bajo el fondo, la tierra con una línea
  * más oscura. Se dibuja antes que los tramos de suelo, que lo tapan por los lados.
  */
-export function drawPit(scene: Phaser.Scene, x: number, width: number, top: number, ambient: Ambient): Phaser.GameObjects.Graphics {
+export function drawPit(scene: Phaser.Scene, x: number, width: number, top: number, ambient: Ambient): Phaser.GameObjects.Image[] {
   const g = scene.add.graphics();
   const left = x - PIT_WALL_BLEED;
   const w = width + 2 * PIT_WALL_BLEED;
@@ -108,17 +112,22 @@ export function drawPit(scene: Phaser.Scene, x: number, width: number, top: numb
   }
   g.fillStyle(ambient.earth).fillRect(left, floor, w, GAME_H - floor + 40);
   g.fillStyle(mixColor(wall, INK, 0.35)).fillRect(left, floor, w, 4);
-  return g;
+  return bakeGraphics(scene, g, { x: left, y: top, width: w, height: GAME_H - top });
 }
 
-/** Colinas redondeadas que asoman por detrás del suelo. */
-export function drawHills(scene: Phaser.Scene, groundTop: number, from: number, to: number, step: number, color: number, scrollFactor = 1, phase = 0): Phaser.GameObjects.Graphics {
-  const g = scene.add.graphics().setScrollFactor(scrollFactor, 1);
-  g.fillStyle(color);
+/**
+ * Colinas redondeadas que asoman por detrás del suelo: la misma elipse repetida cada `step`, como imágenes
+ * de una sola textura. Solo se hornea la mitad de arriba: la de abajo queda siempre tapada por el suelo.
+ */
+export function drawHills(scene: Phaser.Scene, groundTop: number, from: number, to: number, step: number, color: number, scrollFactor = 1, phase = 0): Phaser.GameObjects.Image[] {
+  const w = step * 1.1;
+  const h = 420;
+  const key = bakeShape(scene, w, h / 2, (g) => g.fillStyle(color).fillEllipse(w / 2, h / 2, w, h));
+  const hills: Phaser.GameObjects.Image[] = [];
   for (let x = from + phase; x < to; x += step) {
-    g.fillEllipse(x, groundTop + 100, step * 1.1, 420);
+    hills.push(scene.add.image(x, groundTop + 100, key).setOrigin(0.5, 1).setScrollFactor(scrollFactor, 1));
   }
-  return g;
+  return hills;
 }
 
 export function addClouds(scene: Phaser.Scene, from: number, to: number, step: number, scrollFactor: number, style = { tint: 0xffffff, alpha: 1 }): void {
@@ -151,6 +160,7 @@ const DECOR_ALPHA = 0.72;
  * escenario de siempre (nubes, dos capas de colinas y suelo con los colores de la paleta). El suelo va
  * por tramos (`spans`) y entre ellos, los fosos de los pinchos (`pits`): primero los fosos y después
  * los tramos, con la esquina redondeada del lado del foso. Sin tramos, un solo suelo de todo el ancho.
+ * Devuelve el arcoíris del horizonte, si lo hay (el prólogo lo hace destellar).
  */
 export function addScenery(
   scene: Phaser.Scene,
@@ -160,23 +170,25 @@ export function addScenery(
   horizon: { level: number; lastLevel: number } | null,
   viewW: number,
   ground: { spans: readonly Span[]; pits: readonly Span[] } = { spans: [{ from: 0, to: worldW }], pits: [] },
-): void {
+): { rainbow?: Phaser.GameObjects.Image } {
   addSky(scene, skyKey(ambient.id));
 
   // Arcoíris del horizonte: la capa más lejana, detrás del sol, la luna, las nubes y las colinas.
+  let arc: Phaser.GameObjects.Image | undefined;
   if (horizon) {
     const rainbow = horizonRainbow(horizon.level, horizon.lastLevel, ambient, viewW, worldW);
-    const arc = scene.add.image(rainbow.x, rainbow.bottom, 'decor-rainbow').setOrigin(0.5, 1);
+    arc = scene.add.image(rainbow.x, rainbow.bottom, 'decor-rainbow').setOrigin(0.5, 1);
     arc.setDisplaySize(rainbow.width, (rainbow.width * arc.height) / arc.width).setScrollFactor(rainbow.scrollFactor, 1).setAlpha(rainbow.alpha);
   }
 
   if (ambient.decor === 'sunset') {
     scene.add.image(MAX_W * 0.62, groundTop - 90, 'decor-sun').setScrollFactor(0.03, 1);
   }
-  if (ambient.decor === 'night') {
+  if (ambient.decor === 'night' || ambient.decor === 'fireflies') {
     scene.add.image(MAX_W * 0.72, 220, 'decor-moon').setScrollFactor(0.03, 1);
     addStars(scene, worldW * 0.1 + MAX_W);
   }
+  if (ambient.volcano) addVolcano(scene, groundTop);
 
   addClouds(scene, 120, worldW * 0.3 + MAX_W, 520, 0.3, ambient.cloud);
   if (ambient.decor === 'mountains') {
@@ -191,7 +203,7 @@ export function addScenery(
     }
   }
   drawHills(scene, groundTop, -200, worldW * 0.45 + MAX_W, 900, ambient.hillLight, 0.45);
-  if (ambient.decor === 'beach') drawSea(scene, groundTop, worldW * 0.45 + MAX_W);
+  if (ambient.decor === 'beach') drawSea(scene, groundTop, worldW * 0.45 + MAX_W, ambient.sea);
   if (ambient.decor === 'rainbow') {
     // Nubes grandes y bajas, delante del arcoíris.
     for (let i = 0, x = 200; x < worldW * 0.4 + MAX_W; i++, x += 700 + jitter(i) * 400) {
@@ -211,6 +223,12 @@ export function addScenery(
     jungle: { key: 'decor-leaf', every: 240, scale: 0.7 },
     snow: { key: 'decor-pine-snow', every: 300, scale: 0.8 },
     desert: { key: 'decor-cactus', every: 460, scale: 0.6 },
+    ferns: { key: 'decor-fern', every: 240, scale: 0.7 },
+    geysers: { key: 'decor-geyser', every: 460, scale: 0.75 },
+    ruins: { key: 'decor-column', every: 420, scale: 0.6 },
+    basalt: { key: 'decor-basalt', every: 380, scale: 0.65 },
+    crystals: { key: 'decor-crystal', every: 300, scale: 0.6 },
+    embers: { key: 'decor-basalt', every: 620, scale: 0.55 },
   };
   const planted = groundDecor[ambient.decor];
   if (planted) {
@@ -235,6 +253,8 @@ export function addScenery(
     }
   }
   if (ambient.decor === 'snow') addSnowflakes(scene, groundTop, worldW * 0.3 + MAX_W);
+  if (ambient.decor === 'fireflies') addGlows(scene, 'decor-firefly', groundTop, worldW * DECOR_SCROLL + MAX_W, false);
+  if (ambient.decor === 'embers') addGlows(scene, 'decor-ember', groundTop, worldW * DECOR_SCROLL + MAX_W, true);
 
   const near = { groundTop: groundTop + 30, from: -200, step: 800, phase: 420, scroll: 0.6 };
   // En la playa el mar llega hasta la arena: sin colinas cercanas.
@@ -259,6 +279,7 @@ export function addScenery(
     const round = { left: ground.pits.some((p) => p.to === span.from), right: ground.pits.some((p) => p.from === span.to) };
     drawGround(scene, span.from, span.to - span.from, groundTop, 36, ambient, round);
   }
+  return arc ? { rainbow: arc } : {};
 }
 
 /** Altura (`y`) de la cima de una capa de colinas de `drawHills` en `x`. */
@@ -270,15 +291,66 @@ function hillTop(x: number, hills: { groundTop: number; from: number; step: numb
   return hills.groundTop + 100 - 210 * Math.sqrt(Math.max(0, 1 - (dx / rx) ** 2));
 }
 
-/** Franja de mar en el horizonte de la playa, con ondas claras; se mueve con las colinas lejanas. */
-function drawSea(scene: Phaser.Scene, groundTop: number, to: number): void {
+/**
+ * Franja de mar en el horizonte de la playa, con ondas claras; se mueve con las colinas lejanas. `sea` es el
+ * color del agua (el azul claro de siempre si falta); la franja de arriba y las ondas, más claras.
+ */
+function drawSea(scene: Phaser.Scene, groundTop: number, to: number, sea?: number): void {
   const g = scene.add.graphics().setScrollFactor(0.45, 1);
   const top = groundTop - 96;
-  g.fillStyle(0x7fcfe8).fillRect(-200, top, to + 200, groundTop - top + 10);
-  g.fillStyle(0x9adbee).fillRect(-200, top, to + 200, 14);
-  g.fillStyle(0xd4f1f8, 0.9);
+  g.fillStyle(sea ?? 0x7fcfe8).fillRect(-200, top, to + 200, groundTop - top + 10);
+  g.fillStyle(sea === undefined ? 0x9adbee : mixColor(sea, 0xffffff, 0.2)).fillRect(-200, top, to + 200, 14);
+  g.fillStyle(sea === undefined ? 0xd4f1f8 : mixColor(sea, 0xffffff, 0.5), 0.9);
   for (let i = 0, x = -160; x < to; i++, x += 120 + jitter(i, 10) * 120) {
     g.fillRoundedRect(x, top + 28 + jitter(i, 11) * 50, 34 + jitter(i, 12) * 30, 6, 3);
+  }
+  bakeGraphics(scene, g, { x: -200, y: top, width: to + 200, height: groundTop - top + 10 });
+}
+
+/**
+ * El gran volcán de la isla, lejos y casi quieto: humea despacio por el cráter, que brilla al latir. No
+ * hace daño (`docs/MUNDO-3.md`, «Decisiones»).
+ */
+function addVolcano(scene: Phaser.Scene, groundTop: number): void {
+  // A la izquierda del centro, para no tapar el sol del atardecer.
+  const x = MAX_W * 0.36;
+  const scroll = 0.08;
+  const scale = 0.62;
+  const volcano = scene.add.image(x, groundTop + 30, 'decor-volcano').setOrigin(0.5, 1).setScale(scale).setScrollFactor(scroll, 1).setAlpha(0.8);
+  // El borde del cráter está a 70 px de lo alto de la textura (`BootScene.makeIslandDecor`).
+  const craterY = volcano.y - volcano.displayHeight + 70 * scale;
+  const glow = scene.add.ellipse(x, craterY, 200 * scale, 40 * scale, 0xff9b4a, 0.4).setScrollFactor(scroll, 1);
+  scene.tweens.add({ targets: glow, alpha: 0.1, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  for (let i = 0; i < 3; i++) {
+    const puff = scene.add.image(x, craterY - 10, 'cloud').setScale(0.25).setTint(0x8a8490).setAlpha(0).setScrollFactor(scroll, 1);
+    scene.tweens.add({
+      targets: puff,
+      y: craterY - 120,
+      x: x + 50,
+      scale: 0.7,
+      alpha: { from: 0.7, to: 0 },
+      duration: 6000,
+      delay: i * 2000,
+      repeat: -1,
+      ease: 'Sine.easeOut',
+    });
+  }
+}
+
+/**
+ * Luces pequeñas que flotan: luciérnagas que se encienden y se apagan cerca del suelo, o brasas que suben
+ * desde el suelo y se apagan (`rise`).
+ */
+function addGlows(scene: Phaser.Scene, key: string, groundTop: number, to: number, rise: boolean): void {
+  for (let i = 0, x = 60; x < to; i++, x += 140 + jitter(i, 18) * 160) {
+    const y = groundTop - 40 - jitter(i, 19) * (rise ? 60 : 220);
+    const glow = scene.add.image(x, y, key).setScale(0.8 + jitter(i, 20) * 0.6).setScrollFactor(DECOR_SCROLL, 1).setAlpha(0);
+    const delay = jitter(i, 21) * 3000;
+    if (rise) {
+      scene.tweens.add({ targets: glow, y: y - 220, alpha: { from: 0.95, to: 0 }, duration: 3200 + jitter(i, 22) * 1600, delay, repeat: -1, ease: 'Sine.easeOut' });
+    } else {
+      scene.tweens.add({ targets: glow, alpha: 0.95, x: x + 20, y: y - 16, duration: 1400 + jitter(i, 22) * 900, delay, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
   }
 }
 
@@ -367,7 +439,7 @@ export function bump(scene: Phaser.Scene, target: Phaser.GameObjects.Components.
 export const PLATFORM_THICKNESS = 36;
 
 /** Escalón: tierra con hierba encima, esquinas de arriba redondeadas; llega hasta dentro del suelo. */
-export function drawStep(scene: Phaser.Scene, x: number, width: number, top: number, groundTop: number, colors: GroundColors): Phaser.GameObjects.Graphics {
+export function drawStep(scene: Phaser.Scene, x: number, width: number, top: number, groundTop: number, colors: GroundColors): Phaser.GameObjects.Image[] {
   const g = scene.add.graphics();
   const h = groundTop - top + 20;
   const r = { tl: 18, tr: 18, bl: 0, br: 0 };
@@ -377,19 +449,21 @@ export function drawStep(scene: Phaser.Scene, x: number, width: number, top: num
   // Piedrecitas en la tierra para que se lea como un bloque de suelo y no como una pared lisa.
   g.fillStyle(colors.grassDark, 0.25);
   for (let px = x + 30; px < x + width - 20; px += 70) g.fillCircle(px, top + 44 + ((px / 70) % 2) * 12, 6);
-  return g;
+  return bakeGraphics(scene, g, { x, y: top, width, height: h });
 }
 
 /** Plataforma de un solo sentido: un tronco con musgo encima o una nube mullida, según el ambiente. */
-export function drawPlatform(scene: Phaser.Scene, x: number, width: number, top: number, ambient: Ambient): Phaser.GameObjects.Graphics {
+export function drawPlatform(scene: Phaser.Scene, x: number, width: number, top: number, ambient: Ambient): Phaser.GameObjects.Image[] {
   const g = scene.add.graphics();
   const h = PLATFORM_THICKNESS;
+  // Del musgo (4 px por encima) a los bultos de la nube, que asoman hasta 16 px por abajo y 6 por la derecha.
+  const bake = (): Phaser.GameObjects.Image[] => bakeGraphics(scene, g, { x: x - 8, y: top - 4, width: width + 16, height: h + 24 });
   if (ambient.platform === 'cloud') {
     g.fillStyle(0xd9cfe0).fillRoundedRect(x, top + 6, width, h, h / 2);
     for (let px = x + 26; px < x + width - 10; px += 40) g.fillCircle(px, top + h - 2, 16);
     g.fillStyle(COLORS.white).fillRoundedRect(x, top, width, h - 4, (h - 4) / 2);
     for (let px = x + 26; px < x + width - 10; px += 40) g.fillCircle(px, top + h - 10, 14);
-    return g;
+    return bake();
   }
   g.fillStyle(0x7d5432).fillRoundedRect(x, top + 4, width, h, h / 2);
   g.fillStyle(0x9a6a3f).fillRoundedRect(x, top, width, h, h / 2);
@@ -401,5 +475,5 @@ export function drawPlatform(scene: Phaser.Scene, x: number, width: number, top:
   }
   // Musgo del color de la hierba del ambiente.
   g.fillStyle(ambient.grass).fillRoundedRect(x + 10, top - 4, width - 20, 12, 6);
-  return g;
+  return bake();
 }

@@ -7,9 +7,7 @@ tocarlos (un rebote suave sin penalización) y cómo se reparten al azar por los
 ## Requirements
 
 ### Requirement: Enemigos originales y amables
-Los enemigos SHALL ser un erizo de pinchos y una abeja zumbona, gráficos propios en el estilo vectorial
-plano y redondeado del juego, sin contornos negros, con cara simpática y sin parecido con personajes de
-terceros. Cada gráfico SHALL figurar en el registro de licencias como propio del proyecto.
+Los enemigos SHALL ser un erizo de pinchos y una abeja zumbona y, en el río, también una rana y un cangrejo: gráficos propios en el estilo vectorial plano y redondeado del juego, sin contornos negros, con cara simpática y sin parecido con personajes de terceros. Cada gráfico SHALL figurar en el registro de licencias como propio del proyecto.
 
 #### Scenario: Ver un erizo
 - **WHEN** aparece un erizo en un móvil horizontal de 844×390
@@ -21,7 +19,7 @@ terceros. Cada gráfico SHALL figurar en el registro de licencias como propio de
 
 #### Scenario: Licencia de los gráficos
 - **WHEN** se revisa el registro de licencias del repositorio
-- **THEN** los gráficos del erizo y de la abeja aparecen como propios del proyecto
+- **THEN** los gráficos del erizo, la abeja, la rana y el cangrejo aparecen como propios del proyecto
 
 ### Requirement: Patrulla del erizo
 El erizo SHALL andar por el suelo de un lado a otro dentro de su tramo, dándose la vuelta en cada
@@ -94,11 +92,12 @@ galletas el pinchazo ocurre igual pero no se resta nada. Las galletas perdidas S
 - **THEN** la tarjeta de nivel completado muestra 3 galletas y al total del niño se le suman 3
 
 ### Requirement: El pinchazo no penaliza más
-Un pinchazo SHALL NOT cambiar las estrellas, reiniciar el nivel, mover al zorro a otro punto, quitar
-galletas del total ya guardado ni mostrar ninguna pantalla o mensaje.
+Un pinchazo SHALL NOT reiniciar el nivel, mover al zorro a otro punto, quitar galletas del total ya
+guardado ni mostrar ninguna pantalla o mensaje. Las estrellas solo SHALL notar el pinchazo a través de
+la galleta que resta del contador del nivel, que cuenta para el porcentaje de galletas de la fase.
 
-#### Scenario: Muchos pinchazos
-- **WHEN** el niño se pincha diez veces y luego golpea todos los bloques y llega a la bandera
+#### Scenario: Muchos pinchazos con el contador a cero
+- **WHEN** el niño se pincha diez veces con el contador a 0 y luego golpea todos los bloques y llega a la bandera
 - **THEN** las estrellas son las mismas que sin haberse pinchado
 
 #### Scenario: Total guardado intacto
@@ -161,3 +160,66 @@ Al alcanzar la bandera, ningún enemigo SHALL interrumpir la celebración del zo
 #### Scenario: Enemigo cerca durante la celebración
 - **WHEN** el zorro celebra en la bandera
 - **THEN** ningún enemigo lo hace rebotar y la pantalla de nivel completado se abre como siempre
+
+### Requirement: La rana del río
+La rana SHALL saltar en el sitio con un ritmo fijo y SHALL agacharse durante al menos 400 ms antes de cada salto, para que se vea venir. En lo alto del salto el zorro SHALL poder pasar andando por debajo sin tocarla; quieta, SHALL poder saltarse por encima. Es un gráfico propio en el estilo del juego, anotado en el registro de licencias.
+
+#### Scenario: Pasar por debajo
+- **WHEN** el zorro pasa andando bajo la rana mientras está en el aire
+- **THEN** no la toca y no pierde galletas
+
+#### Scenario: El aviso
+- **WHEN** la rana va a saltar
+- **THEN** antes se agacha, aplastándose, y tiembla un poco
+
+### Requirement: El cangrejo del río
+El cangrejo SHALL andar de lado, sin darse la vuelta, de ida y vuelta por un tramo de suelo de 200 px como mucho y más despacio que el erizo. Es un gráfico propio en el estilo del juego, anotado en el registro de licencias.
+
+#### Scenario: Ver un cangrejo
+- **WHEN** aparece un cangrejo en un móvil horizontal de 844×390
+- **THEN** se reconoce como un cangrejo rojo con pinzas y ojos amables que anda de lado despacio
+
+### Requirement: Tipos de enemigo por mundo
+Cada mundo SHALL decir qué tipos de enemigo salen y desde qué nivel, y cada enemigo SHALL elegirse al azar entre los tipos que ya han llegado. En el mundo 1 salen el erizo desde el nivel 1 y la abeja desde el 2. En el río salen el erizo y la abeja como en el mundo 1, la rana desde el nivel 3 y el cangrejo desde el 7. Ningún enemigo SHALL colocarse en la zona de un reto del recorrido ni a menos del margen de seguridad.
+
+#### Scenario: Nivel 3 del río
+- **WHEN** se abre muchas veces el nivel 3 del río
+- **THEN** salen erizos, abejas y ranas, nunca cangrejos, y ninguno junto a un reto
+
+#### Scenario: El mundo 1 no cambia
+- **WHEN** se abre el nivel 1 del mundo 1
+- **THEN** salen solo erizos, como antes
+
+
+
+### Requirement: Los pterosaurios de la isla
+Los pterosaurios SHALL volar en fila de dos o tres, a la misma altura y en ondas regulares, con un vaivén lento sobre su tramo; una fila cuenta como un enemigo. Abajo SHALL tocar a un zorro de pie y arriba SHALL dejarle pasar por debajo. Su sombra en el suelo SHALL crecer y oscurecerse al bajar, como aviso. Son gráficos propios en el estilo A documental de la isla, anotados en el registro de licencias.
+
+#### Scenario: Pasar por debajo
+- **WHEN** el zorro pasa andando bajo la fila mientras sube
+- **THEN** no la toca y no pierde galletas
+
+#### Scenario: La sombra avisa
+- **WHEN** un pterosaurio baja hacia el suelo
+- **THEN** su sombra se hace más grande y más oscura antes de que llegue a la altura del zorro
+
+### Requirement: El volcancito de la isla
+El volcancito SHALL temblar y echar humo durante al menos 600 ms, con un retumbo, antes de lanzar una piedra grande que sube y vuelve a caer en su cráter, siempre en vertical. La piedra SHALL NOT salir de la columna del volcán. Mientras la piedra está arriba, el volcancito SHALL poder saltarse.
+
+#### Scenario: Saltar el volcancito
+- **WHEN** el zorro salta el volcancito con la piedra en lo alto
+- **THEN** no toca ni el cono ni la piedra
+
+### Requirement: El tiranosaurio de la isla
+El tiranosaurio SHALL caminar despacio de un lado a otro de su tramo y pararse cada pocos pasos a rugir, con un rugido grave que crece y un temblor suave del suelo, sin sangre, sin boca abierta hacia el jugador ni gestos de ataque. Mientras ruge SHALL estar quieto y SHALL poder saltarse por encima con un salto normal.
+
+#### Scenario: Saltar mientras ruge
+- **WHEN** el tiranosaurio se para a rugir y el zorro salta hacia él
+- **THEN** pasa por encima sin tocarlo
+
+### Requirement: Enemigos con varias partes
+Un enemigo SHALL poder tener varias zonas de choque (cada pterosaurio de una fila, el volcán y su piedra), y tocar cualquiera de ellas SHALL contar como un solo pinchazo, con las mismas reglas que el resto de enemigos.
+
+#### Scenario: Tocar la piedra
+- **WHEN** la piedra del volcancito cae sobre el zorro
+- **THEN** pierde una galleta (nunca por debajo de 0) y rebota como con cualquier enemigo

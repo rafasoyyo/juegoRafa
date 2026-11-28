@@ -54,8 +54,19 @@ Licencia: la del repositorio.
 | `svg/icon-no-hat.svg` | lienzo de diseño |
 | `svg/icon-play-white.svg` | derivado: triángulo de jugar |
 | `svg/icon-replay.svg` | lienzo de diseño |
+| `svg/icon-replay-white.svg` | derivado: `icon-replay` en blanco y más grueso |
 | `svg/icon-shapes.svg` | lienzo de diseño |
 | `svg/icon-speaker.svg` | lienzo de diseño |
+| `svg/frog.svg` | propio: rana saltarina (enemigo del río), en la paleta y el estilo del lienzo |
+| `svg/crab.svg` | propio: cangrejo que anda de lado (enemigo del río), en la paleta y el estilo del lienzo |
+| `svg/trex.svg` | propio: tiranosaurio (enemigo de la isla, mundo 3) en el estilo A documental de la hoja de diseño de los dinosaurios del proyecto |
+| `svg/ptero.svg` | propio: pterosaurio (enemigo de la isla, mundo 3) en el estilo A documental de la hoja de diseño de los dinosaurios del proyecto |
+| `svg/volcano-small.svg` | propio: volcancito del camino (enemigo de la isla, mundo 3), plano y sin contornos |
+| `svg/lava-rock.svg` | propio: piedra de lava que lanza el volcancito, plana y sin contornos |
+| `svg/castle.svg` | propio: castillo del final de cada mundo (mapa, recorrido y prueba), en la paleta y el estilo del lienzo |
+| `svg/medal.svg` | propio: medalla que da el castillo (fin del castillo y selector de mundos), en la paleta y el estilo del lienzo |
+| `svg/medal-footprint.svg` | propio: medalla de la huella del castillo de la isla (mundo 3), con la huella de tres dedos de un dinosaurio, en los colores de los grabados de la isla |
+| `svg/nest.svg` | propio: nido del cráter con el huevo de manchas, castillo de la isla (mundo 3) en el mapa, al final de su recorrido y en su prueba, en los colores de la isla |
 | `svg/icon-ten-frame.svg` | propio: marco de diez (2×5 casillas con 7 fichas), icono del mundo del río, en la paleta del lienzo |
 | `svg/icon-speaker-off.svg` | derivado de `icon-speaker.svg`: mismo altavoz con un aspa en lugar de las ondas (silencio) |
 | `svg/lalo-blink.svg` | derivado de Lalo del lienzo (ojos cerrados) |
@@ -80,6 +91,7 @@ Licencia: la del repositorio.
 | `decor-sun` | `src/game/scenes/BootScene.ts` | propio: sol bajo del atardecer |
 | `decor-moon` | `src/game/scenes/BootScene.ts` | propio: luna de la noche |
 | `decor-star` | `src/game/scenes/BootScene.ts` | propio: estrella redondeada de la noche |
+| `decor-burrow` | `src/game/scenes/BootScene.ts` | propio: madriguera de Rufo en la colina, al principio del mapa del arcoíris |
 | `decor-palm` | `src/game/scenes/BootScene.ts` | propio: palmera de la playa |
 | `decor-leaf`, `decor-vine` | `src/game/scenes/BootScene.ts` | propio: hoja grande y liana de la selva |
 | `decor-peak` | `src/game/scenes/BootScene.ts` | propio: pico nevado de la montaña |
